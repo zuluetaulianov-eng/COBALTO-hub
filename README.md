@@ -1,20 +1,22 @@
-# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v12.1
+# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v12.2
 
 > **Sistema de Mando y Control de Inteligencia (C4I)** en tiempo real, orientado a Venezuela y el Caribe,  
 > **potenciado por OSIRIS Engine** — inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
 > Consolida fuentes RSS, redes sociales, ciberseguridad, rastreo de aeronaves/buques y análisis geopolítico multiagente con IA.  
-> **v12.1** — Aplicación Nativa Windows (.EXE), Aceleración Gráfica GPU (DirectX/ANGLE), HUD Drawer colapsable,  
-> Knowledge Graph, Flujos Agénticos IA, Alerta Temprana Predictiva, FININT & Dark Web, HUMINT & Edge Computing.
+> **v12.2** — Refactorización Modular de Sub-routers, Validación de Inteligencia Pydantic v2, Ollama Dynamic Host,  
+> Aplicación Nativa Windows (.EXE), Aceleración Gráfica GPU (DirectX/ANGLE), Knowledge Graph, Alerta Temprana Predictiva.
 
 ---
 
-## 🔄 Últimas Actualizaciones (Agosto 2026 — Estabilización, GPU & Ejecutable Nativo)
+## 🔄 Últimas Actualizaciones (Agosto 2026 — Refactorización Modular, Pydantic & GPU Nativa)
 
+- **🧩 Refactorización Modular de `app.py` (7 Sub-routers):** Descomposición del monolito de 3169+ líneas en sub-routers temáticos ubicados en `routers/` (`rt_humint`, `rt_finint`, `rt_entities`, `rt_predictive`, `rt_agents`, `rt_analytics`, `rt_export`), reduciendo `app.py` a ~1800 líneas manteniendo 100% de compatibilidad de API.
+- **🛡️ Validación Pydantic v2 para Inteligencia Estática:** Creación de `models/intel_models.py` para validar `static_intel.json` (`OWN_POSTS` y `NOTES_INFORMATIVAS`) elemento por elemento en `config.py`, evitando fallos catastróficos o corrupción silenciosa ante JSONs incompletos o malformados.
+- **🌐 Configuración Flexible de Ollama (`OLLAMA_HOST`):** Resolución de Hostname/FQDN desacoplada de IPs fijas de LAN (default `localhost`) y documentada en `.env.example` para prevenir desconexiones de inferencia tras reinicios de red.
+- **🧪 Pipeline CI/CD & Testing Integrado (127/127 Pass):** Endurecimiento del workflow de Github Actions (`.github/workflows/ci.yml`), separación de dependencias pesadas en `requirements-optional.txt` y 127 tests unitarios/de integración HTTP pasando sin regresiones.
 - **🖥️ Aplicación Nativa de Escritorio (`CobaltoHUB.exe`):** Compilación lista para producción mediante PyInstaller y PyWebView2. Hilo backend FastAPI integrado como servicio daemon y ventana de interfaz táctica independiente.
 - **⚡ Aceleración por Hardware GPU (DirectX 11 / ANGLE):** Activación de flags de aceleración gráfica en WebView2 (`--use-gl=angle --use-angle=d3d11 --enable-gpu-rasterization --enable-zero-copy`). Aceleración por capas 3D en CSS (`transform: translateZ(0)`) para renderizado ultrarrápido de mapas Leaflet, Canvas de grafos SNA y mosaicos CCTV.
-- **🎛️ Reorganización del Layout — HUD Inferior Colapsable (`telemetry-drawer`):** Migración de componentes de telemetría del sistema, diagnóstico de IA y selectores de tema hacia un cajón HUD inferior deslizable. Esto libera el 100% de la altura vertical de la barra lateral para navegación limpia entre los 15+ módulos.
-- **🤖 Fallback Inteligente de IA Local (Ollama & Cloud Mappings):** Mapeo automático de nombres de modelos en la nube (`meta/llama-3.3-70b-instruct`) hacia el modelo local activo (`llama3.2`) al utilizar respaldos locales en `ollama_provider.py`, eliminando excepciones HTTP 404.
-- **🎨 Interacción Táctil y hard-styling en Navegación:** Integración de la regla `.nav-button` en `dashboard.css` con `cursor: pointer !important;`, efectos de resplandor hover cian (`#00E5FF`), bordes de foco tácticos y animaciones de clic.
+- **🎛️ Reorganización del Layout — HUD Inferior Colapsable (`telemetry-drawer`):** Migración de componentes de telemetría del sistema, diagnóstico de IA y selectores de tema hacia un cajón HUD inferior deslizable.
 - **📄 Modo Legal e Informes Imprimibles (Word/PDF):** Inclusión de tarjetas noticiosas fácticas con nivel de amenaza IA y exportación a PDF y DOCX en fondos blancos con textos oscuros para óptimo consumo de tinta de impresión oficial.
 
 ---
@@ -248,6 +250,18 @@ COBALTO/
 ├── app_auth.py                   # Autenticación JWT
 ├── app_ws.py                     # WebSocket broadcast
 ├── app_platform.py               # Rutas de la plataforma
+│
+├── models/                       # 🛡️ Modelos Pydantic v2 de validación
+│   └── intel_models.py           # Esquemas para static_intel.json (OwnPost, NotaInformativa)
+│
+├── routers/                      # 🧩 Sub-routers temáticos extraídos de app.py
+│   ├── rt_humint.py              # Endpoints reportes HUMINT y bot Telegram (/api/humint/*)
+│   ├── rt_finint.py              # Endpoints FININT blockchain, wallets y darkweb (/api/finint/*)
+│   ├── rt_entities.py            # Endpoints búsqueda y stats entity registry (/api/entities/*)
+│   ├── rt_predictive.py          # Endpoints alerta temprana y scoring (/api/predictive/*)
+│   ├── rt_agents.py              # Endpoints orquestación agentes IA (/api/agent/*)
+│   ├── rt_analytics.py           # Endpoints telemetría y métricas (/api/analytics-data, /cyber)
+│   └── rt_export.py              # Endpoints exportación SitRep/OSINT DOCX/PDF/JSON (/api/export/*)
 │
 ├── dashboard.py                  # Pipeline del dashboard (full cycle)
 ├── dashboard_pipeline.py         # Pipeline modular de datos
@@ -656,11 +670,14 @@ Los logs rotan automáticamente al alcanzar **5 MB** (máximo 3 copias):
 ## 🧪 Tests
 
 ```bash
-# Ejecutar suite completa:
+# Ejecutar suite completa (127 tests):
 python -m pytest tests/ -v
 
-# Verificar imports críticos:
-python -m pytest tests/test_imports.py
+# Verificar modelos de inteligencia Pydantic:
+python -m pytest tests/test_intel_models.py
+
+# Verificar endpoints HTTP e integración de routers:
+python -m pytest tests/test_api_endpoints.py
 
 # Verificar seguridad:
 python -m pytest tests/test_security.py

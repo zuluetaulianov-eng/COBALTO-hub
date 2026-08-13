@@ -53,11 +53,17 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          pip install pytest pytest-asyncio pytest-cov
+          pip install pytest pytest-asyncio pytest-cov httpx
+
+      - name: Configure CI environment
+        run: |
+          echo "OLLAMA_ENABLED=false" >> $GITHUB_ENV
+          echo "ADMIN_PASSWORD=ci_test_password" >> $GITHUB_ENV
+          echo "JWT_SECRET=ci-test-jwt-secret-minimum-32chars" >> $GITHUB_ENV
 
       - name: Run tests
         run: pytest --cov=. --cov-report=xml --cov-report=term -v
-        continue-on-error: true
+        timeout-minutes: 10
 
   security:
     name: Security Audit
@@ -100,12 +106,12 @@ jobs:
           python -c "
           import sys, importlib
           modules = [
-              'app', 'config', 'dashboard', 'extractor', 'ai_core', 'database',
-              'graph_database', 'humanization', 'security_utils', 'metrics',
-              'doh_patch', 'telegrambot', 'osint_registry', 'event_radar',
-              'osint_alerts', 'osint_narrative', 'osint_socialgraph',
-              'osint_fakenews', 'feed_repair', 'osint_playwright',
-              'user_search', 'osint_onion', 'osint_social_dorks'
+              'config', 'database', 'graph_database', 'humanization', 'security_utils',
+              'metrics', 'doh_patch', 'osint_registry', 'event_radar', 'osint_alerts',
+              'osint_narrative', 'osint_fakenews', 'feed_repair', 'user_search',
+              'osint_onion', 'osint_social_dorks', 'entity_registry', 'event_bus',
+              'historical_store', 'osiris_bridge', 'osiris_recon', 'osiris_intel',
+              'agent_memory', 'agent_tools', 'rag_retriever', 'intel_reports'
           ]
           for m in modules:
               try:

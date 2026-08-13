@@ -1,0 +1,31 @@
+# COBALTO HUB — Dependencias Opcionales
+# Instalar solo si se necesitan las funcionalidades correspondientes
+# Uso: pip install -r requirements-optional.txt
+
+# ── Base de datos avanzada (solo si no se usa SQLite local) ──
+redis==5.0.3                  # Cache distribuido / PubSub
+psycopg2-binary==2.9.9        # PostgreSQL (instancia remota o cloud)
+
+# ── Búsqueda y grafos (módulos OSINT avanzados) ──
+elasticsearch==8.11.0         # Indexación de texto OSINT (osint_elasticsearch.py)
+neo4j==5.14.1                 # Grafo de relaciones (osint_neo4j.py, osint_socialgraph.py)
+
+# ── Scraping con navegador headless ──
+playwright==1.59.0            # JS-heavy scraping (osint_playwright.py) — requiere: playwright install chromium
+selenium==4.44.0              # Fallback scraper alternativo
+
+# ── Interfaz de escritorio nativa (solo Windows) ──
+pywebview==6.2.1              # Wrapper nativo Windows (cobalto_desktop.py)
+
+# ── Documentos / exportación (si se usan informes) ──
+docxtpl==0.20.0               # Templates Word (export_sitrep_docx.py)
+fpdf2==2.8.0                  # Generación PDF (export_sitrep_pdf.py)
+
+# ── Notas de instalación ──
+# Playwright requiere instalación adicional de browsers:
+#   python -m playwright install chromium
+#
+# Para instalación mínima (solo API REST + scraping básico), usar requirements.txt base.
+# Para instalación completa (todas las funcionalidades), instalar ambos:
+#   pip install -r requirements.txt
+#   pip install -r requirements-optional.txt

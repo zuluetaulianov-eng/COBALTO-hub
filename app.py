@@ -208,6 +208,23 @@ app = FastAPI(title="COBALTO HUB v9", lifespan=lifespan)
 app.include_router(avalanche_bridge.router)
 app.include_router(osiris_router)
 
+# ── Sub-routers temáticos (extraídos de app.py para modularidad) ──
+from routers.rt_humint import router as humint_router
+from routers.rt_finint import router as finint_router
+from routers.rt_entities import router as entities_router
+from routers.rt_predictive import router as predictive_router
+from routers.rt_agents import router as agents_router
+from routers.rt_analytics import router as analytics_router
+from routers.rt_export import router as export_router
+
+app.include_router(humint_router)
+app.include_router(finint_router)
+app.include_router(entities_router)
+app.include_router(predictive_router)
+app.include_router(agents_router)
+app.include_router(analytics_router)
+app.include_router(export_router)
+
 if getattr(sys, 'frozen', False):
     BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent))
 else:

@@ -75,3 +75,21 @@ desktop.ini
 # ── Temporales de Windows ─────────────────────────────────────
 temp_test.bat
 videos.bat
+
+# ── Archivos operacionales residuales ─────────────────────────
+*.log.bak
+*.log.*.bak
+extractor.log.*
+worker.log.*
+cortana_news_cache.txt
+feed_patches.json
+static_intel.json
+social_sample.json
+Selecciona
+apinvidea.txt
+js_files.txt
+
+# ── Imágenes/media residuales en raíz ─────────────────────────
+123.png
+cortana.bmp
+logo_cortana.jpg

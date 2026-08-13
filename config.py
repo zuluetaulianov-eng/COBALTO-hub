@@ -322,27 +322,27 @@ KEYWORDS = [
     "biotech",
 ]
 
-# ── Intel propia y Notas informativas cargadas dinámicamente de static_intel.json ──
+# ── Intel propia y Notas informativas — cargadas con validación Pydantic ──
 
 _logger = logging.getLogger("cobalto.config")
 _STATIC_INTEL_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "static_intel.json")
+
 try:
-    with open(_STATIC_INTEL_PATH, "r", encoding="utf-8") as _f:
-        _static_data = json.load(_f)
-        OWN_POSTS = _static_data.get("OWN_POSTS", [])
-        NOTES_INFORMATIVAS = _static_data.get("NOTES_INFORMATIVAS", [])
-except FileNotFoundError:
-    _logger.warning(
-        f"Archivo de inteligencia estática no encontrado en: {_STATIC_INTEL_PATH}. Inicializando con listas vacías."
-    )
-    OWN_POSTS = []
-    NOTES_INFORMATIVAS = []
-except json.JSONDecodeError as jde:
-    _logger.error(f"Error crítico de formato al decodificar static_intel.json: {jde}. Se usará fallback vacío.")
-    OWN_POSTS = []
-    NOTES_INFORMATIVAS = []
+    from models.intel_models import load_static_intel as _load_intel
+    OWN_POSTS, NOTES_INFORMATIVAS = _load_intel(_STATIC_INTEL_PATH)
+except ImportError:
+    # Fallback si Pydantic no está disponible (entornos muy mínimos)
+    _logger.warning("[INTEL] models.intel_models no disponible. Cargando static_intel sin validación.")
+    try:
+        with open(_STATIC_INTEL_PATH, "r", encoding="utf-8") as _f:
+            _static_data = json.load(_f)
+            OWN_POSTS = _static_data.get("OWN_POSTS", [])
+            NOTES_INFORMATIVAS = _static_data.get("NOTES_INFORMATIVAS", [])
+    except Exception:
+        OWN_POSTS = []
+        NOTES_INFORMATIVAS = []
 except Exception as e:
-    _logger.exception(f"Error inesperado durante la carga de static_intel.json: {e}")
+    _logger.exception(f"[INTEL] Error inesperado cargando static_intel.json: {e}")
     OWN_POSTS = []
     NOTES_INFORMATIVAS = []
 
@@ -362,7 +362,7 @@ AI_MAX_TOKENS = 800
 # ── IA Local (Ollama) ──
 OLLAMA_ENABLED = os.getenv("OLLAMA_ENABLED", "true").lower() == "true"
 PREFER_LOCAL_AI = os.getenv("PREFER_LOCAL_AI", "true").lower() == "true"
-OLLAMA_HOST = os.getenv("OLLAMA_HOST", "192.168.1.213")
+OLLAMA_HOST = os.getenv("OLLAMA_HOST", "localhost")
 OLLAMA_PORT = int(os.getenv("OLLAMA_PORT", "11434"))
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
 OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "180"))
@@ -498,13 +498,6 @@ OSIRIS_CYBER_INTERVAL_SEC = 300
 OSIRIS_AEROSPACE_INTERVAL_SEC = 120
 OSIRIS_DISASTERS_INTERVAL_SEC = 300
 OSIRIS_FEED_INTERVAL_SEC = 120
-
-# ── Ollama Engine Config ──
-OLLAMA_ENABLED = True
-OLLAMA_HOST = "192.168.1.213"
-OLLAMA_PORT = 11434
-OLLAMA_MODEL = "llama3.2"
-OLLAMA_TIMEOUT = 180.0
 OSIRIS_MAP_FLIGHTS_INTERVAL_SEC = 60
 OSIRIS_MAP_SATELLITES_INTERVAL_SEC = 120
 OSIRIS_MAP_EARTHQUAKES_INTERVAL_SEC = 120
