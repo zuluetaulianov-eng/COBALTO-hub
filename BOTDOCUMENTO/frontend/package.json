@@ -1,0 +1,11 @@
+{
+  "name": "cobalto-reportes-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Componente Angular para el generador de reportes OSINT COBALTO",
+  "peerDependencies": {
+    "@angular/core": ">=17.0.0",
+    "@angular/common": ">=17.0.0",
+    "@angular/forms": ">=17.0.0"
+  }
+}

@@ -1,0 +1,43 @@
+﻿            <!-- TAB: SOCIAL -->
+            <div id="tab-social" class="tab-content">
+                <div class="flex gap-1 flex-wrap items-center" style="margin-bottom: 1.5rem;">
+                    <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="social-search" class="search-box" style="flex:1; min-width:200px;" placeholder="Filtrar redes sociales...">
+                    <button class="border-primary text-primary" style="background:rgba(0,229,255,0.1);padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-size:0.75rem;" onclick="if(window.CobaltoIntel)CobaltoIntel.expandAllSocial()">Expandir todo</button>
+                    <button style="background:transparent;border:1px solid var(--border-color);color:var(--text-muted);padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-size:0.75rem;" onclick="if(window.CobaltoIntel)CobaltoIntel.collapseAllSocial()">Colapsar todo</button>
+                </div>
+            
+                <div class="flex-column gap-05" style="flex:1;">
+                    <div id="social-list"></div>
+                </div>
+
+                <div class="panel-tactical" style="margin-top: 1.5rem;">
+                    <h3 class="text-primary font-mono" style="margin:0 0 1rem 0;">GRUPOS SOCIALES</h3>
+                    <div id="social-groups-container">
+                        {% for group, items in social_groups.items() %}
+                        <div class="social-group-panel" style="margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden;">
+                            <div class="social-header">
+                                <span>{{ group }}</span>
+                                <span class="social-count">{{ items|length }}</span>
+                                <span class="social-toggle" style="transition:transform 0.3s;margin-left:auto;font-size:0.8rem;">▶</span>
+                            </div>
+                            <div class="social-items" style="display:none;">
+                                {% for item in items[:25] %}
+                                <div class="social-item" data-search-text="{{ item.title|lower }}">
+                                    <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
+                                    <p>{{ item.summary }}</p>
+                                </div>
+                                {% endfor %}
+                                {% if items|length > 25 %}
+                                <div style="padding:0.5rem 1rem;font-size:0.75rem;color:var(--text-muted);border-top:1px solid rgba(255,255,255,0.04);">+{{ items|length - 25 }} m&aacute;s</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="empty-state" style="padding:2rem;">
+                            <p style="color:var(--text-muted);">No hay datos sociales disponibles.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+

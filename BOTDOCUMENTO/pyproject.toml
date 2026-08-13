@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cobalto-reportes"
+version = "1.0.0"
+description = "Generador de Reportes OSINT - COBALTO"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+include = ["backend*"]

@@ -1,0 +1,128 @@
+<!-- BARRA INFERIOR DESPLEGABLE DE TELEMETRÍA Y SISTEMA (HUD BAR) -->
+<div id="telemetry-drawer" class="telemetry-drawer">
+    <div class="telemetry-bar-header" onclick="window.toggleTelemetryDrawer()">
+        <div class="telemetry-summary-chips">
+            <span class="telemetry-chip" title="Haz clic para ver diagnóstico de IA" onclick="event.stopPropagation();if(window.CobaltoCore)CobaltoCore.switchTab('tab-config');setTimeout(function(){var btn=document.querySelector('.config-subtab-btn[data-subtab=subtab-c4i]');if(btn)btn.click();},200)">
+                <span id="ai-health-dot" style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#FF9500; box-shadow:0 0 8px #FF9500; animation:pulse 2s infinite;"></span>
+                <span id="ai-health-text" style="font-size:0.75rem; color:var(--text-muted); font-family:'Roboto Mono',monospace;">IA: verificando...</span>
+            </span>
+            <span class="telemetry-divider">|</span>
+            <span class="telemetry-chip">
+                <span>📡 Fuentes:</span>
+                <strong class="stat-value" id="stat-total-sources">{{ total_sources }}</strong>
+            </span>
+            <span class="telemetry-divider">|</span>
+            <span class="telemetry-chip">
+                <span>📰 RSS:</span>
+                <strong class="stat-value" id="stat-entries-count">{{ all_entries|length }}</strong>
+            </span>
+            <span class="telemetry-divider">|</span>
+            <span class="telemetry-chip">
+                <span>⏳ Sync:</span>
+                <span id="stat-timestamp" style="color:var(--text-muted); font-size:0.75rem;">{{ now }}</span>
+            </span>
+            {% if not tor_active %}
+            <span class="telemetry-divider">|</span>
+            <span class="telemetry-chip" style="color:#FF9500;">⚠️ TOR CAÍDO</span>
+            {% endif %}
+            {% if cb_count and cb_count > 0 %}
+            <span class="telemetry-divider">|</span>
+            <span class="telemetry-chip" style="color:#FF2D55;">⚠️ {{ cb_count }} FEED(S) EN CIRCUITO ABIERTO</span>
+            {% endif %}
+        </div>
+        <div class="telemetry-toggle-btn">
+            <span id="telemetry-toggle-icon">▲</span> TELEMETRÍA SISTEMA
+        </div>
+    </div>
+    
+    <div class="telemetry-bar-body" id="telemetry-drawer-body">
+        <div class="telemetry-grid">
+            <!-- TEMA VISUAL -->
+            <div class="telemetry-card">
+                <div class="telemetry-card-title">🎨 TEMA VISUAL</div>
+                <div class="theme-buttons-row">
+                    <button onclick="if(window.CobaltoConfig){CobaltoConfig.changeTheme('cyber')};this.blur()" class="btn-tactical" style="font-size:0.65rem; padding:3px 8px; border-color:#00E5FF; color:#00E5FF;" title="Cyber (Oscuro)">🌙 Cyber</button>
+                    <button onclick="if(window.CobaltoConfig){CobaltoConfig.changeTheme('amoled-plus')};this.blur()" class="btn-tactical" style="font-size:0.65rem; padding:3px 8px; border-color:#3291FF; color:#3291FF;" title="AMOLED+">⬛ AMOLED+</button>
+                    <button onclick="if(window.CobaltoConfig){CobaltoConfig.changeTheme('amoled')};this.blur()" class="btn-tactical" style="font-size:0.65rem; padding:3px 8px; border-color:#38BDF8; color:#38BDF8;" title="AMOLED (Azul Marino)">🔵 AMOLED</button>
+                    <button onclick="if(window.CobaltoConfig){CobaltoConfig.changeTheme('light')};this.blur()" class="btn-tactical" style="font-size:0.65rem; padding:3px 8px; border-color:#0284C7; color:#0284C7;" title="Light (Claro)">☀️ Light</button>
+                </div>
+            </div>
+
+            <!-- ENLACES & NOTIFICACIONES -->
+            {% if TELEGRAM_CHANNEL %}
+            <div class="telemetry-card">
+                <div class="telemetry-card-title">✈️ COMUNICACIONES</div>
+                <a href="{{ TELEGRAM_CHANNEL }}" target="_blank" rel="noopener" class="btn-tactical" style="font-size:0.65rem; padding:3px 8px; border-color:#00E5FF; color:#00E5FF; text-decoration:none; display:inline-flex;">
+                    ✈️ CANAL TELEGRAM
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- ACERCA DE -->
+            {% if ABOUT_US_CONTENT %}
+            <div class="telemetry-card" style="grid-column: span 2;">
+                <div class="telemetry-card-title">ℹ️ INFORMACIÓN DEL SISTEMA</div>
+                <div style="font-size:0.7rem; color:var(--text-muted); line-height:1.4;">
+                    {{ ABOUT_US_CONTENT }}
+                    {% if NOTES_INFORMATIVAS %}
+                    <div style="margin-top:0.3rem; padding-top:0.3rem; border-top:1px solid rgba(255,255,255,0.05);">
+                        {{ NOTES_INFORMATIVAS }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    (function() {
+        function pollAIHealth() {
+            fetch('/api/ai-diagnostics')
+                .then(function(r) { return r.json(); })
+                .then(function(d) {
+                    var dot = document.getElementById('ai-health-dot');
+                    var txt = document.getElementById('ai-health-text');
+                    if (!dot || !txt) return;
+                    if (d.ai_available && d.status === 'operational') {
+                        dot.style.background = '#00ffaa';
+                        dot.style.boxShadow = '0 0 8px #00ffaa';
+                        txt.textContent = 'IA: operacional (' + (d.groq_pool ? d.groq_pool.size : '?') + ' claves)';
+                        txt.style.color = 'var(--text-muted)';
+                    } else if (d.status === 'degraded') {
+                        dot.style.background = '#FF9500';
+                        dot.style.boxShadow = '0 0 8px #FF9500';
+                        txt.textContent = 'IA: degradada — stress×' + (d.stress_factor || '?');
+                        txt.style.color = '#FF9500';
+                    } else {
+                        dot.style.background = '#FF2D55';
+                        dot.style.boxShadow = '0 0 8px #FF2D55';
+                        txt.textContent = 'IA: no disponible';
+                        txt.style.color = '#FF2D55';
+                    }
+                })
+                .catch(function() {
+                    var dot = document.getElementById('ai-health-dot');
+                    var txt = document.getElementById('ai-health-text');
+                    if (dot) { dot.style.background = '#555'; dot.style.boxShadow = 'none'; }
+                    if (txt) { txt.textContent = 'IA: sin conexión'; }
+                });
+        }
+        document.addEventListener('DOMContentLoaded', function() {
+            pollAIHealth();
+            setInterval(pollAIHealth, 60000);
+        });
+
+        window.toggleTelemetryDrawer = function() {
+            var drawer = document.getElementById('telemetry-drawer');
+            var icon = document.getElementById('telemetry-toggle-icon');
+            if (drawer) {
+                drawer.classList.toggle('open');
+                if (icon) {
+                    icon.textContent = drawer.classList.contains('open') ? '▼' : '▲';
+                }
+            }
+        };
+    })();
+</script>

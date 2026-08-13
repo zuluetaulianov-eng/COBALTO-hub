@@ -1,0 +1,50 @@
+{
+  "codigo": "INT-OSINT-2026-0030",
+  "fecha_creacion": "16 de junio de 2026, 17:46 UTC",
+  "autor": "Analista COPORO",
+  "institucion": "EL OJO DEL COPORO",
+  "fuente_datos": "EL OJO DEL COPORO v10.0.0",
+  "fecha_analisis": "16/06/2026 17:46",
+  "titulo_seccion": "ANÁLISIS POR DOCUMENTO",
+  "total_analizados": 1256,
+  "doc_con_bot": 186,
+  "nivel_alerta": "MONITOREO NORMAL",
+  "documentos": [
+    {
+      "doc_num": "1",
+      "titulo": "El malestar por la intervención estadounidense crece en Venezuela: Esto no mejora, empeora cada día",
+      "fuente": "rss",
+      "score_sentimiento": 0.0,
+      "url": "https://www.entornointeligente.com/el-malestar-por-la-intervencion-estadounidense-crece-en-venezuela-esto-no-mejora-empeora-cada-dia/",
+      "analisis": "El malestar en Venezuela aumenta debido a la intervención estadounidense, lo que genera cada vez más descontento entre la población. La situación se describe como empeorante día a día, sin signos de mejora.",
+      "contenido": "Lapatilla junio 16 2026, 6:50 am - Posteado en: Destacados, Nacionales..."
+    },
+    {
+      "doc_num": "2",
+      "titulo": "Mientras el BCV celebra baja inflación, PJ reveló cuánto cuesta alimentar a una familia en Venezuela",
+      "fuente": "rss",
+      "score_sentimiento": 0.0,
+      "url": "",
+      "analisis": "Mientras el Banco Central de Venezuela (BCV) anuncia una baja en la inflación, el partido político Primero Justicia (PJ) ha revelado los costos actuales para alimentar a una familia en Venezuela. Estos cálculos contrastan con los informes oficiales sobre la inflación.",
+      "contenido": "Lapatilla junio 15 2026..."
+    },
+    {
+      "doc_num": "3",
+      "titulo": "Análisis automatizado: correlación entre métricas de bot y narrativa mediática en fuentes de bajo alcance",
+      "fuente": "vk_search",
+      "score_sentimiento": -0.12,
+      "url": "",
+      "analisis": "Se detecta patrón repetitivo de publicación por múltiples cuentas con contenido casi idéntico. Elevada frecuencia de interacción sugiere operación coordinada automatizada.",
+      "contenido": "Muestra recopilada vía vk_search..."
+    }
+  ],
+  "niveles_bot": [
+    ["Alto (>0.5)", "186", "14.8%"],
+    ["Medio (0.2-0.5)", "0", "0.0%"],
+    ["Bajo (<0.2)", "0", "0.0%"]
+  ],
+  "fuentes_bot": [
+    ["1", "rss", "172", "16.302"],
+    ["2", "vk_search", "14", "16.000"]
+  ]
+}

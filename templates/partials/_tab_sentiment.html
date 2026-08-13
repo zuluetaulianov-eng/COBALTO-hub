@@ -1,0 +1,463 @@
+﻿            <!-- TAB: ANÁLISIS DE SENTIMIENTOS -->
+            <div id="tab-sentiment" class="tab-content">
+                <!-- Pipeline Visual -->
+                <div id="sentiment-pipeline" style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:2rem;flex-wrap:wrap;">
+                    <div class="sent-pipe-step" data-step="0">📡 Fuentes Públicas</div>
+                    <div class="sent-pipe-arrow">▶</div>
+                    <div class="sent-pipe-step" data-step="1">⛏️ Extracción</div>
+                    <div class="sent-pipe-arrow">▶</div>
+                    <div class="sent-pipe-step" data-step="2">🧹 Preprocesamiento</div>
+                    <div class="sent-pipe-arrow">▶</div>
+                    <div class="sent-pipe-step" data-step="3">🧠 Análisis NLP</div>
+                    <div class="sent-pipe-arrow">▶</div>
+                    <div class="sent-pipe-step active" data-step="4">📊 Visualización</div>
+                </div>
+
+                <!-- NUEVO ROL COBALTO: REPORTE PSYOPS -->
+                <div class="news-card" style="margin-bottom:2rem; border-left: 4px solid var(--primary); padding: 1.5rem; background: linear-gradient(90deg, rgba(0, 229, 255, 0.05) 0%, transparent 100%);">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 1.2rem;">
+                        <div style="display:flex; align-items:center; gap: 10px;">
+                            <span style="font-size: 1.5rem;">🧠</span>
+                            <h3 style="margin:0; font-family:'Roboto Mono',monospace; color:var(--primary); font-size:1.1rem; letter-spacing:0.05em;">COBALTO: REPORTE DE OPERACIONES PSICOLÓGICAS (PSYOPS)</h3>
+                        </div>
+                        <div id="psyops-threat-badge" style="padding: 0.2rem 0.8rem; border-radius: 4px; font-family: 'Roboto Mono'; font-weight: bold; font-size: 0.8rem; background: rgba(100,100,100,0.2); border: 1px solid rgba(255,255,255,0.1);">
+                            AMENAZA: EVALUANDO...
+                        </div>
+                    </div>
+                    
+                    <div id="sent-cobalto-report" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem;">
+                        <!-- Operación de influencia -->
+                        <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div style="font-family: 'Roboto Mono'; font-size: 0.75rem; color: var(--primary); margin-bottom: 0.5rem;">[1] OPERACIÓN DE INFLUENCIA</div>
+                            <div id="psyops-influencia" style="font-size: 0.9rem; color: #e0e0e0; line-height: 1.5;">Esperando análisis de anomalías...</div>
+                        </div>
+                        <!-- Vector de manipulación -->
+                        <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div style="font-family: 'Roboto Mono'; font-size: 0.75rem; color: #b388ff; margin-bottom: 0.5rem;">[2] VECTOR COGNITIVO / MANIPULACIÓN</div>
+                            <div id="psyops-vector" style="font-size: 0.9rem; color: #e0e0e0; line-height: 1.5;">Evaluando tácticas cognitivas...</div>
+                        </div>
+                        <!-- Contramedida -->
+                        <div style="background: rgba(0,0,0,0.3); padding: 1rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05); grid-column: 1 / -1;">
+                            <div style="font-family: 'Roboto Mono'; font-size: 0.75rem; color: #00ffaa; margin-bottom: 0.5rem;">[3] CONTRA-MEDIDA TÁCTICA RECOMENDADA</div>
+                            <div id="psyops-contramedida" style="font-size: 0.95rem; color: #fff; line-height: 1.6; border-left: 2px solid #00ffaa; padding-left: 0.8rem;">Calculando defensa informacional...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- C2: Gauge de Pulso Global + KPIs -->
+                <div style="display:grid;grid-template-columns:auto 1fr;gap:1.5rem;align-items:center;margin-bottom:2rem;">
+                    <!-- Gauge velocimetro -->
+                    <div class="news-card" style="padding:1rem;display:flex;flex-direction:column;align-items:center;min-width:200px;">
+                        <div style="font-size:0.65rem;font-family:'Roboto Mono',monospace;color:var(--text-muted);letter-spacing:0.08em;margin-bottom:0.4rem;">PULSO GLOBAL NLP</div>
+                        <canvas id="sent-gauge-canvas" style="width:100%;max-width:220px;"></canvas>
+                        <div style="font-size:0.7rem;font-family:'Roboto Mono',monospace;color:var(--text-muted);margin-top:0.4rem;text-align:center;">
+                            Nivel: <span id="sent-nivel-alerta" style="font-weight:bold;">CARGANDO...</span>
+                        </div>
+                    </div>
+                    <!-- KPIs -->
+                    <div id="sentiment-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;">
+                        <div class="sent-kpi-card" id="sent-kpi-global">
+                            <div class="sent-kpi-label">Score Global</div>
+                            <div class="sent-kpi-value" id="sent-score-global">—</div>
+                            <div class="sent-kpi-sub">rango: -1.0 → +1.0</div>
+                        </div>
+                        <div class="sent-kpi-card">
+                            <div class="sent-kpi-label">Entradas Analizadas</div>
+                            <div class="sent-kpi-value" id="sent-total">—</div>
+                            <div class="sent-kpi-sub">corpus NLP</div>
+                        </div>
+                        <div class="sent-kpi-card" style="border-color:rgba(255,45,85,0.4);">
+                            <div class="sent-kpi-label">🤖 Tasa Bot/Influencia</div>
+                            <div class="sent-kpi-value" id="sent-bot-rate" style="color:#FF2D55;">—</div>
+                            <div class="sent-kpi-sub" id="sent-bot-count">bots detectados</div>
+                        </div>
+                        <div class="sent-kpi-card" style="border-color:rgba(255,45,85,0.4);">
+                            <div class="sent-kpi-label">⚠️ Alertas de Crisis</div>
+                            <div class="sent-kpi-value" id="sent-crisis-count" style="color:#FF9500;">—</div>
+                            <div class="sent-kpi-sub">señales detectadas</div>
+                        </div>
+                        <!-- D1: Stats 24h -->
+                        <div class="sent-kpi-card" style="border-color:rgba(0,229,255,0.3);">
+                            <div class="sent-kpi-label">📊 Ciclos 24h</div>
+                            <div class="sent-kpi-value" id="sent-hist-ciclos" style="color:#00e5ff;">—</div>
+                            <div class="sent-kpi-sub">análisis registrados</div>
+                        </div>
+                        <div class="sent-kpi-card" style="border-color:rgba(0,229,255,0.3);">
+                            <div class="sent-kpi-label">Rango Score 24h</div>
+                            <div class="sent-kpi-value" style="font-size:1rem;color:#00e5ff;">
+                                <span id="sent-hist-score-min" style="color:#FF2D55;">—</span>
+                                <span style="opacity:0.4;"> / </span>
+                                <span id="sent-hist-score-max" style="color:#00ffaa;">—</span>
+                            </div>
+                            <div class="sent-kpi-sub">min / max</div>
+                        </div>
+                        <div class="sent-kpi-card" style="border-color:rgba(255,149,0,0.3);">
+                            <div class="sent-kpi-label">🤖 Pico de Bots 24h</div>
+                            <div class="sent-kpi-value" id="sent-hist-bot-max" style="color:#FF9500;">—</div>
+                            <div class="sent-kpi-sub">tasa máxima detectada</div>
+                        </div>
+                        <div class="sent-kpi-card">
+                            <div class="sent-kpi-label">Nivel Pico 24h</div>
+                            <div class="sent-kpi-value" id="sent-hist-nivel-pico" style="font-size:0.9rem;">—</div>
+                            <div class="sent-kpi-sub">máxima alerta del período</div>
+                        </div>
+                    </div>
+                </div>
+
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:1.5rem;margin-bottom:2rem;">
+                    <!-- Distribución de Sentimientos -->
+                    <div class="news-card" style="padding:1.5rem;">
+                        <div class="sent-card-header">
+                            <h3>🎯 Distribución de Sentimientos</h3>
+                            <span class="sent-badge" id="sent-dist-badge">Léxico NLP</span>
+                        </div>
+                        <div style="height:220px;display:flex;align-items:center;justify-content:center;">
+                            <canvas id="chart-sent-dist"></canvas>
+                        </div>
+                        <div style="display:flex;justify-content:center;gap:1.5rem;margin-top:0.8rem;font-family:'Roboto Mono',monospace;font-size:0.7rem;">
+                            <span style="color:#00ffaa;">● <span id="sent-pct-pos">—</span>% Positivo</span>
+                            <span style="color:#44aaee;">● <span id="sent-pct-neu">—</span>% Neutro</span>
+                            <span style="color:#FF2D55;">● <span id="sent-pct-neg">—</span>% Negativo</span>
+                        </div>
+                    </div>
+
+                    <!-- Mapa Emocional -->
+                    <div class="news-card" style="padding:1.5rem;">
+                        <div class="sent-card-header">
+                            <h3>💡 Mapa Emocional del Corpus</h3>
+                            <span class="sent-badge">Ira / Miedo / Esperanza</span>
+                        </div>
+                        <div style="height:220px;display:flex;align-items:center;justify-content:center;">
+                            <canvas id="chart-sent-emociones"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Tendencia Temporal (ciclo actual) -->
+                    <div class="news-card" style="padding:1.5rem;grid-column:1 / -1;">
+                        <div class="sent-card-header">
+                            <h3>📈 Pulso de Sentimiento — Ciclo Actual (12h)</h3>
+                            <button class="btn-icon" style="font-size:0.7rem;padding:2px 8px;border:1px solid var(--primary);" onclick="if(window.CobaltaSentiment)CobaltaSentiment.refresh()">↻ Actualizar</button>
+                        </div>
+                        <div style="height:200px;">
+                            <canvas id="chart-sent-temporal"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- D1: Historial 7 días -->
+                    <div class="news-card" style="padding:1.5rem;grid-column:1 / -1;">
+                        <div class="sent-card-header">
+                            <h3>🗓️ Historial — Score Global & Bots (7 Días)</h3>
+                            <button class="btn-icon" style="font-size:0.7rem;padding:2px 8px;border:1px solid var(--primary);" onclick="if(window.CobaltaSentiment)CobaltaSentiment.loadHistory()">↻ Actualizar</button>
+                        </div>
+                        <div style="height:200px;">
+                            <canvas id="chart-sent-history"></canvas>
+                        </div>
+                        <div style="font-size:0.65rem;color:var(--text-muted);margin-top:0.5rem;font-family:'Roboto Mono',monospace;">
+                            Azul = Score Global (-1/+1) · Naranja = Tasa Bots (%) · Cada punto = bucket de 2h
+                        </div>
+                    </div>
+
+                    <!-- C4: Timeline de Narrativas (barras apiladas) -->
+                    <div class="news-card" style="padding:1.5rem;grid-column:1 / -1;">
+                        <div class="sent-card-header">
+                            <h3>📊 Timeline de Narrativas — Distribución por Ciclo (24h)</h3>
+                            <span class="sent-badge">Stacked · Positivo / Neutro / Negativo</span>
+                        </div>
+                        <div style="height:200px;">
+                            <canvas id="chart-sent-narrativa-timeline"></canvas>
+                        </div>
+                        <div style="font-size:0.65rem;color:var(--text-muted);margin-top:0.5rem;font-family:'Roboto Mono',monospace;">
+                            Muestra los últimos 24 ciclos. Cada barra = total de entradas por clasificación emocional.
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- Palabras Clave -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;">
+                    <div class="news-card" style="padding:1.5rem;">
+                        <div class="sent-card-header">
+                            <h3 style="color:#00ffaa;">✅ Señales Positivas Frecuentes</h3>
+                        </div>
+                        <div id="sent-words-pos" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.8rem;"></div>
+                    </div>
+                    <div class="news-card" style="padding:1.5rem;">
+                        <div class="sent-card-header">
+                            <h3 style="color:#FF2D55;">⚠️ Señales Negativas Frecuentes</h3>
+                        </div>
+                        <div id="sent-words-neg" style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-top:0.8rem;"></div>
+                    </div>
+                </div>
+
+                <!-- Narrativas Geopolíticas + Alertas de Crisis -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;">
+                    <!-- Narrativas -->
+                    <div class="news-card" style="padding:1.5rem;">
+                        <div class="sent-card-header">
+                            <h3>🌍 Narrativas Geopolíticas</h3>
+                            <span class="sent-badge">Polarización ideológica</span>
+                        </div>
+                        <div id="sent-narrativas" style="margin-top:1rem;display:flex;flex-direction:column;gap:0.8rem;"></div>
+                    </div>
+
+                    <!-- Alertas Temprana de Crisis -->
+                    <div class="news-card" style="padding:1.5rem;border-color:rgba(255,149,0,0.3);">
+                        <div class="sent-card-header">
+                            <h3 style="color:#FF9500;">🚨 Early Warning — Alerta de Crisis</h3>
+                        </div>
+                        <div id="sent-crisis-list" style="margin-top:1rem;display:flex;flex-direction:column;gap:0.7rem;max-height:340px;overflow-y:auto;"></div>
+                    </div>
+                </div>
+
+                <!-- Detección de Bots -->
+                <div class="news-card" style="padding:1.5rem;margin-bottom:2rem;border-color:rgba(255,45,85,0.3);">
+                    <div class="sent-card-header" style="margin-bottom:1rem;">
+                        <h3 style="color:#FF2D55;">🤖 Detección de Operaciones de Influencia y Bots</h3>
+                        <span id="sent-bot-badge" class="sent-badge" style="background:rgba(255,45,85,0.1);color:#FF2D55;border-color:rgba(255,45,85,0.3);">Analizando...</span>
+                    </div>
+                    <div id="sent-bot-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0.8rem;"></div>
+                </div>
+
+                <!-- Análisis por Fuente -->
+                <div class="news-card" style="padding:1.5rem;margin-bottom:2rem;">
+                    <div class="sent-card-header" style="margin-bottom:1rem;">
+                        <h3>📡 Sentimiento por Fuente</h3>
+                        <span class="sent-badge">Top 15 fuentes</span>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table id="sent-table-fuentes" style="width:100%;border-collapse:collapse;font-size:0.8rem;font-family:'Roboto Mono',monospace;">
+                            <thead>
+                                <tr style="border-bottom:1px solid rgba(255,255,255,0.08);color:var(--text-muted);">
+                                    <th style="text-align:left;padding:0.5rem;">Fuente</th>
+                                    <th style="text-align:center;padding:0.5rem;">Total</th>
+                                    <th style="text-align:center;padding:0.5rem;">Score</th>
+                                    <th style="text-align:center;padding:0.5rem;">Pos</th>
+                                    <th style="text-align:center;padding:0.5rem;">Neg</th>
+                                    <th style="text-align:center;padding:0.5rem;">Bots</th>
+                                    <th style="text-align:left;padding:0.5rem;min-width:120px;">Polaridad</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sent-tbody-fuentes"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- C3: Word Cloud -->
+                <div class="news-card" style="padding:1.5rem;margin-bottom:2rem;">
+                    <div class="sent-card-header" style="margin-bottom:1rem;">
+                        <h3>☁️ Nube de Palabras — Corpus NLP</h3>
+                        <span class="sent-badge">Verde = positivo · Rojo = negativo</span>
+                    </div>
+                    <div id="sent-wordcloud" style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;min-height:100px;padding:0.5rem;"></div>
+                </div>
+
+                <!-- B2: CIB + E2: Overton Window -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;">
+                    <!-- B2: Coordinated Inauthentic Behavior -->
+                    <div class="news-card" style="padding:1.5rem;border-color:rgba(255,45,85,0.3);">
+                        <div class="sent-card-header" style="margin-bottom:1rem;">
+                            <h3 style="color:#FF2D55;">🎭 CIB — Comportamiento Coordinado</h3>
+                            <span class="sent-badge" style="color:#FF9500;border-color:rgba(255,149,0,0.3);">ML · Cosine Sim</span>
+                        </div>
+                        <div id="sent-cib-panel" style="max-height:280px;overflow-y:auto;"></div>
+                    </div>
+
+                    <!-- E2: Ventana de Overton -->
+                    <div class="news-card" style="padding:1.5rem;border-color:rgba(255,215,0,0.3);">
+                        <div class="sent-card-header" style="margin-bottom:1rem;">
+                            <h3 style="color:#FFD700;">📡 Ventana de Overton — Términos Emergentes</h3>
+                            <span class="sent-badge" style="color:#FFD700;border-color:rgba(255,215,0,0.3);">TF-IDF · Δ Frecuencia</span>
+                        </div>
+                        <p style="font-size:0.65rem;color:var(--text-muted);margin-bottom:0.8rem;">Palabras cuya frecuencia aumentó ≥3× en las últimas 24h vs. histórico anterior.</p>
+                        <div id="sent-overton-panel" style="max-height:240px;overflow-y:auto;"></div>
+                    </div>
+                </div>
+
+                <!-- E1: Sesgo Editorial por Fuente -->
+                <div class="news-card" style="padding:1.5rem;margin-bottom:2rem;border-color:rgba(0,229,255,0.2);">
+                    <div class="sent-card-header" style="margin-bottom:1rem;">
+                        <h3>🔬 Sesgo Editorial por Fuente — Análisis ML</h3>
+                        <span class="sent-badge" style="color:#00e5ff;border-color:rgba(0,229,255,0.3);">E1 · Acumulado</span>
+                    </div>
+                    <div id="sent-sesgo-fuentes" style="overflow-x:auto;max-height:260px;overflow-y:auto;"></div>
+                </div>
+
+                <!-- E5: LLM Análisis Semántico + C6: Export -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;">
+                    <!-- E5: LLM -->
+                    <div class="news-card" style="padding:1.5rem;border-color:rgba(175,82,222,0.3);">
+                        <div class="sent-card-header" style="margin-bottom:1rem;">
+                            <h3 style="color:#af52de;">🧠 Modo Mixto LLM — Entradas Ambiguas</h3>
+                            <span class="sent-badge" style="color:#af52de;border-color:rgba(175,82,222,0.3);">E5 · Groq LLaMA</span>
+                        </div>
+                        <p style="font-size:0.7rem;color:var(--text-muted);margin-bottom:1rem;">Clasifica semánticamente entradas con score entre -0.10 y +0.10 que el léxico no puede resolver con certeza.</p>
+                        <button id="sent-btn-llm" style="
+                            padding:0.5rem 1rem;
+                            background:rgba(175,82,222,0.15);
+                            border:1px solid rgba(175,82,222,0.4);
+                            color:#af52de;
+                            border-radius:6px;
+                            font-family:'Roboto Mono',monospace;
+                            font-size:0.75rem;
+                            cursor:pointer;
+                            width:100%;
+                            margin-bottom:1rem;
+                            opacity:0.6;
+                            transition:all 0.3s;
+                        ">🧠 Cargando...</button>
+                        <div id="sent-llm-result" style="max-height:200px;overflow-y:auto;"></div>
+                    </div>
+
+                    <!-- C6: Exportar -->
+                    <div class="news-card" style="padding:1.5rem;border-color:rgba(0,229,255,0.2);">
+                        <div class="sent-card-header" style="margin-bottom:1rem;">
+                            <h3>📥 Exportar Análisis</h3>
+                            <span class="sent-badge">C6 · Reportes</span>
+                        </div>
+                        <p style="font-size:0.7rem;color:var(--text-muted);margin-bottom:1rem;">Descarga el historial de ciclos de análisis en formato CSV compatible con Excel.</p>
+                        <div style="display:flex;flex-direction:column;gap:0.6rem;">
+                            <button onclick="if(window.CobaltaSentiment)CobaltaSentiment.exportCSV(24)" style="
+                                padding:0.5rem 1rem;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);
+                                color:#00e5ff;border-radius:6px;font-family:'Roboto Mono',monospace;font-size:0.75rem;cursor:pointer;width:100%;transition:all 0.3s;
+                            " onmouseover="this.style.background='rgba(0,229,255,0.2)'" onmouseout="this.style.background='rgba(0,229,255,0.1)'">
+                                📊 Exportar últimas 24h (CSV)
+                            </button>
+                            <button onclick="if(window.CobaltaSentiment)CobaltaSentiment.exportCSV(168)" style="
+                                padding:0.5rem 1rem;background:rgba(0,229,255,0.05);border:1px solid rgba(0,229,255,0.2);
+                                color:#44aaee;border-radius:6px;font-family:'Roboto Mono',monospace;font-size:0.75rem;cursor:pointer;width:100%;transition:all 0.3s;
+                            " onmouseover="this.style.background='rgba(0,229,255,0.12)'" onmouseout="this.style.background='rgba(0,229,255,0.05)'">
+                                🗓️ Exportar última semana (CSV)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Estado vacío -->
+
+                <div id="sent-empty" class="empty-state" style="display:none;">
+                    <div class="empty-icon">🧬</div>
+                    <p style="color:var(--primary);">INICIANDO MOTOR NLP...</p>
+                    <p style="font-size:0.8rem;">Procesando corpus de noticias y redes sociales.</p>
+                </div>
+
+                <style>
+                    .sent-pipe-step {
+                        background: rgba(10,11,16,0.6);
+                        border: 1px solid rgba(0,229,255,0.15);
+                        border-radius: 8px;
+                        padding: 0.5rem 1rem;
+                        font-family: 'Roboto Mono', monospace;
+                        font-size: 0.72rem;
+                        color: var(--text-muted);
+                        transition: all 0.3s;
+                        white-space: nowrap;
+                    }
+                    .sent-pipe-step.active {
+                        border-color: var(--primary);
+                        color: var(--primary);
+                        background: rgba(0,229,255,0.07);
+                        box-shadow: 0 0 12px rgba(0,229,255,0.15);
+                    }
+                    .sent-pipe-arrow {
+                        color: rgba(0,229,255,0.3);
+                        font-size: 0.8rem;
+                        padding: 0 0.2rem;
+                    }
+                    .sent-kpi-card {
+                        background: rgba(10,11,16,0.5);
+                        border: 1px solid rgba(0,229,255,0.2);
+                        border-radius: 12px;
+                        padding: 1.2rem;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.3rem;
+                    }
+                    .sent-kpi-label {
+                        font-size: 0.7rem;
+                        color: var(--text-muted);
+                        font-family: 'Roboto Mono', monospace;
+                        letter-spacing: 0.5px;
+                        text-transform: uppercase;
+                    }
+                    .sent-kpi-value {
+                        font-size: 2rem;
+                        font-weight: bold;
+                        font-family: 'Roboto Mono', monospace;
+                        color: var(--primary);
+                    }
+                    .sent-kpi-sub {
+                        font-size: 0.7rem;
+                        color: var(--text-muted);
+                        font-family: 'Roboto Mono', monospace;
+                    }
+                    .sent-card-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 0.5rem;
+                        border-bottom: 1px solid rgba(255,255,255,0.05);
+                        padding-bottom: 0.6rem;
+                    }
+                    .sent-card-header h3 {
+                        margin: 0;
+                        font-size: 0.88rem;
+                        font-family: 'Roboto Mono', monospace;
+                        font-weight: normal;
+                        color: #fff;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.4rem;
+                    }
+                    .sent-badge {
+                        font-size: 0.65rem;
+                        font-family: 'Roboto Mono', monospace;
+                        color: var(--primary);
+                        border: 1px solid rgba(0,229,255,0.25);
+                        background: rgba(0,229,255,0.07);
+                        padding: 2px 8px;
+                        border-radius: 4px;
+                        white-space: nowrap;
+                    }
+                    .sent-word-chip {
+                        font-size: 0.7rem;
+                        font-family: 'Roboto Mono', monospace;
+                        padding: 3px 10px;
+                        border-radius: 20px;
+                        border: 1px solid;
+                        cursor: default;
+                    }
+                    .sent-crisis-card {
+                        padding: 0.8rem 1rem;
+                        border-radius: 8px;
+                        border-left: 3px solid;
+                        font-size: 0.8rem;
+                    }
+                    .sent-bot-card {
+                        background: rgba(255,45,85,0.04);
+                        border: 1px solid rgba(255,45,85,0.15);
+                        border-radius: 8px;
+                        padding: 0.9rem;
+                        font-size: 0.78rem;
+                    }
+                    #sent-tbody-fuentes tr:hover td { background: rgba(255,255,255,0.03); }
+                    #sent-tbody-fuentes td { padding: 0.5rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
+                    .sent-bar-mini {
+                        height: 6px;
+                        border-radius: 3px;
+                        background: rgba(255,255,255,0.05);
+                        overflow: hidden;
+                        margin-top: 4px;
+                    }
+                    .sent-bar-fill {
+                        height: 100%;
+                        border-radius: 3px;
+                        transition: width 0.6s ease;
+                    }
+                    @media (max-width: 768px) {
+                        #sentiment-pipeline { gap: 0.3rem; }
+                        .sent-pipe-step { font-size: 0.6rem; padding: 0.4rem 0.6rem; }
+                    }
+                </style>
+            </div>
+

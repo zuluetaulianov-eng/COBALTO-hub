@@ -1,0 +1,77 @@
+# ── Secretos y credenciales ──────────────────────────────────
+.env
+*.env
+.env.*
+
+# ── Base de datos local ───────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Logs y reportes generados ─────────────────────────────────
+*.log
+*.log.json
+*.log.txt
+cortana_last_cycle.html
+cortana_news_cache.txt
+feed_cache.json
+dashboard_output.log
+server_output.log
+server_test.log
+server.log
+zrok.log
+
+# ── Cache y artefactos de build ───────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+*.egg-info/
+dist/
+dist_installer/
+cobalto_mobile/
+build/
+.deps_ready
+dashboard_persistent_cache.json
+sent_alerts.json
+static_intel.json
+test_output.txt
+out.txt
+temp_close.txt
+temp_open.txt
+data/cctv_snapshots/
+data/*.json
+data/*.db
+data/osiris_sanctions_cache.json
+cib_tracker.json
+config_dynamic.json
+
+# ── Assets multimedia (generados/descargados) ─────────────────
+*.mp3
+*.bmp
+*.ico
+main.*.js
+service-worker.js
+test_map.html
+
+# ── Entornos virtuales ────────────────────────────────────────
+venv/
+.venv/
+env/
+.env/
+
+# ── IDEs ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.code-workspace
+
+# ── OS ────────────────────────────────────────────────────────
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# ── Temporales de Windows ─────────────────────────────────────
+temp_test.bat
+videos.bat

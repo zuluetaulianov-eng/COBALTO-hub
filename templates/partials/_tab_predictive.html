@@ -1,0 +1,36 @@
+<div id="tab-predictive" class="tab-content">
+    <div class="panel-glass" style="padding: 1.5rem; margin-bottom: 1rem;">
+        <div class="flex-between" style="margin-bottom: 1rem;">
+            <h2 class="heading-2">⚠️ Alertas Predictivas</h2>
+            <div class="flex" style="gap: 0.5rem; align-items: center;">
+                <span id="predictive-active-count" class="kpi-value" style="font-size: 1.2rem;">0</span>
+                <span class="text-muted" style="font-size: 0.8rem;">activas</span>
+                <button class="btn-tactical btn-sm" onclick="PredictiveIntel.runCycle()">🔄 Ejecutar análisis</button>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-1" style="margin-bottom: 0.5rem;">
+            <button class="btn-tactical btn-sm" data-pred-level="" onclick="PredictiveIntel.filterLevel('')">Todas</button>
+            <button class="btn-tactical btn-sm" data-pred-level="critical" onclick="PredictiveIntel.filterLevel('critical')">🔴 Críticas</button>
+            <button class="btn-tactical btn-sm" data-pred-level="high" onclick="PredictiveIntel.filterLevel('high')">🟠 Altas</button>
+            <button class="btn-tactical btn-sm" data-pred-level="medium" onclick="PredictiveIntel.filterLevel('medium')">🟡 Medias</button>
+            <button class="btn-tactical btn-sm" onclick="PredictiveIntel.showHistory()">📜 Historial</button>
+        </div>
+    </div>
+    <div id="predictive-alert-list"></div>
+
+    <!-- Stats row -->
+    <div class="grid-3" style="margin-top: 1rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem;" id="predictive-stats-row">
+        <div class="panel-glass" style="padding: 1rem;">
+            <div class="heading-4">Por Nivel</div>
+            <div id="pred-stats-levels" class="text-muted" style="font-size: 0.85rem;">—</div>
+        </div>
+        <div class="panel-glass" style="padding: 1rem;">
+            <div class="heading-4">Por Tipo</div>
+            <div id="pred-stats-types" class="text-muted" style="font-size: 0.85rem;">—</div>
+        </div>
+        <div class="panel-glass" style="padding: 1rem;">
+            <div class="heading-4">Entidades</div>
+            <div id="pred-stats-entities" class="text-muted" style="font-size: 0.85rem;">—</div>
+        </div>
+    </div>
+</div>

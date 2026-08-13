@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avalanche Pulse Console - Cobalto Bridge</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0A0B10;
+            font-family: 'Roboto Mono', monospace;
+            color: #fff;
+        }
+
+        #app-root, #root {
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Tactical Header HUD */
+        .hud-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(10, 11, 16, 0.9);
+            border-bottom: 1px solid #00e5ff;
+            padding: 8px 16px;
+            z-index: 10000;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-sizing: border-box;
+            backdrop-filter: blur(5px);
+        }
+
+        .hud-title {
+            color: #00e5ff;
+            font-size: 0.85rem;
+            font-weight: bold;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .hud-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00ffaa;
+            box-shadow: 0 0 8px #00ffaa;
+            animation: pulse 1.5s infinite;
+        }
+
+        .hud-back-btn {
+            background: rgba(0, 229, 255, 0.1);
+            border: 1px solid #00e5ff;
+            color: #00e5ff;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .hud-back-btn:hover {
+            background: #00e5ff;
+            color: #0A0B10;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.5);
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.4; }
+            50% { opacity: 1; }
+            100% { opacity: 0.4; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- HUD Overlay for Navigation / Sandbox Context -->
+    <div class="hud-overlay">
+        <div class="hud-title">
+            <span class="hud-status-dot"></span>
+            🛰️ CONSOLA TÁCTICA AVALANCHE (BRIDGED CONTEXT)
+        </div>
+        <a href="/" class="hud-back-btn">← VOLVER AL SITREP COBALTO</a>
+    </div>
+
+    <!-- App Container Target for Angular / React Bundle -->
+    <app-root></app-root>
+
+    <!-- Configure Local API Mock Interceptors to map to local Bridge routes -->
+    <script>
+        // Intercept XMLHttpRequest to redirect Avalanche Pulse backend requests locally
+        (function() {
+            var open = XMLHttpRequest.prototype.open;
+            XMLHttpRequest.prototype.open = function(method, url) {
+                // If it is an API request to the original endpoints, redirect to our local bridge
+                if (url.startsWith('/api/')) {
+                    var newUrl = '/avalanche-api' + url.substring(4);
+                    console.log('[Bridge Redirect]:', url, '->', newUrl);
+                    arguments[1] = newUrl;
+                }
+                return open.apply(this, arguments);
+            };
+        })();
+
+        // Intercept Fetch API requests
+        const originalFetch = window.fetch;
+        window.fetch = async function(...args) {
+            let [resource, config] = args;
+            if (typeof resource === 'string' && resource.startsWith('/api/')) {
+                const redirectedResource = '/avalanche-api' + resource.substring(4);
+                console.log('[Fetch Bridge Redirect]:', resource, '->', redirectedResource);
+                args[0] = redirectedResource;
+            }
+            return originalFetch(...args);
+        };
+    </script>
+
+    <!-- Mount local Webpack Bundle -->
+    <script src="/static/js/main.3abeda0036a2fb0df8cb.js" defer></script>
+</body>
+</html>

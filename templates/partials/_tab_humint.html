@@ -1,0 +1,47 @@
+<div id="tab-humint" class="tab-content">
+    <div class="panel-glass" style="padding: 1.5rem; margin-bottom: 1rem;">
+        <div class="flex-between" style="margin-bottom: 1rem;">
+            <h2 class="heading-2">🕵️ HUMINT & Reportes de Campo</h2>
+            <div class="flex" style="gap: 0.5rem; align-items: center;">
+                <span id="humint-count" class="kpi-value" style="font-size: 1.1rem;">0</span>
+                <span class="text-muted" style="font-size: 0.8rem;">reportes</span>
+                <button class="btn-tactical btn-sm" onclick="HumintIntel.loadReports()">🔄 Recargar</button>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-1" style="margin-bottom: 0.5rem;">
+            <button class="btn-tactical btn-sm" data-humint-status="" onclick="HumintIntel.filterStatus('')" style="border-color:var(--primary);">Todos</button>
+            <button class="btn-tactical btn-sm" data-humint-status="new" onclick="HumintIntel.filterStatus('new')">🆕 Nuevos</button>
+            <button class="btn-tactical btn-sm" data-humint-status="published" onclick="HumintIntel.filterStatus('published')">📢 Publicados</button>
+            <button class="btn-tactical btn-sm" data-humint-status="reviewed" onclick="HumintIntel.filterStatus('reviewed')">✅ Revisados</button>
+        </div>
+    </div>
+
+    <!-- New report form -->
+    <div class="panel-glass" style="padding: 1rem; margin-bottom: 1rem;">
+        <div class="heading-4" style="margin-bottom: 0.5rem;">📝 Nuevo Reporte de Campo</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
+            <input id="humint-title" class="config-input" placeholder="Título *">
+            <input id="humint-reporter" class="config-input" placeholder="Reportado por">
+            <input id="humint-lat" class="config-input" placeholder="Latitud (ej: 10.4806)">
+            <input id="humint-lon" class="config-input" placeholder="Longitud (ej: -66.9036)">
+            <input id="humint-location" class="config-input" placeholder="Nombre del lugar">
+            <select id="humint-severity" class="config-select">
+                <option value="info">ℹ️ Informativo</option>
+                <option value="medium">🟡 Medio</option>
+                <option value="high">🟠 Alto</option>
+                <option value="critical">🔴 Crítico</option>
+            </select>
+            <input id="humint-tags" class="config-input" placeholder="Tags (coma separados)" style="grid-column: span 2;">
+        </div>
+        <textarea id="humint-description" class="config-input" style="width:100%;min-height:80px;margin-top:0.5rem;" placeholder="Descripción del reporte..."></textarea>
+        <button class="btn-tactical" style="margin-top:0.5rem;" onclick="HumintIntel.submitReport()">📤 Enviar Reporte</button>
+    </div>
+
+    <!-- Report list -->
+    <div id="humint-report-list">
+        <div class="empty-state">
+            <div style="font-size:2rem;">🕵️</div>
+            <div class="heading-4">Cargando reportes...</div>
+        </div>
+    </div>
+</div>

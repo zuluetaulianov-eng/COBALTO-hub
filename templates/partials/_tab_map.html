@@ -1,0 +1,18 @@
+﻿            <!-- TAB: MAPA UNIFICADO (LEAFLET CON OSIRIS + COBALTO) -->
+            <div id="tab-map" class="tab-content" style="position:relative;min-height:300px;">
+                <div id="unified-map-container" style="position:absolute;inset:0;"></div>
+                <!-- Layer Panel Overlay -->
+                <div id="unified-layer-panel" style="position:absolute;top:16px;right:16px;width:260px;max-height:calc(100% - 40px);background:rgba(10,11,16,0.92);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px;overflow-y:auto;font-family:'Roboto Mono',monospace;z-index:1000;backdrop-filter:blur(12px);">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06);">
+                        <span style="color:#00E5FF;font-weight:bold;font-size:0.75rem;letter-spacing:1px;">🗺️ CAPAS</span>
+                        <span id="unified-layer-count" style="color:#64748B;font-size:0.6rem;">0/0</span>
+                    </div>
+                    <div id="unified-layer-list"></div>
+                    <div style="margin-top:10px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);">
+                        <button onclick="if(window.UnifiedMap)window.UnifiedMap.refreshAll()" style="width:100%;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:6px;color:#00E5FF;padding:6px;font-size:0.65rem;font-family:monospace;cursor:pointer;">⟳ REFRESH ALL LAYERS</button>
+                    </div>
+                </div>
+                <div id="unified-map-loading" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#64748B;font-family:monospace;font-size:0.8rem;display:none;z-index:999;background:rgba(10,11,16,0.8);padding:12px 24px;border-radius:8px;border:1px solid rgba(0,229,255,0.2);">
+                    <span style="color:#00E5FF;">⟳</span> LOADING GEOSPATIAL DATA...
+                </div>
+            </div>

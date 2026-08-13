@@ -1,0 +1,30 @@
+﻿            <!-- TAB: ACTORES -->
+            <div id="tab-user-search" class="tab-content">
+                <div class="user-search-container" style="padding:2rem;">
+                    <div style="display:flex; gap:1rem; margin-bottom:2rem;">
+                        <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="user-search-input" class="search-box" style="flex:1" placeholder="Nombre de usuario a investigar...">
+                        <select id="platform-select" class="search-box" style="width:160px">
+                            <option value="all">Todas</option>
+                            <option value="twitter">X (Twitter)</option>
+                            <option value="instagram">Instagram</option>
+                            <option value="tiktok">TikTok</option>
+                            <option value="telegram">Telegram</option>
+                            <option value="youtube">YouTube</option>
+                        </select>
+                        <button class="btn-tactical" style="padding:0 2rem;" onclick="if(window.CobaltoSearch)CobaltoSearch.searchUser()">INVESTIGAR</button>
+                        <button class="btn-red" style="padding:0 1.5rem; font-family:'Roboto Mono'; font-weight:bold; border-radius:8px; border:1px solid #FF2D55; background:transparent; color:#FF2D55; cursor:pointer;" onclick="if(window.CobaltoSearch)CobaltoSearch.clearSearch()">LIMPIAR</button>
+                    </div>
+                    <div id="profile-changes-container" style="margin-bottom:1rem; display:none;">
+                        <div class="news-card" style="border-left:3px solid #ffaa00; padding:0.8rem;">
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
+                                <h4 style="margin:0; color:#ffaa00; font-family:'Roboto Mono',monospace; font-size:0.85rem;">🔄 Cambios Detectados en Targets</h4>
+                                <button class="btn-tactical" style="font-size:0.65rem; padding:2px 8px; border-color:#666; color:#666;" onclick="document.getElementById('profile-changes-container').style.display='none'">✕ CERRAR</button>
+                            </div>
+                            <div id="profile-changes-list" style="font-size:0.8rem;"></div>
+                        </div>
+                    </div>
+                    <div id="influential-users-container"></div>
+                    <div id="user-search-results"></div>
+                </div>
+            </div>
+

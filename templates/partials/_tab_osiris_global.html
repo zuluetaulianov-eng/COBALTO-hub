@@ -1,0 +1,74 @@
+            <!-- TAB: OSIRIS GLOBAL LIVE FEEDS -->
+            <div id="tab-osiris-global" class="tab-content" style="padding:16px;">
+                <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:16px;height:calc(100vh - 180px);">
+
+                    <!-- LEFT: CCTV Viewer -->
+                    <div style="display:flex;flex-direction:column;gap:8px;overflow:hidden;">
+                        <div style="display:flex;align-items:center;justify-content:space-between;flex-shrink:0;padding:8px 12px;background:rgba(0,0,0,0.2);border-radius:10px;border:1px solid rgba(255,255,255,0.04);">
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <span style="font-size:1.1rem;">📹</span>
+                                <span style="color:#FFD700;font-weight:bold;font-family:'Roboto Mono',monospace;font-size:0.7rem;letter-spacing:1px;">CCTV NETWORK</span>
+                                <span id="osiris-cctv-count" style="color:var(--text-muted);font-family:monospace;font-size:0.6rem;">0</span>
+                            </div>
+                            <div style="display:flex;gap:6px;align-items:center;">
+                                <div style="display:flex;gap:2px;margin-right:4px;">
+                                    <button class="cctv-layout-btn" data-cols="1" onclick="if(window.OsirisGlobal)window.OsirisGlobal.setCCTVCols(1)" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:3px;color:#64748B;padding:2px 6px;font-size:9px;cursor:pointer;">1×1</button>
+                                    <button class="cctv-layout-btn" data-cols="2" onclick="if(window.OsirisGlobal)window.OsirisGlobal.setCCTVCols(2)" style="background:none;border:1px solid rgba(0,229,255,0.5);border-radius:3px;color:#00E5FF;padding:2px 6px;font-size:9px;cursor:pointer;">2×2</button>
+                                    <button class="cctv-layout-btn" data-cols="3" onclick="if(window.OsirisGlobal)window.OsirisGlobal.setCCTVCols(3)" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:3px;color:#64748B;padding:2px 6px;font-size:9px;cursor:pointer;">3×3</button>
+                                    <button class="cctv-layout-btn" data-cols="4" onclick="if(window.OsirisGlobal)window.OsirisGlobal.setCCTVCols(4)" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:3px;color:#64748B;padding:2px 6px;font-size:9px;cursor:pointer;">4×4</button>
+                                </div>
+                                <select id="osiris-cctv-filter" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text-muted);padding:3px 6px;font-size:0.6rem;font-family:monospace;cursor:pointer;">
+                                    <option value="all">ALL SOURCES</option>
+                                </select>
+                                <button id="osiris-cctv-refresh" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text-muted);padding:3px 8px;font-size:0.6rem;font-family:monospace;cursor:pointer;">⟳</button>
+                            </div>
+                        </div>
+                        <div id="osiris-cctv-container" style="flex:1;overflow-y:auto;min-height:0;">
+                            <div id="osiris-cctv-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:2px 0;"></div>
+                            <button id="osiris-cctv-more" style="width:100%;margin-top:8px;background:rgba(0,229,255,0.06);border:1px solid rgba(0,229,255,0.15);border-radius:6px;color:#00E5FF;padding:8px;font-size:0.65rem;font-family:monospace;cursor:pointer;display:none;"></button>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT: Aerospace + SIGINT + Camera Info -->
+                    <div style="display:flex;flex-direction:column;gap:8px;overflow:hidden;">
+                        <!-- Camera Info Panel (aparece al seleccionar una cámara) -->
+                        <div id="cctv-info-panel" style="flex-shrink:0;background:rgba(0,0,0,0.2);border-radius:10px;border:1px solid rgba(255,255,255,0.04);padding:10px;min-height:60px;font-family:monospace;font-size:9px;color:#fff;">
+                            <div style="text-align:center;padding:12px;color:#64748B;font-size:9px;">SELECT A CAMERA</div>
+                        </div>
+
+                        <!-- Aerospace & Satellites -->
+                        <div style="flex:1;background:rgba(0,0,0,0.15);border-radius:10px;border:1px solid rgba(255,255,255,0.04);padding:10px;display:flex;flex-direction:column;overflow:hidden;">
+                            <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-shrink:0;">
+                                <span style="font-size:1rem;">✈️</span>
+                                <span style="color:#D4AF37;font-weight:bold;font-family:'Roboto Mono',monospace;font-size:0.7rem;letter-spacing:1px;">AEROSPACE & SATELLITES</span>
+                            </div>
+                            <div id="osiris-aerospace-container" style="flex:1;overflow-y:auto;font-family:monospace;font-size:0.75rem;color:var(--text-muted);display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                LOADING DATA...
+                            </div>
+                        </div>
+
+                        <!-- SIGINT Feed -->
+                        <div style="flex:1;background:rgba(0,0,0,0.15);border-radius:10px;border:1px solid rgba(255,255,255,0.04);padding:10px;display:flex;flex-direction:column;overflow:hidden;">
+                            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;flex-shrink:0;">
+                                <div style="display:flex;align-items:center;gap:6px;">
+                                    <span style="font-size:1rem;">📡</span>
+                                    <span style="color:#D4AF37;font-weight:bold;font-family:'Roboto Mono',monospace;font-size:0.7rem;letter-spacing:1px;">SIGINT FEED</span>
+                                </div>
+                                <span id="osiris-feed-count" style="color:var(--text-muted);font-size:0.6rem;font-family:monospace;">0 ITEMS</span>
+                            </div>
+                            <div id="osiris-feed-container" style="flex:1;overflow-y:auto;min-height:0;"></div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- CCTV Expand Modal -->
+                <div id="cctv-modal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(5,5,10,0.95);backdrop-filter:blur(8px);align-items:center;justify-content:center;padding:40px;">
+                    <div style="position:relative;max-width:90vw;max-height:90vh;display:flex;flex-direction:column;align-items:center;">
+                        <button onclick="if(window.OsirisGlobal)window.OsirisGlobal.closeModal()" style="position:absolute;top:-30px;right:0;background:none;border:none;color:#FF4444;font-size:20px;cursor:pointer;font-family:monospace;z-index:10;">✕ CLOSE</button>
+                        <div id="cctv-modal-name" style="color:#00E5FF;font-weight:bold;font-family:monospace;font-size:13px;margin-bottom:10px;">CCTV FEED</div>
+                        <img id="cctv-modal-img" src="" style="max-width:100%;max-height:75vh;border-radius:8px;border:1px solid rgba(255,255,255,0.1);" />
+                        <div id="cctv-modal-meta" style="margin-top:10px;color:#fff;font-family:monospace;font-size:10px;text-align:center;"></div>
+                    </div>
+                </div>
+            </div>

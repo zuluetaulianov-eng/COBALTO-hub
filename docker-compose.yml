@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  # ── SERVIDOR WEB FASTAPI ──
+  cobalto-web:
+    build: .
+    container_name: cobalto-web
+    command: python app.py
+    ports:
+      - "8083:8083"
+    volumes:
+      # Sincronizar código y caché persistente de forma compartida
+      - .:/app
+    environment:
+      - PORT=8083
+      - WORKER_CACHE_FILE=/app/dashboard_persistent_cache.json
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql+asyncpg://cobalto:cobalto_password@postgres:5432/cobalto_db
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=cobalto_graph
+    restart: always
+    depends_on:
+      - cobalto-worker
+      - redis
+      - postgres
+
+  # ── EXTRACTOR OSINT INDEPENDIENTE (WORKER) ──
+  cobalto-worker:
+    build: .
+    container_name: cobalto-worker
+    command: python cobalto_worker.py
+    volumes:
+      - .:/app
+    environment:
+      - WORKER_CACHE_FILE=/app/dashboard_persistent_cache.json
+      - CYCLE_INTERVAL_MINUTES=30
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql+asyncpg://cobalto:cobalto_password@postgres:5432/cobalto_db
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+      - NEO4J_URI=bolt://neo4j:7687
+      - NEO4J_USER=neo4j
+      - NEO4J_PASSWORD=cobalto_graph
+    restart: always
+    depends_on:
+      - redis
+      - postgres
+
+  # ── INFRAESTRUCTURA POLÍGLOTA ──
+  
+  # REDIS: Message Broker & Cache Rápida
+  redis:
+    image: redis:7-alpine
+    container_name: cobalto-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+
+  # POSTGRESQL: Datos Relacionales, Configuración, Usuarios
+  postgres:
+    image: postgres:15-alpine
+    container_name: cobalto-postgres
+    environment:
+      POSTGRES_USER: cobalto
+      POSTGRES_PASSWORD: cobalto_password
+      POSTGRES_DB: cobalto_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: always
+
+  # ELASTICSEARCH: Motor de Búsqueda Textual OSINT
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    container_name: cobalto-elastic
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elastic_data:/usr/share/elasticsearch/data
+    restart: always
+
+  # NEO4J: Base de Datos de Grafos (Vínculos, Botnets)
+  neo4j:
+    image: neo4j:5-community
+    container_name: cobalto-neo4j
+    environment:
+      - NEO4J_AUTH=neo4j/cobalto_graph
+    ports:
+      - "7474:7474" # HTTP UI
+      - "7687:7687" # Bolt Protocol
+    volumes:
+      - neo4j_data:/data
+    restart: always
+
+volumes:
+  redis_data:
+  postgres_data:
+  elastic_data:
+  neo4j_data:

@@ -1,0 +1,50 @@
+Plan de Ruta para el Sistema de Persistencia Políglota (Híbrido)
+Arquitectura de Base de Datos para el Crecimiento de COBALTO Hub
+Para transformar a COBALTO Hub en una plataforma OSINT de nivel gubernamental o de gran agencia, la arquitectura debe evolucionar de una base de datos única a un modelo de Persistencia Políglota. Esto significa utilizar un sistema híbrido donde cada tipo de dato es gestionado por la base de datos óptima para su naturaleza, interconectados de forma eficiente.
+
+1. Mapa de la Arquitectura Híbrida Propuesta
+CAPA DE CONSUMO
+Tareas asíncronas
+1. Metadatos Relacionales, Config, Auth
+2. Datos de Texto OSINT Scrapeados
+3. Relaciones Sociales / Botnets
+Consultas Rápidas / Cache
+Búsquedas SQL Avanzadas
+Búsquedas de Texto OSINT
+Análisis de Atribución de Vínculos
+Extractor OSINT / Scrapers
+Redis: Broker de Mensajes
+Workers Independientes
+PostgreSQL
+Elasticsearch
+Neo4j / Memgraph
+FastAPI Web Server
+Cliente Web UI / WebSockets
+2. Delegación del Sistema Híbrido
+Para que el sistema sea extremadamente rápido y escalable, dividiremos las cargas de la siguiente manera:
+
+⚡ Capa A: Memoria y Coordinación (Redis)
+Propósito: Actuar como memoria caché en caliente y gestor de colas de tareas en tiempo real.
+Qué almacena: Estados instantáneos del scraping, tokens de sesión WebSocket activos, contadores del RateLimiter y la cola de extracción asíncrona.
+Ventaja: Redis puede procesar más de 150,000 operaciones por segundo directamente en RAM, evitando cualquier fatiga de disco.
+🛡️ Capa B: Datos Core y Operaciones Relacionales (PostgreSQL)
+Propósito: Integridad de datos, auditorías, seguridad y configuraciones.
+Qué almacena: Cuentas de usuarios, permisos (RBAC), logs de auditoría del sistema, configuraciones de proxies, y la configuración dinámica de los sensores del dashboard.
+Ventaja: Garantía transaccional ACID perfecta. Seguridad robusta.
+🔍 Capa C: Motor de Búsqueda y Correlación de Inteligencia (Elasticsearch / OpenSearch)
+Propósito: Búsqueda semántica, análisis de sentimiento histórico y alertas de amenazas.
+Qué almacena: El repositorio masivo de noticias, posts de foros, registros de ransomware, pastes y logs de dorks.
+Ventaja: Permite búsquedas complejas con lógica difusa (Fuzzy Search) y correlacionar ataques en tiempo real sobre terabytes de datos de texto plano.
+🕸️ Capa D: Atribución de Vínculos y Detección de Botnets (Neo4j / Memgraph)
+Propósito: Visualizar y calcular la influencia de redes y difusión de desinformación.
+Qué almacena: Las cuentas sociales monitorizadas, sus interconexiones (quién sigue a quién, menciones), y similitudes semánticas de narrativas.
+Ventaja: Permite consultar caminos más cortos, comunidades (algoritmo Louvain) y grados de centralidad de forma nativa en milisegundos.
+3. Estrategia de Migración Gradual (Fases)
+Para crecer de forma segura y sin romper el sistema operativo actual:
+
+Fase 1: Integración de Redis (Corto Plazo)
+Reemplazar las colas internas en memoria (TASK_QUEUE_AI / TASK_QUEUE_OSINT) y el archivo JSON de caché por Redis. El worker y el servidor se comunicarán a través de Redis en caliente.
+Fase 2: PostgreSQL para Configuración y Auth (Medio Plazo)
+Migrar las tablas de cobalto_cache.db a una base de datos centralizada PostgreSQL, implementando la gestión de usuarios analistas multi-inquilino.
+Fase 3: Elasticsearch y Grafos (Largo Plazo)
+A medida que los extractores recopilen millones de noticias y el análisis social de botnets crezca, canalizar los datos de texto a Elasticsearch y las relaciones de red a Neo4j.

@@ -1,0 +1,229 @@
+﻿            <!-- TAB: Telemetría y Métricas -->
+            <div id="tab-analytics" class="tab-content">
+                <div class="flex-between mb-2" style="flex-wrap:wrap; gap:1rem;">
+                    <div class="font-mono text-muted" style="font-size:0.85rem;">📊 CENTRO DE INTELIGENCIA DE DATOS Y ANALÍTICA DE RED</div>
+                    <div class="flex gap-05 items-center">
+                        <select id="analytics-timerange" class="search-box" style="width:150px; font-size:0.75rem; padding:4px 8px;">
+                            <option value="24h">Últimas 24 Horas</option>
+                            <option value="12h">Últimas 12 Horas</option>
+                            <option value="6h">Últimas 6 Horas</option>
+                            <option value="1h">Última Hora</option>
+                        </select>
+                        <button class="btn-tactical" onclick="if(window.CobaltoAnalytics)CobaltoAnalytics.refreshData()">🔄 REFRESCAR</button>
+                    </div>
+                </div>
+
+
+                <!-- SITREP BUTTON & EXPORT ROW (single button opens modal) -->
+                <div class="flex flex-wrap" style="justify-content:flex-end; margin-bottom:1rem; gap:0.5rem;">
+                    <button class="btn-tactical" style="border-color: #af52de; color: #af52de;" onclick="window.showExportModal()">⎙ EXPORTAR SITREP</button>
+                    <button class="btn-tactical" onclick="window.refreshSourceHealth()">🔄 FUENTES</button>
+                </div>
+
+                <!-- BLUF / SÍNTESIS EJECUTIVA IA -->
+                <div class="news-card" style="margin-bottom:2rem; border-left:4px solid #ffaa00; background:linear-gradient(90deg, rgba(255,170,0,0.08) 0%, rgba(10,11,16,0) 100%);">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:0.5rem;">
+                        <h3 style="margin:0; color:#ffaa00; font-family:'Roboto Mono',monospace; font-size:1rem; display:flex; align-items:center; gap:0.5rem;">
+                            🧠 SÍNTESIS EJECUTIVA (BLUF) <span class="ai-status-dot" style="position:static; background:#ffaa00; box-shadow:0 0 8px #ffaa00; width:6px; height:6px;"></span>
+                        </h3>
+                        <span style="font-size:0.7rem; color:var(--text-muted); font-family:'Roboto Mono',monospace;">Generado por Agente ARES</span>
+                    </div>
+                    <p id="analytics-ai-bluf" style="margin:0 0 1rem 0; font-size:0.85rem; line-height:1.5; color:#ccd6f6;">
+                        <em>Analizando vectores de amenaza y correlacionando telemetría...</em>
+                    </p>
+                    <div id="analytics-ai-actions" style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.05); border-radius:4px; padding:0.8rem;">
+                        <span style="font-size:0.7rem; color:#ff9500; font-family:'Roboto Mono',monospace; font-weight:bold; letter-spacing:1px; display:block; margin-bottom:0.5rem;">[ PROTOCOLOS SUGERIDOS ]</span>
+                        <ul id="analytics-action-list" style="margin:0; padding-left:1.2rem; font-size:0.8rem; color:#8892b0; display:flex; flex-direction:column; gap:0.3rem;">
+                            <li>Esperando telemetría táctica para emitir recomendaciones operacionales.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- KPI CARDS ROW -->
+                <div class="grid-4" style="margin-bottom:2rem;">
+                    <!-- CARD 1 -->
+                    <div class="kpi-card kpi-critical">
+                        <span class="kpi-label">Nivel de Amenaza Global</span>
+                        <div class="flex" style="align-items:baseline; gap:0.5rem; margin-top:0.4rem;">
+                            <span id="kpi-threat-level" class="kpi-value" style="color:#ff4444;">78%</span>
+                            <span id="kpi-threat-status" class="font-mono" style="font-size:0.75rem; color:#ff4444;">(CRÍTICO)</span>
+                        </div>
+                        <span class="ai-status-dot" style="position:absolute; right:1.2rem; top:1.2rem; background:#ff4444; box-shadow:0 0 10px #ff4444; animation:pulse 1.5s infinite;"></span>
+                    </div>
+                    <!-- CARD 2 -->
+                    <div class="kpi-card kpi-stable">
+                        <span class="kpi-label">Integridad del Nodo</span>
+                        <div class="flex" style="align-items:baseline; gap:0.5rem; margin-top:0.4rem;">
+                            <span class="kpi-value" style="color:#00ffaa;">99.8%</span>
+                            <span class="font-mono" style="font-size:0.75rem; color:#00ffaa;">(ESTABLE)</span>
+                        </div>
+                        <span class="ai-status-dot" style="position:absolute; right:1.2rem; top:1.2rem; background:#00ffaa; box-shadow:0 0 10px #00ffaa;"></span>
+                    </div>
+                    <!-- CARD 3 -->
+                    <div class="kpi-card" style="border-left-color:#44aaee;">
+                        <span class="kpi-label">Sensores en Línea</span>
+                        <div class="flex" style="align-items:baseline; gap:0.5rem; margin-top:0.4rem;">
+                            <span class="kpi-value" style="color:#44aaee;">12 / 12</span>
+                            <span class="font-mono" style="font-size:0.75rem; color:#44aaee;">(ACTIVO)</span>
+                        </div>
+                        <span class="ai-status-dot" style="position:absolute; right:1.2rem; top:1.2rem; background:#44aaee; box-shadow:0 0 10px #44aaee;"></span>
+                    </div>
+                    <!-- CARD 4 -->
+                    <div class="kpi-card kpi-warning">
+                        <span class="kpi-label">Incidentes Críticos (24h)</span>
+                        <div class="flex" style="align-items:baseline; gap:0.5rem; margin-top:0.4rem;">
+                            <span id="kpi-critical-incidents" class="kpi-value" style="color:#ffaa00;">0</span>
+                            <span class="font-mono" style="font-size:0.75rem; color:#ffaa00;">(DETECTADOS)</span>
+                        </div>
+                        <span class="ai-status-dot" style="position:absolute; right:1.2rem; top:1.2rem; background:#ffaa00; box-shadow:0 0 10px #ffaa00;"></span>
+                    </div>
+                </div>
+                
+                <!-- HEALTH SOURCES DASHBOARD -->
+                <div class="news-card" style="padding:1.5rem; margin-bottom:2rem; border-left:3px solid #44aaee;">
+                    <div class="flex-between mb-1" style="border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:0.5rem;">
+                        <h3 class="font-mono heading-4 flex items-center" style="gap:0.5rem; margin:0;">
+                            <span>📡</span> Salud de Fuentes OSINT
+                        </h3>
+                        <span id="source-health-timestamp" class="font-mono text-muted" style="font-size:0.7rem;"></span>
+                    </div>
+                    <div id="source-health-summary" class="flex flex-wrap" style="gap:1.5rem; margin-bottom:1rem;">
+                        <div class="flex items-center" style="gap:0.5rem;">
+                            <span style="width:10px;height:10px;border-radius:50%;background:#00ffaa;display:inline-block;"></span>
+                            <span class="font-mono" style="font-size:0.8rem;color:var(--text-muted);">Saludables: <strong id="sh-healthy" style="color:#00ffaa;">0</strong></span>
+                        </div>
+                        <div class="flex items-center" style="gap:0.5rem;">
+                            <span style="width:10px;height:10px;border-radius:50%;background:#ffaa00;display:inline-block;"></span>
+                            <span class="font-mono" style="font-size:0.8rem;color:var(--text-muted);">Degradadas: <strong id="sh-degraded" style="color:#ffaa00;">0</strong></span>
+                        </div>
+                        <div class="flex items-center" style="gap:0.5rem;">
+                            <span style="width:10px;height:10px;border-radius:50%;background:#FF2D55;display:inline-block;"></span>
+                            <span class="font-mono" style="font-size:0.8rem;color:var(--text-muted);">Caídas: <strong id="sh-down" style="color:#FF2D55;">0</strong></span>
+                        </div>
+                    </div>
+                    <div id="source-health-table" style="max-height:200px; overflow-y:auto;">
+                        <table class="source-health-table">
+                            <thead>
+                                <tr>
+                                    <th>Fuente</th>
+                                    <th style="text-align:center;">Fallos</th>
+                                    <th style="text-align:right;">Estado</th>
+                                    <th style="text-align:right;">Reintento</th>
+                                </tr>
+                            </thead>
+                            <tbody id="source-health-tbody">
+                                <tr><td colspan="4" style="padding:1rem; text-align:center; color:var(--text-muted);">Cargando...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="analytics-grid" style="margin-bottom:2rem;">
+                    
+                    <!-- CARD 1: VECTORES DE AMENAZAS (JS: chart-threats) -->
+                    <div class="news-card" style="padding:1.5rem; display:flex; flex-direction:column; min-height:320px;">
+                        <div class="flex-between mb-1" style="border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:0.5rem;">
+                            <h3 class="font-mono heading-4 flex items-center" style="gap:0.5rem; margin:0;">
+                                <span>🚨</span> Vectores de Amenaza
+                            </h3>
+                            <button class="btn-icon btn-export btn-export-docx" data-chart-id="chart-threats" data-label="Vectores_Amenaza" style="font-size:0.7rem; padding:2px 6px;" title="Exportar como PNG">📥 PNG</button>
+                        </div>
+                        <div class="chart-container" style="flex:1; position:relative; min-height:220px;">
+                            <canvas id="chart-threats"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- CARD 2: POLARIZACIÓN DE SENTIMIENTO (JS: chart-sentiment) -->
+                    <div class="news-card" style="padding:1.5rem; display:flex; flex-direction:column; min-height:320px;">
+                        <div class="flex-between mb-1" style="border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:0.5rem;">
+                            <h3 class="font-mono heading-4 flex items-center" style="gap:0.5rem; margin:0;">
+                                <span>🧭</span> Polarización de Red
+                            </h3>
+                            <button class="btn-icon btn-export-png" data-chart-id="chart-sentiment" data-label="Polarizacion_Red" style="font-size:0.75rem; padding:2px 6px; border:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.25); border-radius:4px; color:var(--primary); font-family:'Roboto Mono',monospace;" title="Exportar como PNG">📥 PNG</button>
+                        </div>
+                        <div class="chart-container" style="flex:1; position:relative; min-height:220px;">
+                            <canvas id="chart-sentiment"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- CARD 3: DARK WEB / RANSOMWARE (JS: chart-darkweb) -->
+                    <div class="news-card" style="padding:1.5rem; display:flex; flex-direction:column; min-height:320px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:0.5rem;">
+                            <h3 style="color:#fff; font-family:'Roboto Mono',monospace; font-weight:normal; font-size:0.95rem; margin:0; display:flex; align-items:center; gap:0.5rem;">
+                                <span>🕷️</span> Dark Web & Ransomware Radar
+                            </h3>
+                            <button class="btn-icon btn-export-png" data-chart-id="chart-darkweb" data-label="DarkWeb_Radar" style="font-size:0.75rem; padding:2px 6px; border:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.25); border-radius:4px; color:var(--primary); font-family:'Roboto Mono',monospace;" title="Exportar como PNG">📥 PNG</button>
+                        </div>
+                        <div class="chart-container" style="flex:1; position:relative; min-height:220px;">
+                            <canvas id="chart-darkweb"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- CARD 4: TELEMETRÍA SATELITAL (JS: chart-geointel) -->
+                    <div class="news-card" style="padding:1.5rem; display:flex; flex-direction:column; min-height:320px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:0.5rem;">
+                            <h3 style="color:#fff; font-family:'Roboto Mono',monospace; font-weight:normal; font-size:0.95rem; margin:0; display:flex; align-items:center; gap:0.5rem;">
+                                <span>🛰️</span> Telemetría Satelital - Puertos
+                            </h3>
+                            <button class="btn-icon btn-export-png" data-chart-id="chart-geointel" data-label="Telemetria_Satelital" style="font-size:0.75rem; padding:2px 6px; border:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.25); border-radius:4px; color:var(--primary); font-family:'Roboto Mono',monospace;" title="Exportar como PNG">📥 PNG</button>
+                        </div>
+                        <div class="chart-container" style="flex:1; position:relative; min-height:220px;">
+                            <canvas id="chart-geointel"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- CARD 5: DISTRIBUCIÓN POR SEVERIDAD (JS: chart-severity) -->
+                    <div class="news-card" style="padding:1.5rem; display:flex; flex-direction:column; min-height:320px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:0.5rem;">
+                            <h3 style="color:#fff; font-family:'Roboto Mono',monospace; font-weight:normal; font-size:0.95rem; margin:0; display:flex; align-items:center; gap:0.5rem;">
+                                <span>🎯</span> Distribución por Severidad
+                            </h3>
+                            <button class="btn-icon btn-export-png" data-chart-id="chart-severity" data-label="Distribucion_Severidad" style="font-size:0.75rem; padding:2px 6px; border:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.25); border-radius:4px; color:var(--primary); font-family:'Roboto Mono',monospace;" title="Exportar como PNG">📥 PNG</button>
+                        </div>
+                        <div class="chart-container" style="flex:1; position:relative; min-height:220px;">
+                            <canvas id="chart-severity"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- CARD 6: LATENCIA DE INFRAESTRUCTURA (JS: chart-latency) -->
+                    <div class="news-card" style="padding:1.5rem; display:flex; flex-direction:column; min-height:320px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:0.5rem;">
+                            <h3 style="color:#fff; font-family:'Roboto Mono',monospace; font-weight:normal; font-size:0.95rem; margin:0; display:flex; align-items:center; gap:0.5rem;">
+                                <span>⏱️</span> Latencia de Infraestructura Crítica
+                            </h3>
+                            <button class="btn-icon btn-export-png" data-chart-id="chart-latency" data-label="Latencia_Infraestructura" style="font-size:0.75rem; padding:2px 6px; border:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.25); border-radius:4px; color:var(--primary); font-family:'Roboto Mono',monospace;" title="Exportar como PNG">📥 PNG</button>
+                        </div>
+                        <div class="chart-container" style="flex:1; position:relative; min-height:220px;">
+                            <canvas id="chart-latency"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- CARD 7: ANOMALÍAS SIGINT (JS: chart-sigint) -->
+                    <div class="news-card" style="padding:1.5rem; display:flex; flex-direction:column; min-height:320px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:0.5rem;">
+                            <h3 style="color:#fff; font-family:'Roboto Mono',monospace; font-weight:normal; font-size:0.95rem; margin:0; display:flex; align-items:center; gap:0.5rem;">
+                                <span>📡</span> Anomalías SIGINT / Intercepciones
+                            </h3>
+                            <button class="btn-icon btn-export-png" data-chart-id="chart-sigint" data-label="Anomalias_SIGINT" style="font-size:0.75rem; padding:2px 6px; border:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.25); border-radius:4px; color:var(--primary); font-family:'Roboto Mono',monospace;" title="Exportar como PNG">📥 PNG</button>
+                        </div>
+                        <div class="chart-container" style="flex:1; position:relative; min-height:220px;">
+                            <canvas id="chart-sigint"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- CARD 8: DESINFORMACIÓN (JS: chart-misinfo) -->
+                    <div class="news-card" style="padding:1.5rem; display:flex; flex-direction:column; min-height:320px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.06); padding-bottom:0.5rem;">
+                            <h3 style="color:#fff; font-family:'Roboto Mono',monospace; font-weight:normal; font-size:0.95rem; margin:0; display:flex; align-items:center; gap:0.5rem;">
+                                <span>🌡️</span> Termómetro de Desinformación
+                            </h3>
+                            <button class="btn-icon btn-export-png" data-chart-id="chart-misinfo" data-label="Termometro_Desinformacion" style="font-size:0.75rem; padding:2px 6px; border:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.25); border-radius:4px; color:var(--primary); font-family:'Roboto Mono',monospace;" title="Exportar como PNG">📥 PNG</button>
+                        </div>
+                        <div class="chart-container" style="flex:1; position:relative; min-height:220px;">
+                            <canvas id="chart-misinfo"></canvas>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+

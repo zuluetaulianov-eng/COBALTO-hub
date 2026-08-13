@@ -1,0 +1,149 @@
+    <div class="app-container">
+        
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="logo-area" style="position: relative; display: flex; align-items: center; justify-content: center;">
+                <img src="{{ LOGO_PATH if LOGO_PATH and LOGO_PATH != '123.png' else '/static/icons/icon-512.png' }}" alt="COBALTO HUB" loading="lazy" onerror="this.onerror=null;this.src='/static/icons/icon-192.png';" style="margin: 0 auto; max-height: 48px; object-fit: contain;">
+                <button id="sidebar-collapse-btn" class="btn-icon" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); color: var(--primary); font-size: 1rem; border: 1px solid rgba(0, 229, 255, 0.2); background: rgba(10, 11, 16, 0.6); border-radius: 6px; padding: 4px 8px; font-family: 'Roboto Mono', monospace;" title="Ocultar panel lateral">◀</button>
+            </div>
+            
+            <nav>
+                <button class="nav-button active mobile-primary" data-tab="tab-news">
+                    <span style="font-size:1.2rem">📰</span> SitRep
+                </button>
+                <button class="nav-button mobile-primary" data-tab="tab-intel">
+                    <span style="font-size:1.2rem">🎯</span> Intel Procesada
+                </button>
+                <button class="nav-button mobile-primary" data-tab="tab-map">
+                    <span style="font-size:1.2rem">🗺️</span> Mapa
+                </button>
+                <button class="nav-button mobile-primary" data-tab="tab-alerts" id="btn-alerts">
+                    <span style="font-size:1.2rem">🚨</span> Incidentes
+                    {% if alert_counts and alert_counts.get('critico', 0) > 0 %}
+                    <span style="background:#FF2D55;color:#fff;border-radius:50%;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:bold;margin-left:2px;">{{ alert_counts.get('critico', 0) }}</span>
+                    {% endif %}
+                </button>
+                <button class="nav-button mobile-primary" data-tab="tab-social">
+                    <span style="font-size:1.2rem">🌐</span> Redes
+                </button>
+                <button class="nav-button mobile-only-more" id="btn-mobile-more" onclick="window.toggleMobileNavDrawer()">
+                    <span style="font-size:1.2rem">☰</span> Módulos
+                </button>
+                <button class="nav-button" data-tab="tab-cyber">
+                    <span style="font-size:1.2rem">💻</span> Monitor de Amenazas
+                </button>
+                <button class="nav-button" data-tab="tab-realtime">
+                    <span style="font-size:1.2rem">📱</span> Flujo de Datos en Vivo
+                </button>
+                <button class="nav-button" data-tab="tab-narrative">
+                    <span style="font-size:1.2rem">📊</span> Narrativas
+                </button>
+                <button class="nav-button" data-tab="tab-analytics">
+                    <span style="font-size:1.2rem">📈</span> Telemetría y Métricas
+                </button>
+                <button class="nav-button" data-tab="tab-sentiment">
+                    <span style="font-size:1.2rem">🧬</span> Perfilamiento Conductual
+                </button>
+                <button class="nav-button" data-tab="tab-timeline">
+                    <span style="font-size:1.2rem">⏳</span> Auditoría Cronológica
+                </button>
+                <button class="nav-button" data-tab="tab-graph">
+                    <span style="font-size:1.2rem">🕸️</span> Análisis de Redes (SNA)
+                </button>
+                <button class="nav-button" data-tab="tab-entity-explorer">
+                    <span style="font-size:1.2rem">📦</span> Explorador de Entidades
+                </button>
+                <button class="nav-button" data-tab="tab-agents">
+                    <span style="font-size:1.2rem">🤖</span> Agentes Autónomos
+                </button>
+                <button class="nav-button" data-tab="tab-predictive" id="nav-predictive">
+                    <span style="font-size:1.2rem">⚠️</span> Alertas Predictivas
+                    <span id="predictive-badge" style="display:none;background:#FF2D55;color:#fff;font-size:0.6rem;padding:1px 6px;border-radius:8px;margin-left:4px;">0</span>
+                </button>
+                <button class="nav-button" data-tab="tab-finint">
+                    <span style="font-size:1.2rem">💳</span> FININT & Dark Web
+                </button>
+                <button class="nav-button" data-tab="tab-humint">
+                    <span style="font-size:1.2rem">🕵️</span> HUMINT Campo
+                </button>
+                <button class="nav-button" data-tab="tab-user-search">
+                    <span style="font-size:1.2rem">👤</span> Perfilamiento de Actores
+                </button>
+                <button class="nav-button" data-tab="tab-osiris-recon">
+                    <span style="font-size:1.2rem">🔍</span> OSIRIS RECON Toolkit
+                </button>
+                <button class="nav-button" data-tab="tab-osiris-global">
+                    <span style="font-size:1.2rem">📡</span> OSIRIS Live Feeds
+                </button>
+                <button class="nav-button" data-tab="tab-config">
+                    <span style="font-size:1.2rem">⚙️</span> Configuración
+                </button>
+                <a href="/avalanche" target="_blank" class="nav-button" style="text-decoration: none; display: flex; align-items: center; border: 1px solid rgba(0, 229, 255, 0.25); background: rgba(0, 229, 255, 0.05); color: #fff;">
+                    <span style="font-size:1.2rem; margin-right: 8px;">🛰️</span> Consola Avalanche
+                </a>
+            </nav>
+        </aside>
+
+
+        <!-- DRAWER DE NAVEGACIÓN MÓVIL (SISTEMA COMPACTO DE MÓDULOS) -->
+        <div id="mobile-nav-drawer" class="mobile-drawer-overlay" onclick="if(event.target===this)window.toggleMobileNavDrawer()">
+            <div class="mobile-drawer-content">
+                <div class="mobile-drawer-header">
+                    <div style="display:flex; align-items:center; gap:0.5rem;">
+                        <span style="color:var(--primary); font-size:1.1rem;">⚡</span>
+                        <span class="mobile-drawer-title">MÓDULOS DE INTELIGENCIA</span>
+                    </div>
+                    <button class="mobile-drawer-close" onclick="window.toggleMobileNavDrawer()">✕</button>
+                </div>
+                <div class="mobile-drawer-body">
+                    <!-- SECCIÓN INTELIGENCIA -->
+                    <div class="mobile-drawer-section">
+                        <div class="mobile-drawer-cat">📡 MONITOREO E INTELIGENCIA</div>
+                        <div class="mobile-drawer-grid">
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-news');window.toggleMobileNavDrawer()"><span>📰</span> SitRep Global</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-intel');window.toggleMobileNavDrawer()"><span>🎯</span> Intel Procesada</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-social');window.toggleMobileNavDrawer()"><span>🌐</span> Monitor Redes</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-alerts');window.toggleMobileNavDrawer()"><span>🚨</span> Incidentes</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-cyber');window.toggleMobileNavDrawer()"><span>💻</span> Ciber-Amenazas</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-realtime');window.toggleMobileNavDrawer()"><span>📱</span> Datos en Vivo</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-narrative');window.toggleMobileNavDrawer()"><span>📊</span> Narrativas</button>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN ANÁLISIS & MAPAS -->
+                    <div class="mobile-drawer-section">
+                        <div class="mobile-drawer-cat">📊 ANÁLISIS & MAPAS</div>
+                        <div class="mobile-drawer-grid">
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-map');window.toggleMobileNavDrawer()"><span>🗺️</span> Mapa Unificado</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-graph');window.toggleMobileNavDrawer()"><span>🕸️</span> Análisis Redes (SNA)</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-analytics');window.toggleMobileNavDrawer()"><span>📈</span> Telemetría</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-sentiment');window.toggleMobileNavDrawer()"><span>🧬</span> PsyOps / Sentimiento</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-timeline');window.toggleMobileNavDrawer()"><span>⏳</span> Cronología</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-entity-explorer');window.toggleMobileNavDrawer()"><span>📦</span> Entidades</button>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN AVANZADO & OSIRIS -->
+                    <div class="mobile-drawer-section">
+                        <div class="mobile-drawer-cat">🔍 TÁCTICO & RECON</div>
+                        <div class="mobile-drawer-grid">
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-agents');window.toggleMobileNavDrawer()"><span>🤖</span> Agentes IA</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-predictive');window.toggleMobileNavDrawer()"><span>⚠️</span> Alertas Predictivas</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-finint');window.toggleMobileNavDrawer()"><span>💳</span> FININT / DarkWeb</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-humint');window.toggleMobileNavDrawer()"><span>🕵️</span> HUMINT Campo</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-user-search');window.toggleMobileNavDrawer()"><span>👤</span> Perfil Actores</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-osiris-recon');window.toggleMobileNavDrawer()"><span>🔍</span> OSIRIS RECON</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-osiris-global');window.toggleMobileNavDrawer()"><span>📡</span> Live Feeds CCTV</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-config');window.toggleMobileNavDrawer()"><span>⚙️</span> Configuración</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            window.toggleMobileNavDrawer = function() {
+                var drawer = document.getElementById('mobile-nav-drawer');
+                if (drawer) drawer.classList.toggle('open');
+            };
+        </script>
+

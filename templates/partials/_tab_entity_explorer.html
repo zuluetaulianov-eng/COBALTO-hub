@@ -1,0 +1,47 @@
+<div id="tab-entity-explorer" class="tab-content">
+    <div class="panel-glass" style="padding: 1.5rem; margin-bottom: 1rem;">
+        <div class="flex-between" style="margin-bottom: 1rem;">
+            <h2 class="heading-2">📦 Explorador de Entidades</h2>
+            <div class="flex" style="gap:0.5rem; align-items:center;">
+                <span id="entity-total-display" class="text-muted font-mono" style="font-size: 0.85rem;">0 entidades</span>
+                <button class="btn-tactical btn-sm" onclick="EntityExplorer.runBackfill()">⚡ Poblar</button>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-1" style="margin-bottom: 1rem;">
+            <input type="text" id="entity-search" placeholder="Buscar entidad por nombre o alias..." class="search-input" style="flex: 1; min-width: 200px;" oninput="EntityExplorer.search()">
+            <select id="entity-type-filter" class="config-select" onchange="EntityExplorer.filterType()">
+                <option value="">Todos los tipos</option>
+                <option value="person">Personas</option>
+                <option value="organization">Organizaciones</option>
+                <option value="location">Ubicaciones</option>
+                <option value="infrastructure">Infraestructura</option>
+                <option value="vessel">Buques</option>
+                <option value="aircraft">Aeronaves</option>
+                <option value="event">Eventos</option>
+            </select>
+            <select id="entity-source-filter" class="config-select" onchange="EntityExplorer.filterSource()">
+                <option value="">Todas las fuentes</option>
+                <option value="social_graph">Social Graph</option>
+                <option value="ofac_sdn">OFAC SDN</option>
+                <option value="wikidata">Wikidata</option>
+                <option value="osiris_recon_domain">OSIRIS Dominios</option>
+                <option value="osiris_recon_ip">OSIRIS IPs</option>
+            </select>
+            <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
+                <input type="checkbox" id="entity-ofac-only" onchange="EntityExplorer.search()">
+                <span>🔴 Solo OFAC</span>
+            </label>
+        </div>
+    </div>
+    <div id="entity-results" class="grid-3" style="gap: 0.8rem;">
+        <div class="empty-state" style="grid-column: 1/-1;">
+            <div style="font-size: 2rem; margin-bottom: 0.5rem;">📦</div>
+            <div class="heading-4">Sin datos de entidades</div>
+            <p class="text-muted">Pulsa "⚡ Poblar" para cargar entidades desde OFAC SDN y datos históricos, o ejecuta un ciclo completo en el worker.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+window.EntityExplorerData = {{ entity_explorer_data | default('{"entities":[],"stats":{"total_entities":0}}') | safe }};
+</script>

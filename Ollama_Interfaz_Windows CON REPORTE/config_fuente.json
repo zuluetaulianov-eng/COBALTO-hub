@@ -1,0 +1,21 @@
+{
+    "orden": ["json", "sqlite", "mongo", "postgres", "ejemplo"],
+    "fallback": true,
+    "json": {
+        "ruta": "datos_informe.json"
+    },
+    "sqlite": {
+        "ruta": "datos_informe.db",
+        "tabla_docs": "documentos",
+        "tabla_meta": "informe_meta"
+    },
+    "mongo": {
+        "uri": "mongodb://localhost:27017",
+        "base": "el_ojo_coporo",
+        "coleccion": "documentos"
+    },
+    "postgres": {
+        "conn_info": "postgresql://postgres:postgres@localhost:5432/el_ojo_coporo",
+        "tabla": "documentos"
+    }
+}

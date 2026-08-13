@@ -1,0 +1,15 @@
+[Unit]
+Description=Extractor OSINT en Segundo Plano COBALTO Hub (Worker)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/app/COBALTO
+ExecStart=/usr/bin/python3 cobalto_worker.py
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

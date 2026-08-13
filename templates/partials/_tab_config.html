@@ -1,0 +1,1352 @@
+            <!-- TAB: CONFIGURATION -->
+            <div id="tab-config" class="tab-content">
+                <style>
+                    .config-dashboard-layout {
+                        display: grid;
+                        grid-template-columns: 240px 1fr;
+                        gap: 1.5rem;
+                        margin-top: 1rem;
+                        min-height: 550px;
+                    }
+                    .config-subnav {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.5rem;
+                        background: rgba(10, 11, 16, 0.4);
+                        border: 1px solid var(--border-color);
+                        border-radius: 12px;
+                        padding: 1rem;
+                    }
+                    .config-subtab-btn {
+                        background: transparent;
+                        border: 1px solid transparent;
+                        color: var(--text-muted);
+                        padding: 0.8rem 1rem;
+                        border-radius: 8px;
+                        text-align: left;
+                        font-family: 'Roboto Mono', monospace;
+                        font-size: 0.8rem;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.3s;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                    }
+                    .config-subtab-btn:hover {
+                        background: rgba(255, 255, 255, 0.03);
+                        color: #fff;
+                    }
+                    .config-subtab-btn.active {
+                        background: rgba(0, 229, 255, 0.08);
+                        border: 1px solid rgba(0, 229, 255, 0.2);
+                        color: var(--primary);
+                        box-shadow: 0 0 10px rgba(0, 229, 255, 0.05);
+                    }
+                    .config-subtab-content {
+                        display: none;
+                        background: rgba(10, 11, 16, 0.4);
+                        border: 1px solid var(--border-color);
+                        border-radius: 12px;
+                        padding: 1.8rem;
+                        animation: subtabFadeIn 0.3s ease;
+                    }
+                    .config-subtab-content.active {
+                        display: block;
+                    }
+                    @keyframes subtabFadeIn {
+                        from { opacity: 0; transform: translateY(4px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                    .config-section-title {
+                        font-family: 'Roboto Mono', monospace;
+                        font-size: 0.95rem;
+                        font-weight: 700;
+                        letter-spacing: 1.5px;
+                        color: var(--primary);
+                        margin-bottom: 1.5rem;
+                        border-bottom: 1px dashed rgba(0, 229, 255, 0.2);
+                        padding-bottom: 0.5rem;
+                        text-transform: uppercase;
+                    }
+                    .config-grid-form {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                        gap: 1.5rem;
+                    }
+                    .config-input-group {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 0.5rem;
+                    }
+                    .config-input-group label {
+                        font-family: 'Roboto Mono', monospace;
+                        font-size: 0.75rem;
+                        color: var(--text-muted);
+                        letter-spacing: 0.5px;
+                    }
+                    .config-input-field {
+                        background: rgba(0, 0, 0, 0.45);
+                        border: 1px solid rgba(0, 229, 255, 0.15);
+                        border-radius: 8px;
+                        padding: 0.7rem 1rem;
+                        color: #fff;
+                        font-family: 'Inter', sans-serif;
+                        font-size: 0.85rem;
+                        transition: all 0.3s;
+                    }
+                    .config-input-field:focus {
+                        outline: none;
+                        border-color: var(--primary);
+                        box-shadow: 0 0 10px rgba(0, 229, 255, 0.15);
+                    }
+                    .config-input-field.mono {
+                        font-family: 'Roboto Mono', monospace;
+                        font-size: 0.8rem;
+                    }
+                    .config-checkbox-group {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.8rem;
+                        margin-top: 1rem;
+                    }
+                    .config-checkbox {
+                        appearance: none;
+                        width: 18px;
+                        height: 18px;
+                        border: 1px solid rgba(0, 229, 255, 0.3);
+                        border-radius: 4px;
+                        background: rgba(0, 0, 0, 0.4);
+                        cursor: pointer;
+                        position: relative;
+                        transition: all 0.3s;
+                    }
+                    .config-checkbox:checked {
+                        background: var(--primary);
+                        border-color: var(--primary);
+                        box-shadow: 0 0 8px var(--primary);
+                    }
+                    .config-checkbox:checked::after {
+                        content: "✓";
+                        position: absolute;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        color: #000;
+                        font-size: 0.75rem;
+                        font-weight: bold;
+                    }
+                    /* Chips */
+                    .config-chips-wrap {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 0.6rem;
+                        background: rgba(0, 0, 0, 0.3);
+                        border: 1px solid var(--border-color);
+                        border-radius: 10px;
+                        padding: 1rem;
+                        min-height: 120px;
+                        max-height: 250px;
+                        overflow-y: auto;
+                    }
+                    .config-chip {
+                        background: rgba(0, 229, 255, 0.08);
+                        border: 1px solid rgba(0, 229, 255, 0.25);
+                        border-radius: 6px;
+                        padding: 0.3rem 0.6rem;
+                        display: flex;
+                        align-items: center;
+                        gap: 0.4rem;
+                        font-family: 'Roboto Mono', monospace;
+                        font-size: 0.75rem;
+                        color: #fff;
+                        transition: all 0.2s;
+                        animation: chipFadeIn 0.2s ease-out;
+                    }
+                    .config-chip.border-accent {
+                        background: rgba(179, 136, 255, 0.08);
+                        border-color: rgba(179, 136, 255, 0.25);
+                    }
+                    .config-chip:hover {
+                        border-color: var(--primary);
+                        box-shadow: 0 0 8px rgba(0, 229, 255, 0.15);
+                    }
+                    .config-chip.border-accent:hover {
+                        border-color: var(--secondary);
+                        box-shadow: 0 0 8px rgba(179, 136, 255, 0.15);
+                    }
+                    .config-chip-close {
+                        cursor: pointer;
+                        font-weight: bold;
+                        color: var(--text-muted);
+                        font-size: 0.9rem;
+                        line-height: 1;
+                    }
+                    .config-chip-close:hover {
+                        color: var(--threat-red);
+                    }
+                    @keyframes chipFadeIn {
+                        from { opacity: 0; transform: scale(0.9); }
+                        to { opacity: 1; transform: scale(1); }
+                    }
+                    /* Tables for sources */
+                    .config-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 1rem;
+                    }
+                    .config-table th {
+                        text-align: left;
+                        font-family: 'Roboto Mono', monospace;
+                        font-size: 0.75rem;
+                        color: var(--primary);
+                        padding: 0.8rem 1rem;
+                        border-bottom: 1px solid rgba(0, 229, 255, 0.2);
+                        text-transform: uppercase;
+                    }
+                    .config-table td {
+                        padding: 0.8rem 1rem;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+                        vertical-align: middle;
+                    }
+                    .rss-row:hover {
+                        background: rgba(255, 255, 255, 0.015);
+                    }
+                    /* Loader and Toast */
+                    .config-spinner {
+                        width: 16px;
+                        height: 16px;
+                        border: 2px solid rgba(0, 229, 255, 0.2);
+                        border-top-color: var(--primary);
+                        border-radius: 50%;
+                        animation: config-spin 0.8s linear infinite;
+                        display: inline-block;
+                    }
+                    @keyframes config-spin {
+                        to { transform: rotate(360deg); }
+                    }
+                    .config-toast {
+                        min-width: 280px;
+                        background: rgba(10, 11, 16, 0.95);
+                        border-left: 4px solid var(--primary);
+                        border-radius: 8px;
+                        padding: 12px 18px;
+                        color: #fff;
+                        display: flex;
+                        align-items: center;
+                        box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+                        backdrop-filter: blur(10px);
+                        transform: translateX(50px);
+                        opacity: 0;
+                        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+                    }
+                    .config-toast.success { border-left-color: #4CD964; }
+                    .config-toast.error { border-left-color: #FF2D55; }
+                    .config-toast.warning { border-left-color: #FF9500; }
+                    .config-toast.info { border-left-color: #00E5FF; }
+
+                    @media (max-width: 900px) {
+                        .config-dashboard-layout {
+                            grid-template-columns: 1fr;
+                        }
+                        .config-subnav {
+                            flex-direction: row;
+                            overflow-x: auto;
+                            padding: 0.5rem;
+                        }
+                        .config-subtab-btn {
+                            white-space: nowrap;
+                        }
+                    }
+                </style>
+
+                <div class="config-header flex-between" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1rem;">
+                    <div>
+                        <h2 class="font-mono text-primary ls-2" style="font-size: 1.1rem; text-transform: uppercase;">PANEL DE CONFIGURACIÓN DEL SISTEMA</h2>
+                        <p class="text-muted" style="font-size: 0.75rem; margin-top: 0.3rem;">Administre y sintonice las fuentes de OSINT, palabras clave y parámetros de conectividad.</p>
+                    </div>
+                    <div class="flex gap-1">
+                        <button class="btn-tactical border-accent" id="btn-force-refresh" style="color: var(--secondary); background: rgba(179, 136, 255, 0.05); border-color: rgba(179, 136, 255, 0.3);" onclick="if(window.CobaltoConfig)CobaltoConfig.forceRefresh()">
+                            ⚡ FORZAR RASTREO
+                        </button>
+                        <button class="btn-tactical" id="btn-reset-config" style="color: #FF2D55; background: rgba(255, 45, 85, 0.05); border-color: rgba(255, 45, 85, 0.3);" onclick="if(window.CobaltoConfig)CobaltoConfig.resetConfig()">
+                            ⚠️ DE FÁBRICA
+                        </button>
+                        <button class="btn-tactical" style="padding: 0.6rem 1.8rem; box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);" onclick="if(window.CobaltoConfig)CobaltoConfig.saveConfig()">
+                            💾 GUARDAR CONFIGURACIÓN
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading Console HUD style -->
+                <div id="config-loader" class="flex-column flex-center" style="display: none; padding: 5rem 0;">
+                    <span class="config-spinner" style="width: 40px; height: 40px; border-width: 3px; margin-bottom: 1.5rem;"></span>
+                    <div class="font-mono text-primary ls-1" style="font-size: 0.85rem;">ACCEDIENDO A LOS FICHEROS DE MEMORIA COBALTO...</div>
+                </div>
+
+                <!-- Form container -->
+                <div id="config-form-container" class="config-dashboard-layout">
+                    <!-- Subtab Sidebar -->
+                    <div class="config-subnav">
+                        <button data-subtab="subtab-rss" class="config-subtab-btn active">
+                            <span>📡</span> RSS &amp; Telegram
+                        </button>
+                        <button data-subtab="subtab-filters" class="config-subtab-btn">
+                            <span>🎯</span> Palabras Clave & Targets
+                        </button>
+                        <button data-subtab="subtab-network" class="config-subtab-btn">
+                            <span>🔌</span> Conectividad & Tiempos
+                        </button>
+
+                        <button data-subtab="subtab-advanced" class="config-subtab-btn">
+                            <span>⚙️</span> Inteligencia & LLMs
+                        </button>
+                        <button data-subtab="subtab-sentimiento" class="config-subtab-btn">
+                            <span>🧠</span> Análisis Sentimiento
+                        </button>
+                        <button data-subtab="subtab-c4i" class="config-subtab-btn">
+                            <span>🎛️</span> Centro Mando C4i
+                        </button>
+                        <button data-subtab="subtab-tokens" class="config-subtab-btn">
+                            <span>🔑</span> Tokens & API Keys
+                        </button>
+                        <button data-subtab="subtab-assets" class="config-subtab-btn">
+                            <span>🛩️</span> Rastreo Assets
+                        </button>
+                        <button data-subtab="subtab-osiris" class="config-subtab-btn">
+                            <span>🛰️</span> OSIRIS Engine
+                        </button>
+                    </div>
+
+                    <!-- Contents -->
+                    <div class="config-main-area" style="min-width: 0;">
+                        <!-- SUBTAB: C4I -->
+                        <div id="subtab-c4i" class="config-subtab-content">
+                            <div class="config-section-title">CENTRO DE COMANDO C4I (RECURSOS SISTEMA)</div>
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-input-group" style="background: var(--surface-color); padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 8px;">
+                                    <h4 style="color: var(--primary); font-family: monospace; margin: 0 0 10px 0;">🔴 ESTADO REDIS (CACHÉ Y COLAS)</h4>
+                                    <div style="color: var(--text-muted); font-family: monospace; font-size: 0.85rem; line-height: 1.8;">
+                                        Conexión: <span id="c4i-redis-status" style="color: #FF2D55; font-weight: bold;">DESCONECTADO</span><br>
+                                        Cola AI (Heavy): <span id="c4i-queue-ai" style="color: var(--text-main); font-weight: bold;">0</span> tareas<br>
+                                        Cola OSINT (Scraping): <span id="c4i-queue-osint" style="color: var(--text-main); font-weight: bold;">0</span> tareas
+                                    </div>
+                                </div>
+                                <div class="config-input-group" style="background: var(--surface-color); padding: 1.5rem; border: 1px solid var(--border-color); border-radius: 8px;">
+                                    <h4 style="color: var(--secondary); font-family: monospace; margin: 0 0 10px 0;">🔵 ESTADO POSTGRESQL (PERSISTENCIA CORE)</h4>
+                                    <div style="color: var(--text-muted); font-family: monospace; font-size: 0.85rem; line-height: 1.8;">
+                                        Modo: <span id="c4i-postgres-status" style="color: #FF9500; font-weight: bold;">SQLITE LOCAL (FALLBACK)</span><br>
+                                        Uso CPU Servidor: <span id="c4i-cpu" style="color: var(--text-main); font-weight: bold;">0%</span><br>
+                                        Uso RAM Servidor: <span id="c4i-ram" style="color: var(--text-main); font-weight: bold;">0%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="config-section-title" style="margin-top: 1.5rem;">INTERFAZ TÁCTICA Y TEMAS</div>
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-input-group">
+                                    <label>Tema Visual del Dashboard</label>
+                                    <select id="config-ui-theme" class="config-input-field mono" style="font-weight: bold; background: rgba(0,0,0,0.5);" onchange="if(window.CobaltoConfig)CobaltoConfig.changeTheme(this.value)">
+                                        <option value="cyber" style="color: #00e5ff;">Cyber-Tactical (Predeterminado)</option>
+                                        <option value="amoled" style="color: #fff;">AMOLED Puro (Alto Contraste)</option>
+                                        <option value="light" style="color: #1D4ED8; background: #fff;">Executive Light (Modo Claro)</option>
+                                    </select>
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Ajusta la paleta para reducir fatiga visual o uso nocturno/diurno.</span>
+                                </div>
+                            </div>
+
+                            <div class="config-section-title" style="margin-top: 2.5rem;">BRANDING Y METADATOS DEL SITIO</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Personalice la identidad visual y los metadatos del dashboard que se renderizan en el <code>&lt;head&gt;</code> y la barra lateral.</p>
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-input-group">
+                                    <label>Título de la Página (PAGE_TITLE)</label>
+                                    <input type="text" id="cfg-page-title" class="config-input-field mono" placeholder="COBALTO HUB | Noticias &amp; Intel Venezuela 2026">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Aparece en la pestaña del navegador y en el encabezado HTML.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Descripción (PAGE_DESCRIPTION)</label>
+                                    <input type="text" id="cfg-page-description" class="config-input-field mono" placeholder="Tablero en tiempo real con intel propia y externa.">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Meta description para SEO y previsualización de enlaces.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>URL Pública (SITE_URL)</label>
+                                    <input type="text" id="cfg-site-url" class="config-input-field mono" placeholder="https://midominio.com">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">URL base del sitio para enlaces compartidos y feeds.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Ruta del Logo (LOGO_PATH)</label>
+                                    <input type="text" id="cfg-logo-path" class="config-input-field mono" placeholder="123.png">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Archivo de imagen en /static/ o URL externa.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Logo Fallback SVG (LOGO_FALLBACK)</label>
+                                    <input type="text" id="cfg-logo-fallback" class="config-input-field mono" placeholder="data:image/svg+xml,...">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">SVG inline de respaldo si el logo principal no carga.</span>
+                                </div>
+                            </div>
+
+                            <div style="text-align: right;">
+                                <button class="btn-tactical" style="padding: 0.5rem 1rem;" onclick="if(window.refreshC4iDashboard)refreshC4iDashboard()">🔄 REFRESCAR MÉTRICAS</button>
+                            </div>
+
+                            <!-- DIAGNÓSTICO IA - Motor Groq / Circuit Breaker -->
+                            <div class="config-section-title" style="margin-top: 2.5rem;">🧠 DIAGNÓSTICO DEL MOTOR IA (GROQ)</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Estado en tiempo real del pool de claves Groq, circuit breaker y colas de tareas IA. Fuente: <code>/api/ai-diagnostics</code></p>
+                            <div id="c4i-ai-diag-panel">
+                                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                                    <div style="background: var(--surface-color); padding: 1.2rem; border: 1px solid var(--border-color); border-radius: 8px;">
+                                        <div style="font-family:monospace;font-size:0.7rem;color:var(--text-muted);margin-bottom:0.5rem;">ESTADO GENERAL</div>
+                                        <div id="c4i-ai-status" style="font-size:1.2rem;font-weight:bold;font-family:monospace;color:#FF9500;">CARGANDO...</div>
+                                    </div>
+                                    <div style="background: var(--surface-color); padding: 1.2rem; border: 1px solid var(--border-color); border-radius: 8px;">
+                                        <div style="font-family:monospace;font-size:0.7rem;color:var(--text-muted);margin-bottom:0.5rem;">CLAVES GROQ EN POOL</div>
+                                        <div id="c4i-groq-pool" style="font-size:1.4rem;font-weight:bold;font-family:monospace;color:var(--primary);">—</div>
+                                    </div>
+                                    <div style="background: var(--surface-color); padding: 1.2rem; border: 1px solid var(--border-color); border-radius: 8px;">
+                                        <div style="font-family:monospace;font-size:0.7rem;color:var(--text-muted);margin-bottom:0.5rem;">FACTOR ESTRÉS</div>
+                                        <div id="c4i-stress-factor" style="font-size:1.4rem;font-weight:bold;font-family:monospace;color:#00ffaa;">—</div>
+                                    </div>
+                                    <div style="background: var(--surface-color); padding: 1.2rem; border: 1px solid var(--border-color); border-radius: 8px;">
+                                        <div style="font-family:monospace;font-size:0.7rem;color:var(--text-muted);margin-bottom:0.5rem;">CIRCUIT BREAKER</div>
+                                        <div id="c4i-cb-status" style="font-size:0.85rem;font-family:monospace;color:var(--text-muted); word-break:break-all;">—</div>
+                                    </div>
+                                    <div style="background: var(--surface-color); padding: 1.2rem; border: 1px solid var(--border-color); border-radius: 8px;">
+                                        <div style="font-family:monospace;font-size:0.7rem;color:var(--text-muted);margin-bottom:0.5rem;">COLA TAREAS IA</div>
+                                        <div id="c4i-task-ai" style="font-size:1.4rem;font-weight:bold;font-family:monospace;color:var(--primary);">—</div>
+                                    </div>
+                                    <div style="background: var(--surface-color); padding: 1.2rem; border: 1px solid var(--border-color); border-radius: 8px;">
+                                        <div style="font-family:monospace;font-size:0.7rem;color:var(--text-muted);margin-bottom:0.5rem;">COLA TAREAS OSINT</div>
+                                        <div id="c4i-task-osint" style="font-size:1.4rem;font-weight:bold;font-family:monospace;color:var(--primary);">—</div>
+                                    </div>
+                                </div>
+                                <!-- Errores por clave -->
+                                <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem;">
+                                    <div style="font-family:monospace;font-size:0.75rem;color:var(--primary);margin-bottom:0.6rem;font-weight:bold;">ERRORES POR CLAVE API (Groq)</div>
+                                    <div id="c4i-key-errors" style="font-family:monospace;font-size:0.75rem;color:var(--text-muted);">Sin errores detectados</div>
+                                </div>
+                                <div style="margin-top:0.5rem;font-size:0.65rem;color:var(--text-muted);font-family:monospace;">
+                                    Última actualización: <span id="c4i-ai-diag-ts">—</span>
+                                </div>
+                            </div>
+
+                            <!-- SALUD DE FUENTES RSS -->
+                            <div class="config-section-title" style="margin-top: 2.5rem;">📡 SALUD DE FUENTES RSS (EXTRACTOR)</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Monitor de fallos y éxitos por fuente RSS. Identifica feeds bloqueados o con errores repetidos. Fuente: <code>/api/health/sources</code></p>
+                            <div style="max-height: 380px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 10px;">
+                                <table class="config-table" id="c4i-sources-health-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width:30%;">Fuente</th>
+                                            <th style="width:35%;">URL</th>
+                                            <th style="width:10%;text-align:center;">Éxitos</th>
+                                            <th style="width:10%;text-align:center;">Fallos</th>
+                                            <th style="width:15%;text-align:center;">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="c4i-sources-health-tbody">
+                                        <tr><td colspan="5" style="text-align:center;padding:1.5rem;color:var(--text-muted);font-family:monospace;font-size:0.8rem;">Cargando salud de fuentes...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <script>
+                            window.refreshC4iDashboard = async function() {
+                                // System status (Redis, Postgres, CPU, RAM)
+                                try {
+                                    var r = await fetch('/api/intel/system_status');
+                                    var d = await r.json();
+                                    var redisEl = document.getElementById('c4i-redis-status');
+                                    if (redisEl) {
+                                        redisEl.textContent = d.redis_connected ? 'CONECTADO' : 'DESCONECTADO';
+                                        redisEl.style.color = d.redis_connected ? '#00ffaa' : '#FF2D55';
+                                    }
+                                    var pgEl = document.getElementById('c4i-postgres-status');
+                                    if (pgEl) {
+                                        pgEl.textContent = d.postgres_connected ? 'POSTGRESQL ACTIVO' : 'SQLITE LOCAL (FALLBACK)';
+                                        pgEl.style.color = d.postgres_connected ? '#00ffaa' : '#FF9500';
+                                    }
+                                    var qAi = document.getElementById('c4i-queue-ai');
+                                    if (qAi && d.queues) qAi.textContent = d.queues.ai_tasks || 0;
+                                    var qOs = document.getElementById('c4i-queue-osint');
+                                    if (qOs && d.queues) qOs.textContent = d.queues.osint_tasks || 0;
+                                    var cpu = document.getElementById('c4i-cpu');
+                                    if (cpu && d.cpu_percent !== undefined) cpu.textContent = d.cpu_percent.toFixed(1) + '%';
+                                    var ram = document.getElementById('c4i-ram');
+                                    if (ram && d.mem_percent !== undefined) ram.textContent = d.mem_percent.toFixed(1) + '%';
+                                } catch(e) {}
+
+                                // AI Diagnostics
+                                try {
+                                    var r2 = await fetch('/api/ai-diagnostics');
+                                    var d2 = await r2.json();
+                                    var statusColors = { operational:'#00ffaa', degraded:'#FF9500' };
+                                    var stEl = document.getElementById('c4i-ai-status');
+                                    if (stEl) {
+                                        stEl.textContent = (d2.status || 'unknown').toUpperCase();
+                                        stEl.style.color = statusColors[d2.status] || '#FF2D55';
+                                    }
+                                    var poolEl = document.getElementById('c4i-groq-pool');
+                                    if (poolEl && d2.groq_pool) poolEl.textContent = d2.groq_pool.size || 0;
+                                    var sfEl = document.getElementById('c4i-stress-factor');
+                                    if (sfEl) sfEl.textContent = d2.stress_factor ? d2.stress_factor.toFixed(2) : '—';
+                                    var cbEl = document.getElementById('c4i-cb-status');
+                                    if (cbEl && d2.groq_pool) cbEl.textContent = d2.groq_pool.circuit_breaker || '—';
+                                    var tqAiEl = document.getElementById('c4i-task-ai');
+                                    if (tqAiEl && d2.task_queue_ai) tqAiEl.textContent = d2.task_queue_ai.pending || 0;
+                                    var tqOsEl = document.getElementById('c4i-task-osint');
+                                    if (tqOsEl && d2.task_queue_osint) tqOsEl.textContent = d2.task_queue_osint.pending || 0;
+                                    var errEl = document.getElementById('c4i-key-errors');
+                                    if (errEl) {
+                                        var errs = d2.groq_pool && d2.groq_pool.key_errors ? d2.groq_pool.key_errors : {};
+                                        var keys = Object.keys(errs);
+                                        if (keys.length === 0) {
+                                            errEl.textContent = '✅ Sin errores detectados en ninguna clave API';
+                                        } else {
+                                            errEl.innerHTML = keys.map(function(k) {
+                                                var cnt = errs[k];
+                                                var color = cnt > 3 ? '#FF2D55' : '#FF9500';
+                                                return '<span style="color:' + color + ';">🔑 ' + k.substring(0,8) + '... → ' + cnt + ' error(es)</span>';
+                                            }).join('<br>');
+                                        }
+                                    }
+                                    var tsEl = document.getElementById('c4i-ai-diag-ts');
+                                    if (tsEl) tsEl.textContent = new Date().toLocaleTimeString('es-VE');
+                                } catch(e) {}
+
+                                // Sources health
+                                try {
+                                    var r3 = await fetch('/api/health/sources');
+                                    var d3 = await r3.json();
+                                    var tbody = document.getElementById('c4i-sources-health-tbody');
+                                    if (tbody && d3) {
+                                        var sources = Array.isArray(d3) ? d3 : (d3.feeds || d3.sources || []);
+                                        if (sources.length === 0) {
+                                            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:1rem;color:var(--text-muted);font-family:monospace;font-size:0.8rem;">Sin datos de salud disponibles aún</td></tr>';
+                                        } else {
+                                            tbody.innerHTML = sources.slice(0, 60).map(function(src) {
+                                                var name = src.name || src.url || 'Fuente';
+                                                var url = src.url || '';
+                                                var ok = src.success_count || src.ok || 0;
+                                                var fail = src.fail_count || src.errors || 0;
+                                                var isDown = fail > 3;
+                                                var isWarn = fail > 0 && fail <= 3;
+                                                var statusHtml = isDown
+                                                    ? '<span style="color:#FF2D55;font-family:monospace;font-size:0.7rem;font-weight:bold;">⛔ CAÍDO</span>'
+                                                    : isWarn
+                                                    ? '<span style="color:#FF9500;font-family:monospace;font-size:0.7rem;">⚠ INESTABLE</span>'
+                                                    : '<span style="color:#00ffaa;font-family:monospace;font-size:0.7rem;">✅ OK</span>';
+                                                var shortUrl = url.length > 40 ? url.substring(0,40) + '…' : url;
+                                                return '<tr class="rss-row" style="' + (isDown ? 'background:rgba(255,45,85,0.03);' : '') + '">' +
+                                                    '<td style="font-size:0.8rem;font-weight:500;">' + name + '</td>' +
+                                                    '<td style="font-size:0.7rem;color:var(--text-muted);font-family:monospace;"><a href="' + url + '" target="_blank" rel="noopener" style="color:inherit;text-decoration:none;" title="' + url + '">' + shortUrl + '</a></td>' +
+                                                    '<td style="text-align:center;color:#00ffaa;font-family:monospace;font-size:0.8rem;">' + ok + '</td>' +
+                                                    '<td style="text-align:center;color:' + (fail > 0 ? '#FF9500' : 'var(--text-muted)') + ';font-family:monospace;font-size:0.8rem;">' + fail + '</td>' +
+                                                    '<td style="text-align:center;">' + statusHtml + '</td>' +
+                                                '</tr>';
+                                            }).join('');
+                                        }
+                                    }
+                                } catch(e) {}
+                            };
+
+                            // Auto-load when C4i subtab is activated
+                            document.addEventListener('DOMContentLoaded', function() {
+                                document.querySelectorAll('.config-subtab-btn').forEach(function(btn) {
+                                    if (btn.getAttribute('data-subtab') === 'subtab-c4i') {
+                                        btn.addEventListener('click', function() {
+                                            setTimeout(window.refreshC4iDashboard, 100);
+                                        });
+                                    }
+                                });
+                            });
+                            </script>
+
+                            <div class="config-section-title" style="margin-top: 2.5rem;">ESTADO OPERACIONAL (DEFCON) Y HEURÍSTICA</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Ajuste el comportamiento masivo del sistema frente a eventos tácticos sin necesidad de cambiar los parámetros individuales.</p>
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-input-group">
+                                    <label>Nivel de Alerta General (DEFCON)</label>
+                                    <select id="cfg-defcon-level" class="config-input-field mono" style="font-weight: bold; background: rgba(0,0,0,0.5);">
+                                        <option value="5" style="color: #00ffaa;">DEFCON 5 (Minimizando Recursos - Latencia Alta)</option>
+                                        <option value="4" style="color: #00e5ff;">DEFCON 4 (Vigilancia Expandida - Latencia Media)</option>
+                                        <option value="3" style="color: #b388ff;">DEFCON 3 (Operación Estándar - Balance Carga)</option>
+                                        <option value="2" style="color: #FF9500;">DEFCON 2 (Alerta Temprana - Alta Frecuencia)</option>
+                                        <option value="1" style="color: #FF2D55; font-weight: bold;">DEFCON 1 (CRISIS ACTIVA - Procesamiento Extremo)</option>
+                                    </select>
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">DEFCON 1 reduce los intervalos al mínimo y despliega los LLMs más avanzados.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Sensibilidad Anti-Eco (Clonación de Noticias) <span id="sim-val-display" style="color: var(--primary);">0.85</span></label>
+                                    <input type="range" id="cfg-similarity" min="0.5" max="0.99" step="0.01" class="config-input-field" style="padding: 0.2rem; cursor: pointer;" >
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Menos % = Agrupa noticias bajo temas generales. Más % = Exige que sean idénticas.</span>
+                                </div>
+                            </div>
+
+                            <div class="config-section-title" style="margin-top: 2rem;">MÓDULOS DE INTELIGENCIA ACTIVOS</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Habilite o deshabilite subsistemas completos para ajustar rendimiento y consumo de recursos.</p>
+                            <div class="flex gap-2" style="margin-top: 1rem; background: rgba(0,0,0,0.15); padding: 1.2rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                                <div class="config-checkbox-group">
+                                    <input type="checkbox" id="cfg-module-osint" class="config-checkbox">
+                                    <div class="flex-column">
+                                        <label for="cfg-module-osint" style="color: #fff; font-size: 0.8rem; cursor: pointer; font-weight: 500;">📡 OSINT (RSS + Scraping)</label>
+                                        <span style="font-size: 0.65rem; color: var(--text-muted);">Extracción de fuentes RSS y canales públicos.</span>
+                                    </div>
+                                </div>
+                                <div class="config-checkbox-group">
+                                    <input type="checkbox" id="cfg-module-social" class="config-checkbox">
+                                    <div class="flex-column">
+                                        <label for="cfg-module-social" style="color: #fff; font-size: 0.8rem; cursor: pointer; font-weight: 500;">🌐 Social (Redes + Foros)</label>
+                                        <span style="font-size: 0.65rem; color: var(--text-muted);">Monitoreo de redes sociales y foros públicos.</span>
+                                    </div>
+                                </div>
+                                <div class="config-checkbox-group">
+                                    <input type="checkbox" id="cfg-module-nlp" class="config-checkbox">
+                                    <div class="flex-column">
+                                        <label for="cfg-module-nlp" style="color: #fff; font-size: 0.8rem; cursor: pointer; font-weight: 500;">🧠 NLP (Sentimiento + Bots)</label>
+                                        <span style="font-size: 0.65rem; color: var(--text-muted);">Análisis de sentimiento, detección de bots y astroturfing.</span>
+                                    </div>
+                                </div>
+                                <div class="config-input-group" style="flex: 1; min-width: 120px;">
+                                    <label>Batch Size Social</label>
+                                    <input type="number" id="cfg-social-batch-size" class="config-input-field mono" placeholder="4" min="1" max="20">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Lotes de extracción simultánea (SOCIAL_FETCH_BATCH_SIZE).</span>
+                                </div>
+                            </div>
+
+                            <div class="config-section-title" style="margin-top: 2rem;">CONTENIDO INFORMATIVO (ABOUT US)</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Texto HTML que se muestra en la sección "Acerca de" de la barra lateral. Soporta etiquetas básicas.</p>
+                            <div class="config-input-group" style="margin-bottom: 2rem;">
+                                <textarea id="cfg-about-us" class="config-input-field mono" style="min-height: 150px; font-size: 0.8rem; line-height: 1.4; resize: vertical;"></textarea>
+                            </div>
+
+                            <div class="config-section-title" style="margin-top: 2rem;">PURGADO TÁCTICO Y EXPORTACIÓN (RETENCIÓN DE DATOS)</div>
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-input-group">
+                                    <label>Días de Retención en Base de Datos (Inteligencia e Historial)</label>
+                                    <input type="number" id="cfg-data-retention" class="config-input-field mono" placeholder="15">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Días antes de que el motor borre automáticamente la inteligencia caduca para ahorrar disco.</span>
+                                </div>
+                                <div class="config-input-group" style="display: flex; align-items: flex-end; gap: 1rem;">
+                                    <button class="btn-tactical" style="flex: 1; padding: 0.7rem; color: #fff; background: rgba(0, 229, 255, 0.1); border-color: #00e5ff;" onclick="if(window.CobaltoConfig)CobaltoConfig.exportEvidence()">
+                                        📥 DESCARGAR CSV
+                                    </button>
+                                    <button class="btn-tactical" style="flex: 1; padding: 0.7rem; color: #FF2D55; background: rgba(255, 45, 85, 0.1); border-color: rgba(255, 45, 85, 0.5);" onclick="if(window.CobaltoConfig)CobaltoConfig.purgeDatabase()">
+                                        🗑️ PURGAR BASE DE DATOS
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="config-section-title" style="margin-top: 2rem;">🌊 ALERTAS GDACS (ONU: CICLONES, INUNDACIONES, INCENDIOS, VOLCANES)</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Polling a la API REST de GDACS (Sistema Global de Alerta de Desastres de la ONU). Usa la misma geocerca del monitor sísmico.</p>
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-checkbox-group">
+                                    <input type="checkbox" id="cfg-gdacs-enabled" class="config-checkbox">
+                                    <div class="flex-column">
+                                        <label for="cfg-gdacs-enabled" style="color: #fff; font-size: 0.8rem; cursor: pointer; font-weight: 500;">🔴 Activar Alertas GDACS</label>
+                                        <span style="font-size: 0.65rem; color: var(--text-muted);">Consulta eventos de ciclones, inundaciones, incendios y volcanes en cada ciclo full.</span>
+                                    </div>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Radio de Alerta GDACS (km)</label>
+                                    <input type="number" id="cfg-gdacs-max-dist" class="config-input-field mono" placeholder="800" min="100" max="5000" step="10">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">GDACS_MAX_DISTANCE_KM — Mayor que el sísmico porque ciclones e inundaciones afectan áreas extensas.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Días de Retrospectiva</label>
+                                    <input type="number" id="cfg-gdacs-days" class="config-input-field mono" placeholder="2" min="1" max="14" step="1">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">GDACS_EVENT_DAYS — Ventana de búsqueda hacia atrás (2 = último par de días).</span>
+                                </div>
+                            </div>
+
+                            <div class="config-section-title" style="margin-top: 2rem;">🌐 MONITOREO ASN (IODA: APAGONES DE INTERNET)</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Monitorea la conectividad de los proveedores de infraestructura crítica de Venezuela (CANTV, Movistar, Digitel, Inter) usando datos de Georgia Tech IODA. Los apagones aparecen en el tab de tiempo real.</p>
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-checkbox-group">
+                                    <input type="checkbox" id="cfg-asn-enabled" class="config-checkbox">
+                                    <div class="flex-column">
+                                        <label for="cfg-asn-enabled" style="color: #fff; font-size: 0.8rem; cursor: pointer; font-weight: 500;">🔴 Activar Monitoreo ASN</label>
+                                        <span style="font-size: 0.65rem; color: var(--text-muted);">Consulta IODA en cada ciclo full. Objetivos: AS8048 (CANTV), AS8046 (Movistar), AS19324 (Digitel), AS21826 (Inter).</span>
+                                    </div>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Umbral de Caída (%)</label>
+                                    <input type="number" id="cfg-asn-threshold" class="config-input-field mono" placeholder="30" min="10" max="90" step="5">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">ASN_DROP_THRESHOLD — Porcentaje de caída en subredes activas para disparar alerta.</span>
+                                </div>
+                            </div>
+
+                            <div class="config-section-title" style="margin-top: 2rem;">🌍 MONITOREO SÍSMICO (USGS + GEOCERCA)</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Polling inteligente a la API de USGS con filtro Haversine. Los eventos relevantes aparecen en el tab de tiempo real.</p>
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-checkbox-group">
+                                    <input type="checkbox" id="cfg-seismic-enabled" class="config-checkbox">
+                                    <div class="flex-column">
+                                        <label for="cfg-seismic-enabled" style="color: #fff; font-size: 0.8rem; cursor: pointer; font-weight: 500;">🔴 Activar Monitoreo Sísmico</label>
+                                        <span style="font-size: 0.65rem; color: var(--text-muted);">Consulta USGS all_day.geojson en cada ciclo de extracción.</span>
+                                    </div>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Latitud Objetivo (SEISMIC_TARGET_LAT)</label>
+                                    <input type="number" id="cfg-seismic-lat" class="config-input-field mono" placeholder="10.4806" step="0.0001" min="-90" max="90">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Centro de la geocerca (Caracas por defecto).</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Longitud Objetivo (SEISMIC_TARGET_LON)</label>
+                                    <input type="number" id="cfg-seismic-lon" class="config-input-field mono" placeholder="-66.9036" step="0.0001" min="-180" max="180">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Centro de la geocerca.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Radio de Alerta (SEISMIC_MAX_DISTANCE_KM)</label>
+                                    <input type="number" id="cfg-seismic-max-dist" class="config-input-field mono" placeholder="400" min="50" max="2000" step="10">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Distancia máxima en km desde el objetivo para disparar alerta.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Magnitud Mínima (SEISMIC_MIN_MAGNITUDE)</label>
+                                    <input type="number" id="cfg-seismic-min-mag" class="config-input-field mono" placeholder="3.5" min="0" max="10" step="0.1">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Ignora eventos por debajo de este umbral.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SUBTAB: RSS -->
+                        <div id="subtab-rss" class="config-subtab-content active">
+                            <div class="config-section-title">FUENTES RSS DE MONITOREO</div>
+                            
+                            <div class="flex gap-1 style-form" style="margin-bottom: 1.5rem; background: rgba(0,0,0,0.25); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); align-items: flex-end;">
+                                <div class="config-input-group" style="flex: 1;">
+                                    <label>Nombre de la fuente</label>
+                                    <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="new-rss-name" class="config-input-field" placeholder="Ej: VenCERT Alertas">
+                                </div>
+                                <div class="config-input-group" style="flex: 2;">
+                                    <label>URL del feed RSS</label>
+                                    <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="new-rss-url" class="config-input-field mono" placeholder="https://dominio.com/feed/">
+                                </div>
+                                <button class="btn-tactical" style="padding: 0.7rem 1.5rem;" onclick="if(window.CobaltoConfig)CobaltoConfig.addRSSFeed()">+ AGREGAR</button>
+                            </div>
+
+                            <div style="max-height: 400px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 10px;">
+                                <table class="config-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 30%;">Nombre de la fuente</th>
+                                            <th style="width: 50%;">URL del feed</th>
+                                            <th style="width: 20%; text-align: right;">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rss-feeds-table-body"></tbody>
+                                </table>
+                            </div>
+
+                            <!-- Telegram Sources section -->
+                            <div class="config-section-title" style="margin-top: 3rem;">FUENTES TELEGRAM (EXTRACTOR PÚBLICO)</div>
+                            
+                            <div class="flex gap-1 style-form" style="margin-bottom: 1.5rem; background: rgba(0,0,0,0.25); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); align-items: flex-end;">
+                                <div class="config-input-group" style="flex: 1;">
+                                    <label>Nombre del canal</label>
+                                    <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="new-tg-name" class="config-input-field" placeholder="Ej: Noticias Caracol">
+                                </div>
+                                <div class="config-input-group" style="flex: 2;">
+                                    <label>URL pública del canal</label>
+                                    <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="new-tg-url" class="config-input-field mono" placeholder="https://t.me/s/canal">
+                                </div>
+                                <button class="btn-tactical" style="padding: 0.7rem 1.5rem;" onclick="if(window.CobaltoConfig)CobaltoConfig.addTelegramSource()">+ AGREGAR</button>
+                            </div>
+
+                            <div style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 10px;">
+                                <table class="config-table">
+                                    <thead>
+                                        <tr>
+                                            <th style="width: 30%;">Nombre del canal</th>
+                                            <th style="width: 50%;">URL del canal</th>
+                                            <th style="width: 20%; text-align: right;">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="telegram-sources-table-body"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- SUBTAB: FILTERS -->
+                        <div id="subtab-filters" class="config-subtab-content">
+                            <div class="config-section-title">Palabras Clave de Monitoreo (<span id="keywords-count">0</span>)</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Estas palabras clave determinan la relevancia, categorías y clasificación de los reportes. Presione Enter para agregar.</p>
+                            
+                            <div class="config-input-group" style="margin-bottom: 1rem;">
+                                <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="new-keyword-input" class="config-input-field" placeholder="Escriba una palabra clave y presione Enter..." style="border-color: rgba(0, 229, 255, 0.25);">
+                            </div>
+                            
+                            <div class="config-chips-wrap" id="keywords-chips-container"></div>
+
+                            <div class="config-section-title" style="margin-top: 3rem;">Usuarios Objetivos / Target (<span id="targets-count">0</span>)</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Cuentas de redes sociales críticas monitoreadas por los rastreadores en tiempo real.</p>
+                            
+                            <div class="config-input-group" style="margin-bottom: 1rem;">
+                                <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="new-target-input" class="config-input-field" placeholder="Escriba el nombre de usuario (ej: PresidencialVen) y presione Enter..." style="border-color: rgba(179, 136, 255, 0.25);">
+                            </div>
+                            
+                            <div class="config-chips-wrap" id="targets-chips-container"></div>
+                        </div>
+
+                        <!-- SUBTAB: NETWORK -->
+                        <div id="subtab-network" class="config-subtab-content">
+                            <div class="config-section-title">CONECTIVIDAD Y SEGURIDAD RED</div>
+                            
+                            <div class="config-grid-form">
+                                <div class="config-input-group">
+                                    <label>Residential Proxy Server URL</label>
+                                    <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="cfg-proxy-url" class="config-input-field mono" placeholder="http://user:pass@host:port">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Establece un proxy residencial rotativo para evitar bloqueos Cloudflare.</span>
+                                </div>
+
+                                <div class="config-input-group">
+                                    <label>Puerto Tor SOCKS5 Local</label>
+                                    <input type="number" id="cfg-tor-socks-port" class="config-input-field mono" placeholder="9150">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">El puerto SOCKS por defecto de Tor Browser o servicio local Tor.</span>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-2" style="margin-top: 1.5rem; background: rgba(0,0,0,0.15); padding: 1.2rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                                <div class="config-checkbox-group">
+                                    <input type="checkbox" id="cfg-ssl-verify" class="config-checkbox">
+                                    <div class="flex-column">
+                                        <label for="cfg-ssl-verify" style="color: #fff; font-size: 0.8rem; cursor: pointer; font-weight: 500;">Verificar Certificados SSL</label>
+                                        <span style="font-size: 0.65rem; color: var(--text-muted);">Desactive únicamente para entornos de depuración local.</span>
+                                    </div>
+                                </div>
+
+                                <div class="config-checkbox-group">
+                                    <input type="checkbox" id="cfg-use-tor" class="config-checkbox">
+                                    <div class="flex-column">
+                                        <label for="cfg-use-tor" style="color: #fff; font-size: 0.8rem; cursor: pointer; font-weight: 500;">Redireccionar fallas a Tor</label>
+                                        <span style="font-size: 0.65rem; color: var(--text-muted);">Si un feed falla por censura, reintenta automáticamente usando el túnel Tor.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="config-section-title" style="margin-top: 3rem;">INTERVALOS DE CACHÉ Y RASTREO</div>
+                            
+                            <div class="config-grid-form">
+                                <div class="config-input-group">
+                                    <label>Tiempo Expiración Caché de Red (Minutos)</label>
+                                    <input type="number" id="cfg-cache-max-age" class="config-input-field mono" placeholder="15">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">El tiempo que el dashboard servirá datos en caché antes de solicitar a la base de datos.</span>
+                                </div>
+
+                                <div class="config-input-group">
+                                    <label>Intervalo de Ciclo de Rastreo (Minutos)</label>
+                                    <input type="number" id="cfg-cycle-interval" class="config-input-field mono" placeholder="30">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">La frecuencia con la que los sensores en segundo plano actualizan las fuentes.</span>
+                                </div>
+
+                                <div class="config-input-group">
+                                    <label>Edad Máxima de las Noticias (Horas)</label>
+                                    <input type="number" id="cfg-entry-max-age" class="config-input-field mono" placeholder="48">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Filtro para expirar y limpiar noticias viejas del dashboard para mantener frescura.</span>
+                                </div>
+                            </div>
+                        </div>
+
+
+
+                        <!-- SUBTAB: ADVANCED -->
+                        <div id="subtab-advanced" class="config-subtab-content">
+                            <div class="config-section-title">CONFIGURACIÓN AVANZADA DE IA & DEBATES</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Sintonice el comportamiento del motor cognitivo del sistema, los umbrales creativos y las posturas geopolíticas de los agentes de inteligencia.</p>
+
+                            <!-- Ollama Engine Config Block -->
+                            <div class="config-section-title" style="margin-top: 1rem;">🦙 MOTOR IA LOCAL (OLLAMA ENGINE)</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Configure la conexión al servidor Ollama que corre en la PC local para inferencia y RAG bajo demanda sin límites de API.</p>
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-checkbox-group">
+                                    <input type="checkbox" id="cfg-ollama-enabled" class="config-checkbox">
+                                    <div class="flex-column">
+                                        <label for="cfg-ollama-enabled" style="color: #fff; font-size: 0.8rem; cursor: pointer; font-weight: 500;">Activar Motor Ollama Local</label>
+                                        <span style="font-size: 0.65rem; color: var(--text-muted);">Priorizar la PC local para inferencias RAG y consultas tácticas.</span>
+                                    </div>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>IP / Host Servidor Ollama (OLLAMA_HOST)</label>
+                                    <input type="text" id="cfg-ollama-host" class="config-input-field mono" placeholder="192.168.1.213">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">IP de la PC donde corre Ollama en la red local.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Puerto Ollama (OLLAMA_PORT)</label>
+                                    <input type="number" id="cfg-ollama-port" class="config-input-field mono" placeholder="11434">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Puerto predeterminado de Ollama (11434).</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Modelo Ollama (OLLAMA_MODEL)</label>
+                                    <button type="button" id="btn-detect-ollama-models" onclick="CobaltoConfig.detectOllamaModels()" class="btn-tactical" style="padding: 0.25rem 0.6rem; font-size: 0.7rem; margin-bottom: 0.4rem; display: inline-flex; align-items: center; gap: 0.3rem;"><i class="fas fa-sync-alt" id="icon-detect-ollama"></i> Auto-Detectar Modelos</button>
+                                    <select id="cfg-ollama-model" class="config-input-field mono">
+                                        <option value="llama3.2">llama3.2 (Predeterminado)</option>
+                                    </select>
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Nombre del modelo descargado en Ollama (ej: llama3.2, mistral).</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Timeout Inferencia (Segundos)</label>
+                                    <input type="number" id="cfg-ollama-timeout" class="config-input-field mono" placeholder="180">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Tiempo máximo de espera para la respuesta del modelo local.</span>
+                                </div>
+                            </div>
+
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-input-group">
+                                    <label>Modelo Generativo Principal (NVIDIA)</label>
+                                    <select id="cfg-ai-model" class="config-input-field mono">
+                                        <option value="meta/llama-3.3-70b-instruct">Llama 3.3 70B Instruct (Recomendado)</option>
+                                        <option value="deepseek-ai/deepseek-r1">DeepSeek R1 (Razonamiento)</option>
+                                        <option value="mistralai/mistral-large-2-instruct">Mistral Large 2 (Preciso)</option>
+                                        <option value="meta/llama-3.1-8b-instruct">Llama 3.1 8B Instruct (Rápido)</option>
+                                    </select>
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">El LLM encargado de coordinar y generar los briefings globales del SitRep.</span>
+                                </div>
+
+                                <div class="config-input-group">
+                                    <label>Temperatura de Respuesta (<span id="temp-val-display" style="color: var(--primary); font-weight: bold;">0.55</span>)</label>
+                                    <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.2rem;">
+                                        <input type="range" id="cfg-ai-temperature" min="0.0" max="1.0" step="0.05" class="config-input-field" style="flex: 1; padding: 0.2rem; cursor: pointer;" >
+                                    </div>
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Valores bajos aumentan la exactitud fáctica. Valores altos aumentan la fluidez narrativa.</span>
+                                </div>
+                            </div>
+
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-input-group">
+                                    <label>Límite de Tokens del Coordinador</label>
+                                    <input type="number" id="cfg-ai-max-tokens" class="config-input-field mono" placeholder="800">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Longitud máxima de salida para el análisis y debate de cada agente.</span>
+                                </div>
+                            </div>
+
+                            <!-- Agentes Tácticos Prompts -->
+                            <div class="config-section-title" style="margin-top: 2rem;">DIRECTRICES SISTÉMICAS DE AGENTES (PROMPTS)</div>
+                            
+                            <div class="config-input-group" style="margin-bottom: 1.5rem;">
+                                <label>IA-ARES: Directriz Analista Fáctico Neutral (OSINT)</label>
+                                <textarea id="cfg-prompt-ares" class="config-input-field" style="min-height: 100px; font-family: 'Roboto Mono', monospace; font-size: 0.8rem; line-height: 1.4; resize: vertical;"></textarea>
+                            </div>
+
+                            <div class="config-input-group" style="margin-bottom: 1.5rem;">
+                                <label>IA-MINERVA: Directriz Analista de Oposición y Crítico</label>
+                                <textarea id="cfg-prompt-minerva" class="config-input-field" style="min-height: 100px; font-family: 'Roboto Mono', monospace; font-size: 0.8rem; line-height: 1.4; resize: vertical;"></textarea>
+                            </div>
+
+                            <div class="config-input-group" style="margin-bottom: 1.5rem;">
+                                <label>IA-NEXUS: Directriz Analista de Oficialismo y Defensa Soberana</label>
+                                <textarea id="cfg-prompt-nexus" class="config-input-field" style="min-height: 100px; font-family: 'Roboto Mono', monospace; font-size: 0.8rem; line-height: 1.4; resize: vertical;"></textarea>
+                            </div>
+
+                            <!-- Notificaciones Telegram Push -->
+                            <div class="config-section-title" style="margin-top: 2rem;">BOT DE ALERTAS TÁCTICAS (TELEGRAM PUSH)</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Configure el canal de destino. El <strong>Token del Bot</strong> se gestiona en <strong>Tokens & API Keys</strong> → <code>.env</code>.</p>
+
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-input-group">
+                                    <label>ID del Chat / Canal de Destino</label>
+                                    <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="cfg-telegram-push-chat-id" class="config-input-field mono" placeholder="-100123456789">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">ID numérico del canal o grupo táctico privado (debe empezar por -100).</span>
+                                </div>
+                            </div>
+
+                            <!-- Palabras Clave de Niveles de Alerta -->
+                            <div class="config-section-title" style="margin-top: 2rem;">MATRIZ DE AMENAZAS (DISPARADORES DE SEVERIDAD)</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Defina las palabras clave que clasificarán automáticamente las noticias en alertas Críticas o Urgentes (separadas por comas).</p>
+
+                            <div class="config-input-group" style="margin-bottom: 1.5rem;">
+                                <label>🚨 Palabras Clave para Alertas: 🔴 CRÍTICO (Acción Inmediata)</label>
+                                <textarea id="cfg-alert-critical" class="config-input-field" style="min-height: 80px; font-family: 'Roboto Mono', monospace; font-size: 0.8rem; line-height: 1.4; resize: vertical;"></textarea>
+                            </div>
+
+                            <div class="config-input-group" style="margin-bottom: 1.5rem;">
+                                <label>⚠️ Palabras Clave para Alertas: 🟠 URGENTE (Alta Prioridad)</label>
+                                <textarea id="cfg-alert-urgent" class="config-input-field" style="min-height: 80px; font-family: 'Roboto Mono', monospace; font-size: 0.8rem; line-height: 1.4; resize: vertical;"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- SUBTAB: SENTIMIENTO -->
+                        <div id="subtab-sentimiento" class="config-subtab-content">
+                            <div class="config-section-title">MOTOR DE ANÁLISIS DE SENTIMIENTO (NLP)</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Configure el léxico emocional, los umbrales de clasificación y las listas de palabras clave para el detector de crisis y astroturfing.</p>
+
+                            <!-- Thresholds y parámetros numéricos -->
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-input-group">
+                                    <label>Umbral Positivo (<span id="sent-thr-pos-display" style="color:#00ffaa;font-weight:bold;">0.15</span>)</label>
+                                    <div style="display:flex;align-items:center;gap:1rem;margin-top:0.2rem;">
+                                        <input type="range" id="cfg-sent-threshold-positivo" min="0.05" max="0.5" step="0.01" class="config-input-field" style="flex:1;padding:0.2rem;cursor:pointer;" >
+                                    </div>
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">Score mínimo para clasificar una entrada como Positiva.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Umbral Negativo (<span id="sent-thr-neg-display" style="color:#FF2D55;font-weight:bold;">-0.15</span>)</label>
+                                    <div style="display:flex;align-items:center;gap:1rem;margin-top:0.2rem;">
+                                        <input type="range" id="cfg-sent-threshold-negativo" min="-0.5" max="-0.05" step="0.01" class="config-input-field" style="flex:1;padding:0.2rem;cursor:pointer;" >
+                                    </div>
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">Score máximo para clasificar una entrada como Negativa.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Máximo de Muestras por Análisis</label>
+                                    <input type="number" id="cfg-sent-max-muestras" class="config-input-field mono" placeholder="300" min="50" max="2000">
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">Limita el corpus analizado por ciclo para controlar el rendimiento.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Umbral Score Bot (%)</label>
+                                    <input type="number" id="cfg-sent-bot-score" class="config-input-field mono" placeholder="40" min="10" max="100">
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">Puntuación mínima (0-100) para marcar una fuente como sospechosa de bot.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Tasa Bot-Storm (% del corpus)</label>
+                                    <input type="number" id="cfg-sent-bot-storm" class="config-input-field mono" placeholder="25" min="5" max="100">
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">% mínimo de entradas bot para activar alerta BOT-STORM global.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Ventana Temporal (Horas)</label>
+                                    <input type="number" id="cfg-sent-serie-horas" class="config-input-field mono" placeholder="12" min="6" max="72">
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">Número de horas de historia mostradas en el gráfico de tendencia temporal.</span>
+                                </div>
+                            </div>
+
+                            <!-- Umbrales de crisis -->
+                            <div class="config-section-title" style="margin-top: 1.5rem;">UMBRALES DE CRISIS Y ALERTA</div>
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-input-group">
+                                    <label>Score CRÍTICO (<span id="sent-thr-crit-display" style="color:#FF2D55;font-weight:bold;">-0.50</span>)</label>
+                                    <input type="range" id="cfg-sent-crisis-score" min="-1.0" max="-0.2" step="0.05" class="config-input-field" style="padding:0.2rem;cursor:pointer;" >
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">Score mínimo para detonar una alerta CRÍTICO.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Score ALERTA (<span id="sent-thr-alert-display" style="color:#FF9500;font-weight:bold;">-0.30</span>)</label>
+                                    <input type="range" id="cfg-sent-alerta-score" min="-0.8" max="-0.1" step="0.05" class="config-input-field" style="padding:0.2rem;cursor:pointer;" >
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">Score para activar nivel de alerta ALERTA.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Keywords Mínimas para CRÍTICO</label>
+                                    <input type="number" id="cfg-sent-crisis-kw-min" class="config-input-field mono" placeholder="2" min="1" max="10">
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">Número mínimo de keywords de crisis simultáneas para activar alerta CRÍTICO.</span>
+                                </div>
+                            </div>
+
+                            <!-- Léxico positivo/negativo -->
+                            <div class="config-section-title" style="margin-top: 1.5rem;">LÉXICO EMOCIONAL (formato JSON: {"palabra": score})</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;">
+                                <div class="config-input-group">
+                                    <label>📗 Léxico Positivo (scores positivos)</label>
+                                    <textarea id="cfg-sent-lexico-pos" class="config-input-field mono" style="min-height:160px;font-size:0.75rem;line-height:1.4;resize:vertical;" placeholder='{"recuperación": 3, "crecimiento": 3, ...}'></textarea>
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">JSON válido. Scores del 1 al 3 (mayor = más positivo).</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>📕 Léxico Negativo (scores negativos)</label>
+                                    <textarea id="cfg-sent-lexico-neg" class="config-input-field mono" style="min-height:160px;font-size:0.75rem;line-height:1.4;resize:vertical;" placeholder='{"crisis": -2, "colapso": -3, ...}'></textarea>
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">JSON válido. Scores del -1 al -3 (menor = más negativo).</span>
+                                </div>
+                            </div>
+
+                            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-bottom:2rem;">
+                                <div class="config-input-group">
+                                    <label>🔥 Léxico IRA (array JSON)</label>
+                                    <textarea id="cfg-sent-lexico-ira" class="config-input-field mono" style="min-height:120px;font-size:0.75rem;line-height:1.4;resize:vertical;" placeholder='["indignación", "rechazo", ...]'></textarea>
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">Palabras que indican indignación o rechazo.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>😨 Léxico MIEDO (array JSON)</label>
+                                    <textarea id="cfg-sent-lexico-miedo" class="config-input-field mono" style="min-height:120px;font-size:0.75rem;line-height:1.4;resize:vertical;" placeholder='["amenaza", "riesgo", ...]'></textarea>
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">Palabras que indican temor o alerta.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>✨ Léxico ESPERANZA (array JSON)</label>
+                                    <textarea id="cfg-sent-lexico-esperanza" class="config-input-field mono" style="min-height:120px;font-size:0.75rem;line-height:1.4;resize:vertical;" placeholder='["esperanza", "cambio", ...]'></textarea>
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">Palabras que indican optimismo o solución.</span>
+                                </div>
+                            </div>
+
+                            <div class="config-section-title" style="margin-top: 1.5rem;">LÍMITES DE MUESTREO Y UMBRALES AVANZADOS</div>
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-input-group">
+                                    <label>Top Palabras Límite</label>
+                                    <input type="number" id="cfg-sent-top-palabras" class="config-input-field mono" placeholder="12" min="5" max="50">
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">TOP_PALABRAS_LIMIT — Máx. palabras frecuentes en el análisis.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Muestras Bot en Reporte</label>
+                                    <input type="number" id="cfg-sent-bots-muestra" class="config-input-field mono" placeholder="8" min="1" max="50">
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">BOTS_MUESTRA_LIMIT — Máx. cuentas bot listadas por ciclo.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Muestras Crisis en Reporte</label>
+                                    <input type="number" id="cfg-sent-crisis-muestra" class="config-input-field mono" placeholder="10" min="1" max="50">
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">CRISIS_MUESTRA_LIMIT — Máx. alertas de crisis listadas.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Entradas Máximas por Muestra</label>
+                                    <input type="number" id="cfg-sent-entradas-muestra" class="config-input-field mono" placeholder="20" min="5" max="100">
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">ENTRADAS_MUESTRA_LIMIT — Máx. entradas de ejemplo por grupo.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Umbral Atención (<span id="sent-thr-atencion-display" style="color:#FF9500;font-weight:bold;">-0.15</span>)</label>
+                                    <input type="range" id="cfg-sent-atencion-score" min="-0.5" max="-0.05" step="0.01" class="config-input-field" style="padding:0.2rem;cursor:pointer;" >
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">ATENCION_SCORE_THRESHOLD — Score mínimo para alerta temprana.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Denominador Normalización (<span id="sent-norm-denom-display" style="color:var(--primary);font-weight:bold;">0.50</span>)</label>
+                                    <input type="range" id="cfg-sent-norm-denom" min="0.1" max="1.0" step="0.05" class="config-input-field" style="padding:0.2rem;cursor:pointer;" >
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">NORMALIZACION_DENOM — Factor de normalización del score compuesto.</span>
+                                </div>
+                            </div>
+
+                            <!-- Keywords crisis y bot -->
+                            <div class="config-section-title" style="margin-top: 1.5rem;">KEYWORDS ESPECIALIZADAS (separadas por comas)</div>
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-input-group">
+                                    <label>🚨 Palabras Clave de Crisis</label>
+                                    <textarea id="cfg-sent-keywords-crisis" class="config-input-field mono" style="min-height:80px;font-size:0.8rem;resize:vertical;"></textarea>
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">Estas palabras activan el detector de alerta temprana de crisis.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>🤖 Palabras Clave de Bots / Astroturfing</label>
+                                    <textarea id="cfg-sent-keywords-bot" class="config-input-field mono" style="min-height:80px;font-size:0.8rem;resize:vertical;"></textarea>
+                                    <span style="font-size:0.65rem;color:var(--text-muted);">Estas palabras aumentan el score de sospecha de operación de influencia.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SUBTAB: TOKENS ENV -->
+                        <div id="subtab-tokens" class="config-subtab-content">
+                            <div class="config-section-title">VARIABLES DE ENTORNO Y CREDENCIALES</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Credenciales de sistemas de Inteligencia Artificial y conectividad API alojadas localmente en el archivo <code>.env</code>. Como red cerrada, el administrador requiere acceso visual a los tokens activos.</p>
+                            
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-input-group">
+                                    <label>Usuario Administrador</label>
+                                    <input type="text" id="env-ADMIN_USERNAME" class="config-input-field mono" placeholder="admin">
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Contraseña Administrador</label>
+                                    <div style="display:flex;">
+                                        <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-ADMIN_PASSWORD" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
+                                        <button class="config-btn btn-toggle-password" data-target="env-ADMIN_PASSWORD" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem;">👁️</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="config-section-title">TOKENS DE INTELIGENCIA ARTIFICIAL</div>
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-input-group">
+                                    <label>Groq API Key (Pipeline General)</label>
+                                    <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-GROQ_API_KEY" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
+                                    <button class="config-btn btn-toggle-password" data-target="env-GROQ_API_KEY" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem;">👁️</button>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Groq API Key (C4i / Sentimientos)</label>
+                                    <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-GROQ_API_KEY_COORD" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
+                                    <button class="config-btn btn-toggle-password" data-target="env-GROQ_API_KEY_COORD" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem;">👁️</button>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Groq API Key ARES</label>
+                                    <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-GROQ_API_KEY_ARES" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
+                                    <button class="config-btn btn-toggle-password" data-target="env-GROQ_API_KEY_ARES" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem;">👁️</button>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Groq API Key MINERVA</label>
+                                    <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-GROQ_API_KEY_MINERVA" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
+                                    <button class="config-btn btn-toggle-password" data-target="env-GROQ_API_KEY_MINERVA" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem;">👁️</button>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Groq API Key NEXUS</label>
+                                    <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-GROQ_API_KEY_NEXUS" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
+                                    <button class="config-btn btn-toggle-password" data-target="env-GROQ_API_KEY_NEXUS" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem;">👁️</button>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Gemini API Key 1</label>
+                                    <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-GEMINI_API_KEY" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
+                                    <button class="config-btn btn-toggle-password" data-target="env-GEMINI_API_KEY" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem;">👁️</button>
+                                </div>
+                            </div>
+
+                            <div class="config-section-title">API EXTERNAS DE OSINT</div>
+                            <div class="config-grid-form" style="margin-bottom: 2rem;">
+                                <div class="config-input-group">
+                                    <label>Telegram Bot Token</label>
+                                    <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-TELEGRAM_TOKEN" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
+                                    <button class="config-btn btn-toggle-password" data-target="env-TELEGRAM_TOKEN" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem;">👁️</button>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>GitHub Token (Leaks y OSINT)</label>
+                                    <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-GITHUB_TOKEN" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
+                                    <button class="config-btn btn-toggle-password" data-target="env-GITHUB_TOKEN" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem;">👁️</button>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>FIRMS API Key (Anomalías Térmicas)</label>
+                                    <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-FIRMS_API_KEY" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
+                                    <button class="config-btn btn-toggle-password" data-target="env-FIRMS_API_KEY" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem;">👁️</button>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>OpenWeather API Key</label>
+                                    <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-OPENWEATHER_API_KEY" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
+                                    <button class="config-btn btn-toggle-password" data-target="env-OPENWEATHER_API_KEY" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem;">👁️</button>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Shodan API Key (OSIRIS Recon)</label>
+                                    <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-SHODAN_API_KEY" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
+                                    <button class="config-btn btn-toggle-password" data-target="env-SHODAN_API_KEY" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem;">👁️</button>
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Necesaria para Shodan InternetDB + CVE en OSIRIS RECON toolkit.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Canal Telegram Público</label>
+                                    <input type="text" autocomplete="off" spellcheck="false" id="env-TELEGRAM_CHANNEL" class="config-input-field mono" placeholder="https://t.me/micanal">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Enlace público al canal de difusión.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Telegram Admin Chat ID</label>
+                                    <input type="text" autocomplete="off" spellcheck="false" id="env-TELEGRAM_ADMIN_CHAT_ID" class="config-input-field mono" placeholder="123456789">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">ID numérico del chat del administrador para notificaciones directas.</span>
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Gemini API Key 2 (Fallback)</label>
+                                    <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-GEMINI_API_KEY_2" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;" placeholder="AIza..."></form>
+                                    <button class="config-btn btn-toggle-password" data-target="env-GEMINI_API_KEY_2" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem;">👁️</button>
+                                </div>
+                            </div>
+
+                            <div style="display:flex; justify-content:flex-end; gap: 1rem; margin-top: 1rem;">
+                                <button class="btn-tactical" style="padding: 0.6rem 1.8rem; box-shadow: 0 0 15px rgba(0, 229, 255, 0.15);" onclick="if(window.CobaltoConfig)CobaltoConfig.saveEnvConfig()">💾 GUARDAR VARIABLES DE ENTORNO (.ENV)</button>
+                            </div>
+                        </div>
+
+                        <!-- SUBTAB: ASSETS TRACKING -->
+                        <div id="subtab-assets" class="config-subtab-content">
+                            <div class="config-section-title">RASTREO DE AERONAVES (ICAO → MATRÍCULA)</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Códigos hex ICAO de aeronaves monitoreadas por el rastreador ADS-B. Formato: <code>0D830B</code> → <code>FAV0001</code>.</p>
+                            <div class="flex gap-1" style="margin-bottom: 1rem; background: rgba(0,0,0,0.25); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); align-items: flex-end;">
+                                <div class="config-input-group" style="flex: 1;">
+                                    <label>Código ICAO (hex)</label>
+                                    <input type="text" id="new-ac-icao" class="config-input-field mono" placeholder="0D830B" maxlength="6">
+                                </div>
+                                <div class="config-input-group" style="flex: 1;">
+                                    <label>Matrícula / Nombre</label>
+                                    <input type="text" id="new-ac-tail" class="config-input-field mono" placeholder="FAV0001">
+                                </div>
+                                <button class="btn-tactical" style="padding: 0.7rem 1rem;" onclick="if(window.CobaltoConfig)CobaltoConfig.addAircraft()">+ AVIÓN</button>
+                            </div>
+                            <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 10px; margin-bottom: 2.5rem;">
+                                <table class="config-table">
+                                    <thead><tr><th style="width: 30%;">Código ICAO</th><th style="width: 50%;">Matrícula</th><th style="width: 20%; text-align: right;">Acción</th></tr></thead>
+                                    <tbody id="aircraft-table-body"></tbody>
+                                </table>
+                            </div>
+
+                            <div class="config-section-title">RASTREO DE BUQUES (MMSI → NOMBRE)</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Números MMSI de embarcaciones monitoreadas por el rastreador AIS. Formato: <code>735059048</code> → <code>Ayacucho</code>.</p>
+                            <div class="flex gap-1" style="margin-bottom: 1rem; background: rgba(0,0,0,0.25); padding: 1rem; border-radius: 8px; border: 1px solid var(--border-color); align-items: flex-end;">
+                                <div class="config-input-group" style="flex: 1;">
+                                    <label>MMSI</label>
+                                    <input type="text" id="new-vessel-mmsi" class="config-input-field mono" placeholder="735059048">
+                                </div>
+                                <div class="config-input-group" style="flex: 1;">
+                                    <label>Nombre del Buque</label>
+                                    <input type="text" id="new-vessel-name" class="config-input-field mono" placeholder="Ayacucho">
+                                </div>
+                                <button class="btn-tactical" style="padding: 0.7rem 1rem;" onclick="if(window.CobaltoConfig)CobaltoConfig.addVessel()">+ BUQUE</button>
+                            </div>
+                            <div style="max-height: 200px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 10px;">
+                                <table class="config-table">
+                                    <thead><tr><th style="width: 30%;">MMSI</th><th style="width: 50%;">Nombre</th><th style="width: 20%; text-align: right;">Acción</th></tr></thead>
+                                    <tbody id="vessels-table-body"></tbody>
+                                </table>
+                            </div>
+                        <div id="subtab-osiris" class="config-subtab-content">
+                            <div class="config-section-title">🛰️ OSIRIS ENGINE — MÓDULOS</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Habilita o deshabilita módulos de OSIRIS Global Intel. Los cambios requieren recargar la pestaña OSIRIS.</p>
+                            <div class="config-grid-form">
+                                <div class="config-checkbox-group">
+                                    <input type="checkbox" id="cfg-osiris-recon" class="config-checkbox">
+                                    <label for="cfg-osiris-recon">RECON Toolkit (16 herramientas OSINT)</label>
+                                </div>
+                                <div class="config-checkbox-group">
+                                    <input type="checkbox" id="cfg-osiris-intel" class="config-checkbox">
+                                    <label for="cfg-osiris-intel">Intel Engine (Wikidata + Sanciones)</label>
+                                </div>
+                                <div class="config-checkbox-group">
+                                    <input type="checkbox" id="cfg-osiris-map" class="config-checkbox">
+                                    <label for="cfg-osiris-map">Global Map (MapLibre GL + 6 capas)</label>
+                                </div>
+                                <div class="config-checkbox-group">
+                                    <input type="checkbox" id="cfg-osiris-cctv" class="config-checkbox">
+                                    <label for="cfg-osiris-cctv">CCTV Network (cámaras IP globales)</label>
+                                </div>
+                                <div class="config-checkbox-group">
+                                    <input type="checkbox" id="cfg-osiris-feed" class="config-checkbox">
+                                    <label for="cfg-osiris-feed">SIGINT Feed (inteligencia de fuente abierta)</label>
+                                </div>
+                            </div>
+
+                            <div class="config-section-title" style="margin-top: 2rem;">⏱️ OSIRIS GLOBAL — INTERVALOS DE REFRESCO</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Intervalos en segundos para el polling automático del tab OSIRIS Global Intel.</p>
+                            <div class="config-grid-form">
+                                <div class="config-input-group">
+                                    <label>Feed SIGINT (seg)</label>
+                                    <input type="number" id="cfg-osiris-feed-interval" class="config-input-field mono" min="30" max="3600" step="10">
+                                </div>
+                                <div class="config-input-group">
+                                    <label>CCTV Network (seg)</label>
+                                    <input type="number" id="cfg-osiris-cctv-interval" class="config-input-field mono" min="30" max="3600" step="10">
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Markets & Crypto (seg)</label>
+                                    <input type="number" id="cfg-osiris-markets-interval" class="config-input-field mono" min="60" max="3600" step="10">
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Cyber Threats (seg)</label>
+                                    <input type="number" id="cfg-osiris-cyber-interval" class="config-input-field mono" min="60" max="3600" step="10">
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Aerospace & Satellites (seg)</label>
+                                    <input type="number" id="cfg-osiris-aerospace-interval" class="config-input-field mono" min="30" max="3600" step="10">
+                                </div>
+                                <div class="config-input-group">
+                                    <label>Disasters & Space WX (seg)</label>
+                                    <input type="number" id="cfg-osiris-disasters-interval" class="config-input-field mono" min="60" max="3600" step="10">
+                                </div>
+                            </div>
+
+                            <div class="config-section-title" style="margin-top: 2rem;">🗺️ OSIRIS MAP — INTERVALOS POR CAPA</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Intervalos en segundos para el polling de cada capa geoespacial en el OSIRIS Global Map.</p>
+                            <div class="config-grid-form">
+                                <div class="config-input-group">
+                                    <label>🛩️ Military Flights (seg)</label>
+                                    <input type="number" id="cfg-osiris-map-flights" class="config-input-field mono" min="15" max="600" step="5">
+                                </div>
+                                <div class="config-input-group">
+                                    <label>🛰️ Satellites (seg)</label>
+                                    <input type="number" id="cfg-osiris-map-satellites" class="config-input-field mono" min="30" max="600" step="5">
+                                </div>
+                                <div class="config-input-group">
+                                    <label>🌋 Earthquakes (seg)</label>
+                                    <input type="number" id="cfg-osiris-map-earthquakes" class="config-input-field mono" min="30" max="600" step="5">
+                                </div>
+                                <div class="config-input-group">
+                                    <label>🔥 Active Fires (seg)</label>
+                                    <input type="number" id="cfg-osiris-map-fires" class="config-input-field mono" min="30" max="600" step="5">
+                                </div>
+                                <div class="config-input-group">
+                                    <label>🌪️ Severe Weather (seg)</label>
+                                    <input type="number" id="cfg-osiris-map-weather" class="config-input-field mono" min="60" max="900" step="10">
+                                </div>
+                                <div class="config-input-group">
+                                    <label>📹 CCTV Map (seg)</label>
+                                    <input type="number" id="cfg-osiris-map-cctv" class="config-input-field mono" min="60" max="900" step="10">
+                                </div>
+                            </div>
+
+                            <div class="config-section-title" style="margin-top: 2rem;">🔐 OFAC SDN — CACHÉ DE SANCIONES</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Frecuencia de refresco automático del índice de sanciones OFAC SDN (OpenSanctions).</p>
+                            <div class="config-grid-form">
+                                <div class="config-input-group">
+                                    <label>Refresco automático (horas)</label>
+                                    <input type="number" id="cfg-osiris-sanctions-refresh" class="config-input-field mono" min="1" max="168" step="1">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Tiempo entre descargas del CSV de OpenSanctions. Mín: 1h, Máx: 168h (7 días).</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>

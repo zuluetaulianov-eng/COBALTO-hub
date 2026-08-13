@@ -1,0 +1,59 @@
+from openai import OpenAI
+
+client = OpenAI(
+  base_url = "https://integrate.api.nvidia.com/v1",
+  api_key = "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"
+)
+
+
+completion = client.chat.completions.create(
+  model="deepseek-ai/deepseek-v4-flash",
+  messages=[{"role":"user","content":""}],
+  temperature=1,
+  top_p=0.95,
+  max_tokens=16384,
+  extra_body={"chat_template_kwargs":{"thinking":True,"reasoning_effort":"high"}},
+  stream=False
+)
+
+reasoning = getattr(completion.choices[0].message, "reasoning", None) or getattr(completion.choices[0].message, "reasoning_content", None)
+if reasoning:
+  print(reasoning)
+print(completion.choices[0].message.content)
+
+···········································································
+
+import requests
+
+invoke_url = "https://integrate.api.nvidia.com/v1/chat/completions"
+stream = False
+
+headers = {
+    "Authorization": "Bearer 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",
+    "Accept": "text/event-stream" if stream else "application/json",
+}
+
+payload = {
+  "messages": [
+    {
+      "role": "user",
+      "content": ""
+    }
+  ],
+  "model": "google/gemma-4-31b-it",
+  "chat_template_kwargs": {
+    "enable_thinking": True
+  },
+  "max_tokens": 16384,
+  "stream": stream,
+  "temperature": 1,
+  "top_p": 0.95
+}
+
+response = requests.post(invoke_url, headers=headers, json=payload, stream=stream)
+if stream:
+    for line in response.iter_lines():
+        if line:
+            print(line.decode("utf-8"))
+else:
+    print(response.json())

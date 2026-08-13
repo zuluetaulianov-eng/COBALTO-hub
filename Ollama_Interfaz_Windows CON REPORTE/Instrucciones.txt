@@ -1,0 +1,13 @@
+=== Interfaz de Ollama Local para Windows ===
+
+1. Descomprime esta carpeta.
+2. Haz doble clic en el archivo "Iniciar_Chat.bat".
+3. Se abrirá una ventana grafica.
+4. Escribe tu mensaje y presiona "Enviar".
+
+* No requiere instalar librerias adicionales para el chat: usa el entorno nativo de Python en Windows.
+* Para exportar informes (botones "Exportar informe" y "Exportar IA"), la primera vez
+  se instalan automaticamente las librerias python-docx y Pillow.
+* "Exportar informe" genera informe_inteligencia_coporo.docx (datos multifuente).
+* "Exportar IA" genera transcripcion_ia.docx con la conversacion actual del chat.
+* Asegurate de que tu servidor en Xubuntu (192.168.1.213) este encendido y ejecutando Ollama.

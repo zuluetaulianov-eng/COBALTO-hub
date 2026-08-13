@@ -1,0 +1,30 @@
+# ── TERMINACIONES DE LÍNEA AUTOMÁTICAS (.gitattributes) ────────
+* text=auto
+
+# Código fuente en LF (Estándar Linux/macOS/Git)
+*.py text eol=lf
+*.js text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.sh text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+
+# Scripts de Windows en CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+*.iss text eol=crlf
+
+# Binarios e imágenes (sin tocar)
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.ico binary
+*.bmp binary
+*.pdf binary
+*.docx binary
+*.exe binary
+*.zip binary

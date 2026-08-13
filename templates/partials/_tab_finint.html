@@ -1,0 +1,69 @@
+<div id="tab-finint" class="tab-content">
+    <div class="panel-glass" style="padding: 1.5rem; margin-bottom: 1rem;">
+        <div class="flex-between" style="margin-bottom: 1rem;">
+            <h2 class="heading-2">💳 FININT & Dark Web</h2>
+            <div class="flex" style="gap: 0.5rem;">
+                <span id="finint-badge" class="text-muted font-mono" style="font-size:0.8rem;">0 wallets monitoreadas</span>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-1" style="margin-bottom: 0.5rem;">
+            <button class="btn-tactical btn-sm" data-finint-tab="wallets" onclick="FinintIntel.switchTab('wallets')" style="border-color:var(--primary);">💳 Wallets</button>
+            <button class="btn-tactical btn-sm" data-finint-tab="sanctioned" onclick="FinintIntel.switchTab('sanctioned');FinintIntel.loadSanctioned();">🚫 Sancionadas</button>
+            <button class="btn-tactical btn-sm" data-finint-tab="darkweb" onclick="FinintIntel.switchTab('darkweb')">🌐 Dark Web</button>
+            <button class="btn-tactical btn-sm" data-finint-tab="analyze" onclick="FinintIntel.switchTab('analyze')">🔍 Analizar Texto</button>
+        </div>
+    </div>
+
+    <!-- Wallet Check -->
+    <div id="finint-panel-wallets" class="finint-panel" style="display:block;">
+        <div class="panel-glass" style="padding:1rem;margin-bottom:0.5rem;">
+            <div class="flex" style="gap:0.5rem;">
+                <input id="finint-wallet-input" type="text" class="config-input" style="flex:1;font-family:monospace;" placeholder="Dirección wallet (BTC/ETH)...">
+                <select id="finint-chain-select" class="config-select" style="width:auto;">
+                    <option value="bitcoin">Bitcoin</option>
+                    <option value="ethereum">Ethereum</option>
+                </select>
+                <button class="btn-tactical" onclick="FinintIntel.checkWallet()">🔍 Verificar</button>
+            </div>
+        </div>
+        <div id="finint-wallet-result">
+            <div class="empty-state">
+                <div style="font-size:2rem;">💳</div>
+                <div class="heading-4">Verificador de Wallets</div>
+                <p class="text-muted">Ingresa una dirección BTC o ETH para verificar si está sancionada, ver su balance y transacciones recientes.</p>
+                <p class="font-mono" style="font-size:0.75rem;color:var(--primary);">Ej: 1F1tAaz5x1HUXrCNLbtMDqcw6o5GNn4xqX</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sanctioned Wallets -->
+    <div id="finint-panel-sanctioned" class="finint-panel" style="display:none;">
+        <div class="panel-glass" style="padding:1rem;margin-bottom:0.5rem;">
+            <div class="flex-between">
+                <span class="heading-4">🚫 Wallets Sancionadas (OFAC)</span>
+                <button class="btn-tactical btn-sm" onclick="FinintIntel.loadSanctioned()">🔄 Recargar</button>
+            </div>
+        </div>
+        <div id="finint-sanctioned-list"></div>
+    </div>
+
+    <!-- Dark Web Search -->
+    <div id="finint-panel-darkweb" class="finint-panel" style="display:none;">
+        <div class="panel-glass" style="padding:1rem;margin-bottom:0.5rem;">
+            <div class="flex" style="gap:0.5rem;">
+                <input id="finint-dw-input" type="text" class="config-input" style="flex:1;" placeholder="Buscar en paste sites (dominio, wallet, keyword)...">
+                <button class="btn-tactical" onclick="FinintIntel.searchDarkWeb()">🌐 Buscar</button>
+            </div>
+        </div>
+        <div id="finint-darkweb-results"></div>
+    </div>
+
+    <!-- Text Analyzer -->
+    <div id="finint-panel-analyze" class="finint-panel" style="display:none;">
+        <div class="panel-glass" style="padding:1rem;margin-bottom:0.5rem;">
+            <textarea id="finint-analyze-input" class="config-input" style="width:100%;min-height:150px;font-family:monospace;font-size:0.8rem;" placeholder="Pega texto para analizar (artículos, leaks, chats)..."></textarea>
+            <button class="btn-tactical" style="margin-top:0.5rem;" onclick="FinintIntel.analyzeText()">🔍 Analizar</button>
+        </div>
+        <div id="finint-analyze-result"></div>
+    </div>
+</div>

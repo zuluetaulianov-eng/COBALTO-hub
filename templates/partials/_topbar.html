@@ -1,0 +1,80 @@
+﻿        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            
+            <div class="top-bar">
+                <h1 class="page-title" id="main-title">Reporte de Situación</h1>
+                <div class="flex gap-1 items-center">
+                    <button class="btn-tactical" id="btn-mosaic-toggle" style="border-color: #00ffaa; color: #00ffaa; box-shadow: 0 0 10px rgba(0, 255, 170, 0.2);">🧩 MODO MOSAICO (C4i)</button>
+                    <div id="radar-indicator" style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(0, 229, 255, 0.2); background: rgba(0, 0, 0, 0.5); margin-right: 10px; cursor: help; position: relative;" title="Radar de Extracción OSINT (Parpadea cuando hay datos nuevos)">
+                        <div id="radar-pulse" style="width: 8px; height: 8px; border-radius: 50%; background: #00ffaa; box-shadow: 0 0 10px #00ffaa; transition: all 0.3s;"></div>
+                        <!-- Sonar wave effect -->
+                        <div id="radar-wave" style="position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; border-radius: 50%; border: 1px solid #00ffaa; transform: translate(-50%, -50%) scale(0.1); opacity: 0; pointer-events: none;"></div>
+                    </div>
+                    <button class="btn-tactical btn-neo4j-graph" style="border-color: #B388FF; color: #B388FF; box-shadow: 0 0 10px rgba(179, 136, 255, 0.2);">🕸️ CIBER-GRAFO NEO4J</button>
+                    <button onclick="window.showExportModal()" class="btn-tactical" style="border-color: #af52de; color: #af52de;">⎙ EXPORTAR</button>
+                    <button id="btn-mute-alerts" onclick="window.toggleMuteAlert()" class="btn-tactical" style="border-color:#FF2D55; color:#FF2D55; font-size:0.7rem;" title="Silenciar alertas sonoras críticas">🔊 AUDIO</button>
+                    <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" class="search-box" id="search-input" placeholder="Filtrar datos tácticos...">
+                    <button id="btn-clear-filters" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 0.5rem 0.7rem; border-radius: 8px; cursor: pointer; font-size: 0.7rem; font-family: 'Roboto Mono', monospace;">✕ LIMPIAR</button>
+                </div>
+            </div>
+
+            <!-- Export Modal -->
+            <div id="export-modal-overlay" class="export-overlay" onclick="if(event.target===this)window.closeExportModal()">
+                <div class="export-modal">
+                    <div class="modal-header">
+                        <h2>⎙ EXPORTAR SITREP</h2>
+                        <button class="modal-close" onclick="window.closeExportModal()">✕</button>
+                    </div>
+
+                    <div class="modal-section">
+                        <label>Formato de Reporte</label>
+                        <div class="format-grid">
+                            <div class="format-option selected" data-format="json" onclick="window.selectExportFormat('json')">
+                                <span class="format-icon">⎙</span>
+                                <span class="format-label">JSON</span>
+                                <span class="format-desc">Datos estructurados</span>
+                            </div>
+                            <div class="format-option" data-format="docx" onclick="window.selectExportFormat('docx')">
+                                <span class="format-icon">📄</span>
+                                <span class="format-label">DOCX</span>
+                                <span class="format-desc">Word profesional</span>
+                            </div>
+                            <div class="format-option" data-format="pdf" onclick="window.selectExportFormat('pdf')">
+                                <span class="format-icon">📕</span>
+                                <span class="format-label">PDF</span>
+                                <span class="format-desc">Documento portátil</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-section">
+                        <div class="toggle-row">
+                            <input type="checkbox" id="export-use-ia">
+                            <div>
+                                <div class="toggle-label">🧠 Incluir análisis de IA (Groq)</div>
+                                <div class="toggle-hint">Enriquece cada entrada con actores, amenaza y análisis estratégico</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-section" id="export-entries-config">
+                        <label>Entradas máximas a incluir</label>
+                        <div class="slider-row">
+                            <input type="range" id="export-max-entries" min="5" max="100" value="25" step="5" oninput="document.getElementById('export-entries-value').textContent=this.value">
+                            <span class="slider-value" id="export-entries-value">25</span>
+                        </div>
+                    </div>
+
+                    <button class="btn-generate" id="btn-export-generate" onclick="window.executeExport()">
+                        ⚡ GENERAR REPORTE
+                    </button>
+
+                    <div class="modal-progress" id="export-progress">
+                        <div class="progress-text" id="export-progress-text">Generando...</div>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" id="export-progress-fill"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+

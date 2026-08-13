@@ -1,0 +1,25 @@
+<div id="tab-agents" class="tab-content">
+    <div class="panel-glass" style="padding: 1.5rem; margin-bottom: 1rem;">
+        <div class="flex-between" style="margin-bottom: 1rem;">
+            <h2 class="heading-2">🤖 Actividad de Agentes Autónomos</h2>
+            <div class="flex" style="gap: 0.5rem; align-items: center;">
+                <span class="text-muted font-mono" style="font-size: 0.8rem;">Modo:</span>
+                <select id="agent-mode-select" class="config-select" style="width: auto;" onchange="AgentFeed.setMode(this.value)">
+                    <option value="suggest">💡 Sugerir solo</option>
+                    <option value="approval">✅ Requiere aprobación</option>
+                    <option value="auto">🤖 Automático</option>
+                </select>
+                <button class="btn-tactical btn-sm" onclick="AgentFeed.runCycle()">🤖 Ejecutar Ciclo</button>
+                <span id="agent-task-count" class="text-muted font-mono" style="font-size: 0.85rem;">0 tareas</span>
+            </div>
+        </div>
+        <div class="flex flex-wrap gap-1" style="margin-bottom: 0.5rem;">
+            <button class="btn-tactical btn-sm" data-agent-status="" onclick="AgentFeed.filterStatus('')">Todas</button>
+            <button class="btn-tactical btn-sm" data-agent-status="pending_approval" onclick="AgentFeed.filterStatus('pending_approval')">⏳ Pendientes</button>
+            <button class="btn-tactical btn-sm" data-agent-status="running" onclick="AgentFeed.filterStatus('running')">🔄 Ejecutando</button>
+            <button class="btn-tactical btn-sm" data-agent-status="completed" onclick="AgentFeed.filterStatus('completed')">✅ Completadas</button>
+            <button class="btn-tactical btn-sm" data-agent-status="failed" onclick="AgentFeed.filterStatus('failed')">❌ Fallidas</button>
+        </div>
+    </div>
+    <div id="agent-task-list"></div>
+</div>

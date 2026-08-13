@@ -1,0 +1,72 @@
+﻿            <!-- TAB: CRONOLOGÍA (NUEVO) -->
+            <div id="tab-timeline" class="tab-content" style="padding: 2rem;">
+                <div class="flex-between" style="margin-bottom: 1rem;">
+                    <div>
+                        <h2 class="text-primary font-mono heading-2 flex items-center" style="gap: 0.5rem;">
+                            <span style="font-size: 1.5rem;">⏳</span> MONITOREO LONGITUDINAL (TIMELINE)
+                        </h2>
+                        <p class="text-muted" style="font-size: 0.9rem;">Evolución táctica de operaciones de influencia y matrices de opinión (72h - 7d)</p>
+                    </div>
+                    <button class="btn-export btn-export-ia" onclick="if(window.CobaltoTimeline)CobaltoTimeline.refresh()">
+                        🔄 SINCRONIZAR CRONOLOGÍA
+                    </button>
+                </div>
+
+                <!-- TIMELINE SCRUBBER -->
+                <div class="panel-tactical" style="padding: 1rem; margin-bottom: 1.5rem;">
+                    <div class="flex-between" style="margin-bottom:0.5rem;">
+                        <h3 class="panel-title" style="margin:0;">⏱ REPRODUCTOR DE LÍNEA DE TIEMPO</h3>
+                        <span id="scrubber-timestamp" class="font-mono text-primary" style="font-size:0.85rem;"></span>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:1rem; position:relative;">
+                        <span id="scrubber-label-start" class="font-mono text-muted" style="font-size:0.75rem;"></span>
+                        <output id="scrubber-tooltip"></output>
+                        <input type="range" id="timeline-scrubber" min="0" max="168" value="168" step="1"
+                               style="flex:1; height:6px; -webkit-appearance:none; appearance:none; 
+                                      background:linear-gradient(90deg, #1a1a2e, #00e5ff); 
+                                      border-radius:3px; outline:none; cursor:pointer;">
+                        <span id="scrubber-label-end" class="font-mono text-muted" style="font-size:0.75rem;"></span>
+                    </div>
+                    <div class="flex-between" style="margin-top:0.3rem;">
+                        <div class="flex" style="gap:1rem;">
+                            <span id="scrubber-entries-count" class="font-mono text-muted" style="font-size:0.75rem;">📰 0 entradas</span>
+                            <span id="scrubber-mode" class="font-mono" style="color:#ffaa00; font-size:0.75rem;">🔴 EN VIVO</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid-2 gap-2" style="margin-bottom: 2rem;">
+                    <!-- Gráfico Sentimiento vs Alertas -->
+                    <div class="panel-tactical" style="grid-column: span 2;">
+                        <h3 class="panel-title">TENDENCIA MACRO: SENTIMIENTO VS. ALERTAS</h3>
+                        <div style="height: 300px; position: relative;">
+                            <canvas id="timeline-chart-macro"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Seguimiento Predictivo de Campañas CIB -->
+                    <div class="panel-tactical" style="max-height: 400px; overflow-y: auto;">
+                        <h3 class="panel-title">📡 RASTREO PREDICTIVO: CAMPAÑAS COORD. (CIB)</h3>
+                        <div id="timeline-cib-container" class="flex-column gap-1">
+                            <div class="empty-state">
+                                <div class="empty-icon">⏳</div>
+                                <div class="empty-title">SIN DATOS CRONOLÓGICOS</div>
+                                <div class="empty-desc">No hay suficiente información histórica para construir una línea de tiempo. Los datos aparecerán automáticamente tras 72h de monitoreo continuo.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Escalamiento de Alertas Críticas -->
+                    <div class="panel-tactical" style="max-height: 400px; overflow-y: auto;">
+                        <h3 class="panel-title">⚠️ ESCALADAS CRÍTICAS (Últimos 7 días)</h3>
+                        <div id="timeline-alerts-container" class="flex-column gap-1">
+                            <div class="empty-state">
+                                <div class="empty-icon">📊</div>
+                                <div class="empty-title">SIN ALERTAS HISTÓRICAS</div>
+                                <div class="empty-desc">No se han registrado alertas críticas en la ventana de tiempo seleccionada. Las alertas aparecerán a medida que el sistema las detecte.</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
