@@ -15,9 +15,51 @@ import multiprocessing
 import os
 import sys
 
-# CRÍTICO PARA PYINSTALLER EN WINDOWS: Ejecutar freeze_support() de inmediato al tope del módulo
 if sys.platform == 'win32':
     multiprocessing.freeze_support()
+
+import io
+
+class SafeStream(io.TextIOBase):
+    def __init__(self, target):
+        self.target = target
+    def write(self, s):
+        if not s:
+            return 0
+        if self.target is None:
+            return len(s)
+        try:
+            return self.target.write(s)
+        except Exception:
+            try:
+                enc = getattr(self.target, 'encoding', 'ascii') or 'ascii'
+                safe_s = s.encode(enc, errors='replace').decode(enc, errors='replace')
+                return self.target.write(safe_s)
+            except Exception:
+                return len(s)
+    def flush(self):
+        if self.target is not None and hasattr(self.target, 'flush'):
+            try:
+                self.target.flush()
+            except Exception:
+                pass
+
+if sys.platform == 'win32':
+    if sys.stdout is not None:
+        try:
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            sys.stdout = SafeStream(sys.stdout)
+    else:
+        sys.stdout = SafeStream(None)
+
+    if sys.stderr is not None:
+        try:
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+        except Exception:
+            sys.stderr = SafeStream(sys.stderr)
+    else:
+        sys.stderr = SafeStream(None)
 
 import socket
 import subprocess
@@ -878,46 +920,19 @@ class CobaltoGUI:
 
 import multiprocessing
 
-def main():
-    multiprocessing.freeze_support()
-
-    if "--server" in sys.argv:
-        import uvicorn
-        from app import app
-        host = os.getenv("HOST", "0.0.0.0")
-        port = int(os.getenv("PORT", "8083"))
-        dev_mode = "--dev" in sys.argv
-        uvicorn.run(app, host=host, port=port, log_level="debug" if dev_mode else "warning")
-        return
-
-    if "--worker" in sys.argv:
-        import cobalto_worker
-        cobalto_worker.main()
-        return
-
-    if "--desktop" in sys.argv:
-        import cobalto_desktop
-        cobalto_desktop.launch_desktop()
-        return
-
+def launch_control_panel():
     engine = CobaltoEngine()
-
-    # Si se pasa explícitamente '--cli' o Tkinter no está disponible, usar el TUI anterior
-    use_cli = "--cli" in sys.argv or not HAS_GUI
-
+    use_cli = "--cli" in sys.argv or "--tui" in sys.argv or not HAS_GUI
     if not use_cli:
         try:
-            # Lanzar la espectacular GUI cyberpunk
             gui = CobaltoGUI(engine)
             gui.start()
+            return
         except Exception as display_err:
-            print(f"[ADVERTENCIA] No se detecto un entorno grafico activo o surgio un fallo de GUI ({display_err}).")
-            print("[INFO] Redireccionando automaticamente a Modo Terminal Consola (TUI)...")
+            print(f"[ADVERTENCIA] Fallo al iniciar entorno gráfico ({display_err}). Redireccionando a TUI...")
             use_cli = True
 
     if use_cli:
-        print("[SISTEMA] Iniciando en Modo Terminal Consola (TUI)...")
-        # Importar dinámicamente el cargador CLI anterior
         try:
             import cobalto_launcher
             cobalto_launcher.main()
@@ -926,5 +941,17 @@ def main():
             sys.exit(1)
 
 
+def main():
+    multiprocessing.freeze_support()
+
+    if "--control-panel" in sys.argv or "--gui" in sys.argv:
+        launch_control_panel()
+        return
+
+    import cobalto_desktop
+    cobalto_desktop.main()
+
+
 if __name__ == "__main__":
     main()
+

@@ -1,23 +1,22 @@
-# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v12.5
+# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v12.6
 
 > **Sistema de Mando y Control de Inteligencia (C4I)** en tiempo real, orientado a Venezuela y el Caribe,  
 > **potenciado por OSIRIS Engine** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
 > Consolida fuentes RSS, redes sociales, ciberseguridad, rastreo de aeronaves/buques, telemetría de campo en vivo y análisis geopolítico multiagente con IA.  
-> **v12.5** — Sistema Blue Force Tracking (BFT) con Telemetría GPS en Vivo, Monitoreo de Batería y Red, Alertas SOS y Botón de Hombre Muerto,  
-> Refactorización Modular de Sub-routers, Validación Pydantic v2, Aplicación Nativa Windows (.EXE) y Aceleración Gráfica GPU.
+> **v12.6** — Aplicación Nativa PyQt6/QWebEngineView con Integración en Bandeja de Sistema (System Tray),  
+> Pipeline de Rehidratación de Datos en Tiempo Real continuo vía WebSockets, Retención Configurable de Noticias (TTL) y 132/132 Tests Aprobados.
 
 ---
 
-## 🔄 Últimas Actualizaciones (Agosto 2026 — Blue Force Tracking, Refactorización & GPU Nativa)
+## 🔄 Últimas Actualizaciones (Agosto 2026 — Arquitectura Nativa PyQt6 & Sincronización Continua)
 
-- **👥 Blue Force Tracking (BFT) & Monitoreo de Operadores en Terreno:** Integración de telemetría táctica en tiempo real desde la app móvil COBALTO Mobile (`/api/telemetry/heartbeat`). Registro de operadores, métricas de fuerza (total, activos, sin señal, emergencias SOS), rastro histórico GPS (breadcrumbs), indicador de nivel de batería con código de color dinámico y tipo de red (`4G` / `Wi-Fi` / `AEGIS Mesh`).
-- **🗺️ 8va Capa en el Mapa Unificado (`map-unified.js`):** Integración de la capa `🔵 Operadores BFT` en el mapa Leaflet unificado con marcadores tácticos interactivos ciberpunk (`#00E5FF` patrulla activa, `#FF9500` sin señal, `#FF2D55` emergencia SOS) y modal de centrado rápido.
-- **🚨 Sistema de Alerta Temprana SOS & Hombre Muerto:** Captura instantánea de eventos de pánico manual y alertas del sensor de Hombre Muerto (`DEAD_MAN_TRIGGERED`), disparando alertas audibles y visuales con prioridad en la consola del HUB.
-- **🧩 Refactorización Modular de `app.py` (7 Sub-routers):** Descomposición del monolito en sub-routers temáticos ubicados en `routers/` (`rt_humint`, `rt_finint`, `rt_entities`, `rt_predictive`, `rt_agents`, `rt_analytics`, `rt_export`), manteniendo 100% de compatibilidad de API.
-- **🛡️ Validación Pydantic v2 para Inteligencia Estática:** Creación de `models/intel_models.py` para validar `static_intel.json` (`OWN_POSTS` y `NOTES_INFORMATIVAS`) elemento por elemento en `config.py`.
-- **🧪 Pipeline CI/CD & Testing Integrado (132/132 Pass):** Suite completa de 132 tests de integración/unitarios (incluyendo tests de telemetría BFT) pasando sin regresiones.
-- **🖥️ Aplicación Nativa de Escritorio (`CobaltoHUB.exe`):** Compilación lista para producción mediante PyInstaller y PyWebView2.
-- **⚡ Aceleración por Hardware GPU (DirectX 11 / ANGLE):** Renderizado ultrarrápido de mapas Leaflet, Canvas de grafos SNA y mosaicos CCTV.
+- **🖥️ Migración a Stack Nativo PyQt6 / QWebEngineView (`cobalto_desktop.py`):** Modernización del contenedor de escritorio eliminando pywebview por el runtime aislado de Chromium en PyQt6. Garantiza 100% de estabilidad y rendimiento en Windows.
+- **📌 Integración en Bandeja del Sistema (System Tray Icon):** Operación en segundo plano como servicio persistente. Al cerrar la ventana principal (❌), la aplicación se minimiza a la bandeja del sistema sin interrumpir el servidor FastAPI ni los workers de extracción. Incluye menú contextual (Restaurar Dashboard, Abrir en Navegador, Detener Servicio).
+- **🔒 Control Monoinstancia (Windows Mutex):** Mutex nativo `CobaltoHUB_SingleInstance_Mutex` para prevenir múltiples procesos concurrentes de GUI.
+- **⚡ Rehidratación de Inteligencia en Tiempo Real:** Refactorización de `handleUpdate` en `main.js` para procesar continuamente eventos WebSocket (`{type: "update"}`). Actualiza dinámicamente el grid de noticias, métricas del panel lateral, informe ejecutivo de IA y capas del Mapa Unificado sin recargar la página.
+- **⏱️ Retención Configurable de Noticias (`ENTRY_MAX_AGE_HOURS`):** Exposición del control TTL de noticias en el panel de configuración UI, enlazado directamente con los filtros de la base de datos y la caché en tiempo real.
+- **📦 Compilador Autónomo (`build_exe.py`):** Script optimizado de PyInstaller para compilar el paquete nativo standalone `dist/CobaltoHUB/CobaltoHUB.exe`.
+- **🧪 Suite de Testing (132/132 Pass):** Validación continua de la totalidad del paquete de pruebas.
 
 ---
 

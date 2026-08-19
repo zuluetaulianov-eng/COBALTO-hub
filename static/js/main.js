@@ -451,54 +451,57 @@ window.CobaltoCore = {
     },
 
     handleUpdate: function(dataPayload) {
-        const newTimestamp = dataPayload.timestamp;
+        const newTimestamp = dataPayload ? dataPayload.timestamp : '';
         
         // Disparar Radar y Toasts
-        window.animateRadar();
-        if (dataPayload.counts && dataPayload.counts.alerts > 0) {
-            window.showTacticalToast(`Nuevo ciclo completado. Se detectaron ${dataPayload.counts.alerts} posibles amenazas/alertas.`, 'warning');
-            window.playTacticalBeep('warning');
+        if (typeof window.animateRadar === 'function') window.animateRadar();
+        if (dataPayload && dataPayload.counts && dataPayload.counts.alerts > 0) {
+            if (typeof window.showTacticalToast === 'function') {
+                window.showTacticalToast(`Nuevo ciclo completado. Se detectaron ${dataPayload.counts.alerts} posibles amenazas/alertas.`, 'warning');
+            }
+            if (typeof window.playTacticalBeep === 'function') window.playTacticalBeep('warning');
         } else {
-            window.showTacticalToast('Ciclo de extracción completado. Nodos sincronizados.', 'info');
-            window.playTacticalBeep('info');
+            if (typeof window.showTacticalToast === 'function') {
+                window.showTacticalToast('Ciclo de extracción completado. Nodos sincronizados.', 'info');
+            }
+            if (typeof window.playTacticalBeep === 'function') window.playTacticalBeep('info');
         }
 
-        // Solo se ejecuta UNA VEZ al recibir la señal de arranque inicial del servidor vía WebSocket.
-        // Una vez marcado como procesado, se ignoran todas las señales posteriores.
-        if (this.state.initialUpdateDone) return;
         this.state.initialUpdateDone = true;
         this.state.currentTimestamp = newTimestamp;
         this.state.tabRendered = {};
 
-        console.log('[COBALTO] Ciclo de carga inicial completado. Hidratando dashboard...');
+        console.log('[COBALTO] Sincronizando datos de inteligencia en tiempo real desde servidor...');
 
         var hud = document.getElementById('hud-update');
         if (hud) {
-            hud.innerText = '✅ Inteligencia sincronizada';
+            hud.innerText = '✅ Inteligencia sincronizada en tiempo real';
             hud.style.display = 'block';
             setTimeout(function() { hud.style.display = 'none'; }, 5000);
         }
 
-        // Actualizar sidebar con datos finales
         var self = this;
+        // 1. Actualizar sidebar con datos finales
         this.utils.fetchWithTimeout('/api/status')
             .then(function(r) { return r.json(); })
             .then(function(data) { self.updateSidebar(data); })
             .catch(function() {});
 
-        // Recargar noticias con datos frescos del servidor
+        // 2. Recargar noticias con datos frescos del servidor
         this.utils.fetchWithTimeout('/api/news')
             .then(function(r) { return r.json(); })
             .then(function(entries) {
-                self.state.allNews = entries;
-                self.db.set('allNews', entries);
-                self.resetNewsView();
+                if (entries && Array.isArray(entries)) {
+                    self.state.allNews = entries;
+                    self.db.set('allNews', entries);
+                    self.resetNewsView();
+                }
             })
             .catch(function() {});
 
-        // Recargar briefing con análisis IA final
+        // 3. Recargar briefing con análisis IA final
         var briefingContainer = document.getElementById('main-briefing');
-        if (briefingContainer && briefingContainer.getAttribute('data-briefing-loaded') !== 'true') {
+        if (briefingContainer) {
             self.utils.fetchWithTimeout('/api/briefing')
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
@@ -508,6 +511,15 @@ window.CobaltoCore = {
                     }
                 })
                 .catch(function() {});
+        }
+
+        // 4. Refrescar capas de Mapa Unificado si está activo
+        if (window.UnifiedMap && typeof window.UnifiedMap.refreshAll === 'function') {
+            try {
+                window.UnifiedMap.refreshAll();
+            } catch(e) {
+                console.warn('[MAP] Error refrescando mapa unificado:', e);
+            }
         }
     },
 
