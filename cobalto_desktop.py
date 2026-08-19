@@ -66,6 +66,15 @@ from pathlib import Path
 if getattr(sys, 'frozen', False):
     BUNDLE_DIR = Path(getattr(sys, '_MEIPASS', os.path.dirname(sys.executable)))
     APP_DIR = Path(sys.executable).parent
+    proc_candidates = [
+        BUNDLE_DIR / "_internal" / "PyQt6" / "Qt6" / "bin" / "QtWebEngineProcess.exe",
+        BUNDLE_DIR / "PyQt6" / "Qt6" / "bin" / "QtWebEngineProcess.exe",
+        APP_DIR / "_internal" / "PyQt6" / "Qt6" / "bin" / "QtWebEngineProcess.exe"
+    ]
+    for proc_path in proc_candidates:
+        if proc_path.exists():
+            os.environ["QTWEBENGINEPROCESS_PATH"] = str(proc_path)
+            break
 else:
     BUNDLE_DIR = Path(__file__).parent
     APP_DIR = BUNDLE_DIR
@@ -127,7 +136,10 @@ def run_backend(dev_mode=False):
     import uvicorn
     from app import app
     log_level = "debug" if dev_mode else "warning"
-    uvicorn.run(app, host=HOST, port=PORT, log_level=log_level)
+    config = uvicorn.Config(app=app, host=HOST, port=PORT, log_level=log_level, loop="asyncio")
+    server = uvicorn.Server(config)
+    server.install_signal_handlers = lambda: None
+    server.run()
 
 
 def run_worker():
@@ -293,7 +305,15 @@ def _launch_qt_window(url: str):
         sys.exit(app.exec())
 
     except Exception as e:
-        print(f"[!] Qt window failed ({e}). Falling back to browser...")
+        err_msg = f"[!] Qt window failed ({e}). Falling back to browser..."
+        print(err_msg)
+        try:
+            with open("desktop_error.log", "a", encoding="utf-8") as f:
+                import traceback
+                f.write(f"[{time.strftime('%Y-%m-%d %H:%M:%S')}] {err_msg}\n")
+                traceback.print_exc(file=f)
+        except Exception:
+            pass
         webbrowser.open(url)
         while True:
             time.sleep(1)
