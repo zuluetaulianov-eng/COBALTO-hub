@@ -14,6 +14,7 @@ window.UnifiedMap = {
         fires: { id: 'fires', label: 'Active Fires', icon: '🔥', color: '#FF3B30', endpoint: '/api/osiris/data/fires', dataPath: ['fires'], latField: 'lat', lngField: 'lng', visible: true, refreshMs: 120000 },
         weather: { id: 'weather', label: 'Severe Weather', icon: '🌪️', color: '#FFD700', endpoint: '/api/osiris/data/weather', dataPath: ['events'], latField: 'lat', lngField: 'lng', visible: true, refreshMs: 300000 },
         cctv: { id: 'cctv', label: 'CCTV Cameras', icon: '📹', color: '#B388FF', endpoint: '/api/osiris/data/cctv', dataPath: ['cameras'], latField: 'lat', lngField: 'lng', visible: true, refreshMs: 300000 },
+        operators: { id: 'operators', label: 'Operadores BFT', icon: '🔵', color: '#00E5FF', endpoint: '/api/telemetry/operators', dataPath: ['operators'], latField: 'latitude', lngField: 'longitude', visible: true, refreshMs: 10000 },
     },
 
     POPUP_FIELDS: {
@@ -24,6 +25,7 @@ window.UnifiedMap = {
         weather: { 'Title': 'title', 'Category': 'category', 'Severity': 'severity' },
         cctv: { 'Name': 'name', 'City': 'city', 'Country': 'country' },
         cobato: { 'Title': 'title', 'Type': 'type', 'Source': 'source', 'Date': 'date' },
+        operators: { 'Operador': 'operator_name', 'ID': 'operator_id', 'Grupo': 'unit_group', 'Batería (%)': 'battery_level', 'Estado': 'status', 'Red': 'network_type' },
     },
 
     init: function() {

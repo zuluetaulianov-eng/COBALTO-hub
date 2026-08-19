@@ -1,4 +1,4 @@
-﻿            <!-- TAB: SOCIAL -->
+            <!-- TAB: SOCIAL -->
             <div id="tab-social" class="tab-content">
                 <div class="flex gap-1 flex-wrap items-center" style="margin-bottom: 1.5rem;">
                     <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="social-search" class="search-box" style="flex:1; min-width:200px;" placeholder="Filtrar redes sociales...">
@@ -22,9 +22,25 @@
                             </div>
                             <div class="social-items" style="display:none;">
                                 {% for item in items[:25] %}
-                                <div class="social-item" data-search-text="{{ item.title|lower }}">
-                                    <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer">{{ item.title }}</a>
-                                    <p>{{ item.summary }}</p>
+                                {% set is_reddit = 'Reddit' in (item.source or '') or 'r/' in (item.source or '') or 'reddit.com' in (item.link or '') %}
+                                {% set is_telegram = 'Telegram' in (item.source or '') or 't.me' in (item.link or '') %}
+                                <div class="social-item {% if is_reddit %}reddit-item{% endif %}" data-search-text="{{ item.title|lower }}">
+                                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem; flex-wrap:wrap;">
+                                        {% if is_reddit %}
+                                        <span class="social-tag social-tag-reddit">🤖 {{ item.source or 'Reddit OSINT' }}</span>
+                                        {% elif is_telegram %}
+                                        <span class="social-tag social-tag-telegram">✈️ {{ item.source or 'Telegram' }}</span>
+                                        {% elif item.source %}
+                                        <span class="social-tag">📡 {{ item.source }}</span>
+                                        {% endif %}
+                                        {% if item.published %}
+                                        <span style="font-size:0.7rem; color:var(--text-muted); margin-left:auto; font-family:'Roboto Mono', monospace;">{{ item.published[:16] }}</span>
+                                        {% endif %}
+                                    </div>
+                                    <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer" style="font-weight:600; text-decoration:none;">{{ item.title }}</a>
+                                    {% if item.summary %}
+                                    <p style="margin-top:0.3rem; font-size:0.8rem; color:var(--text-muted); line-height:1.4;">{{ item.summary }}</p>
+                                    {% endif %}
                                 </div>
                                 {% endfor %}
                                 {% if items|length > 25 %}

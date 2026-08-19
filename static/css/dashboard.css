@@ -3858,3 +3858,44 @@ body.ai-collapsed .telemetry-drawer {
     gap: 0.4rem;
     flex-wrap: wrap;
 }
+
+/* ── ESTILOS TÁCTICOS DE TARJETAS SOCIALES & REDDIT ── */
+.social-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+    border-left: 2px solid transparent;
+}
+.social-item:hover {
+    background: rgba(0, 229, 255, 0.04);
+    border-left-color: var(--primary, #00E5FF);
+}
+.social-item.reddit-item:hover {
+    background: rgba(255, 69, 0, 0.06);
+    border-left-color: #FF5722;
+}
+.social-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-family: 'Roboto Mono', monospace;
+    background: rgba(0, 229, 255, 0.1);
+    color: var(--primary, #00E5FF);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    line-height: 1.2;
+}
+.social-tag-reddit {
+    background: rgba(255, 69, 0, 0.15);
+    color: #FF5722;
+    border-color: rgba(255, 87, 34, 0.4);
+    font-weight: 600;
+}
+.social-tag-telegram {
+    background: rgba(36, 161, 222, 0.15);
+    color: #24A1DE;
+    border-color: rgba(36, 161, 222, 0.4);
+}
+

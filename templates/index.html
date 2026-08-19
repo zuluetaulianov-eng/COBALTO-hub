@@ -26,6 +26,7 @@ window._newsPerPage = 30;
         {% include "partials/_tab_predictive.html" %}
         {% include "partials/_tab_finint.html" %}
         {% include "partials/_tab_humint.html" %}
+        {% include "partials/_tab_operators.html" %}
         {% include "partials/_tab_map.html" %}
         {% include "partials/_tab_actors.html" %}
         {% include "partials/_tab_osiris_recon.html" %}
@@ -201,6 +202,7 @@ window._newsPerPage = 30;
 <script src="/static/js/predictive.js?v={{ now|urlencode }}" defer></script>
 <script src="/static/js/finint.js?v={{ now|urlencode }}" defer></script>
 <script src="/static/js/humint.js?v={{ now|urlencode }}" defer></script>
+<script src="/static/js/operators-manager.js?v={{ now|urlencode }}" defer></script>
 <script src="/static/js/user_search.js?v={{ now|urlencode }}" defer></script>
 <script src="/static/js/intel-analytics.js?v={{ now|urlencode }}" defer></script>
 <script src="/static/js/config_manager.js?v={{ now|urlencode }}" defer></script>

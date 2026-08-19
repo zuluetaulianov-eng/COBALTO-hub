@@ -2,18 +2,22 @@
 # Versión 1.1 - Más fuentes públicas añadidas
 
 import logging
+import os
 import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 import feedparser
 import requests
 import urllib3
 
+from config import REDLIB_INSTANCES, RESIDENTIAL_PROXY_URL
+from osint_tls_backend import tls_manager
+
 urllib3.disable_warnings()
 
 # Proxies de TOR (socks5h = DNS tambien resuelto via Tor)
-# Puerto 9150 = Tor Browser | Puerto 9050 = Tor como servicio de sistema
 TOR_PROXIES = {"http": "socks5h://127.0.0.1:9150", "https": "socks5h://127.0.0.1:9150"}
 
 # Fallback a puerto 9050 (Tor como servicio)
@@ -22,10 +26,20 @@ TOR_PROXIES_ALT = {"http": "socks5h://127.0.0.1:9050", "https": "socks5h://127.0
 # Dominios que bloquean activamente conexiones desde nodos Tor
 TOR_BLOCKED_DOMAINS = ["t.me", "telegram.org", "reddit.com", "facebook.com", "instagram.com", "tiktok.com"]
 
+# Pool de instancias alternativas de Reddit (Redlib / Libreddit)
+REDDIT_FRONTEND_INSTANCES = REDLIB_INSTANCES if REDLIB_INSTANCES else [
+    "https://redlib.catsarch.com",
+    "https://redlib.vlink.dev",
+    "https://libreddit.privacydev.net",
+    "https://redlib.freedit.eu",
+    "https://libreddit.oxhead.nl",
+]
+
 logger = logging.getLogger("social_public_extractor")
 
 _cached_tor_port = None
 _last_tor_check_time = 0.0
+
 
 def get_tor_port() -> Optional[int]:
     """Detecta el puerto de Tor disponible con caché de 60 segundos."""
@@ -57,45 +71,54 @@ def check_tor_available() -> bool:
 
 def safe_get(url: str, timeout: int = 12, *args, **kwargs):
     """
-    Estrategia de conexión en capas:
-    1. Si el dominio bloquea Tor -> va directo (sin perder tiempo)
-    2. Si Tor esta disponible -> lo intenta primero (detecta puerto automáticamente)
-    3. Si falla -> fallback a internet normal
+    Estrategia de conexión en capas con TLS Fingerprint Evasion y Proxies Residenciales:
+    1. Si el dominio bloquea Tor -> usa TLS manager + Proxy Residencial (si está configurado)
+    2. Si Tor está disponible -> lo intenta vía SOCKS con TLS manager
+    3. Fallback directo con firma TLS de navegador
     """
-
     import urllib3
 
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
     headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36"}
 
-    # Detectar si el dominio bloquea Tor y saltar directo
     domain = url.split("/")[2] if "://" in url else url
+
+    # 1. Si el dominio bloquea Tor (Reddit, Telegram, Facebook, etc.)
     if any(blocked in domain for blocked in TOR_BLOCKED_DOMAINS):
-        return requests.get(url, headers=headers, timeout=timeout, verify=False)
+        proxies = None
+        proxy_url = RESIDENTIAL_PROXY_URL or os.getenv("RESIDENTIAL_PROXY_URL")
+        if proxy_url:
+            proxies = {"http": proxy_url, "https": proxy_url}
 
-    # Detectar puerto de Tor disponible usando caché
+        resp = tls_manager.request("GET", url, platform="social_public", proxies=proxies, timeout=timeout)
+        if resp is not None and (getattr(resp, "status_code", 0) == 200 or getattr(resp, "content", None)):
+            return resp
+
+        try:
+            return requests.get(url, headers=headers, proxies=proxies, timeout=timeout, verify=False)
+        except Exception:
+            return None
+
+    # 2. Si Tor está disponible, intentar usarlo
     tor_port = get_tor_port()
-
-    # Si Tor está disponible, intentar usarlo
     if tor_port:
         tor_proxies = {"http": f"socks5h://127.0.0.1:{tor_port}", "https": f"socks5h://127.0.0.1:{tor_port}"}
         try:
+            resp = tls_manager.request("GET", url, platform="social_public", proxies=tor_proxies, timeout=timeout)
+            if resp is not None and getattr(resp, "status_code", 0) == 200:
+                return resp
+
             resp = requests.get(url, headers=headers, proxies=tor_proxies, timeout=timeout, verify=False)
-            # Si el código es 200 pero no hay contenido, probablemente es un bloqueo silencioso de Tor
-            if resp.status_code == 200 and not resp.content:
-                logger.warning(f"[TOR] Respuesta vacía de {domain} vía Tor. Intentando conexión directa...")
-            else:
+            if resp.status_code == 200 and resp.content:
                 return resp
         except Exception as e:
-            err = str(e)
-            if "timed out" in err.lower() or "ConnectTimeout" in err:
-                logger.warning(f"[TOR] Timeout via Tor puerto {tor_port} para {domain}. Usando conexión directa.")
-            elif "SOCKS" in err or "ProxyError" in err:
-                logger.warning(f"[TOR] Error SOCKS en puerto {tor_port}. Usando conexión directa.")
-            else:
-                logger.warning(f"[TOR] Error en puerto {tor_port} para {domain}: {err}. Usando conexión directa.")
+            logger.warning(f"[TOR] Error en puerto {tor_port} para {domain}: {e}. Fallback a TLS directo.")
 
-    # Fallback a conexion normal
+    # 3. Fallback a conexión normal con TLS backend
+    resp = tls_manager.request("GET", url, platform="social_public", timeout=timeout)
+    if resp is not None:
+        return resp
+
     return requests.get(url, headers=headers, timeout=timeout, verify=False)
 
 
@@ -231,27 +254,41 @@ def get_mastodon_public() -> List[Dict[str, Any]]:
 
 
 def get_reddit_public() -> List[Dict[str, Any]]:
-    """Extrae de Reddit usando Frontends Alternativos (Redlib) para evadir bloqueo"""
+    """Extrae de Reddit usando un pool de Frontends Alternativos (Redlib/Libreddit) con fallback dinámico"""
     results = []
-    # Usamos redlib.catsarch.com u otra instancia de Redlib/Libreddit que no esté bloqueada
     for sub in REDDIT_PUBLIC_SUBREDDITS:
-        try:
-            url = f"https://redlib.catsarch.com/r/{sub}/rss"
-            resp = safe_get(url)
-            feed = feedparser.parse(resp.content)
-            for entry in feed.entries[:3]:
-                results.append(
-                    {
-                        "title": entry.get("title", "Sin título")[:140],
-                        "summary": entry.get("summary", "")[:280],
-                        "link": entry.get("link", "#").replace("redlib.catsarch.com", "reddit.com"),
-                        "published": entry.get("published", ""),
-                        "source": f"Reddit: r/{sub}",
-                        "type": "reddit",
-                    }
-                )
-        except Exception as e:
-            print(f"[WARN] Reddit Frontend r/{sub}: {e}")
+        extracted = False
+        for instance_base in REDDIT_FRONTEND_INSTANCES:
+            try:
+                url = f"{instance_base.rstrip('/')}/r/{sub}/rss"
+                resp = safe_get(url, timeout=10)
+                if not resp or getattr(resp, "status_code", 0) != 200 or not getattr(resp, "content", None):
+                    continue
+                feed = feedparser.parse(resp.content)
+                if not feed.entries:
+                    continue
+
+                netloc = urlparse(instance_base).netloc
+                for entry in feed.entries[:3]:
+                    raw_link = entry.get("link", "#")
+                    canonical_link = raw_link.replace(netloc, "reddit.com").replace("http://", "https://")
+                    results.append(
+                        {
+                            "title": entry.get("title", "Sin título")[:140],
+                            "summary": entry.get("summary", "")[:280],
+                            "link": canonical_link,
+                            "published": entry.get("published", ""),
+                            "source": f"Reddit: r/{sub}",
+                            "type": "reddit",
+                        }
+                    )
+                extracted = True
+                break  # Éxito con esta instancia
+            except Exception as e:
+                logger.warning(f"[WARN] Reddit Frontend {instance_base} r/{sub}: {e}")
+                continue
+        if not extracted:
+            logger.warning(f"[WARN] No se pudo extraer r/{sub} desde ninguna instancia de Redlib.")
     return results
 
 

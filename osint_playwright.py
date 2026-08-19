@@ -10,6 +10,8 @@ _browser_instance = None
 _playwright_instance = None
 _browser_lock = asyncio.Lock()
 _playwright_semaphore = asyncio.Semaphore(2)  # Evita saturar RAM de 8GB limitando a 2 pestañas simultáneas
+_playwright_disabled = False
+_playwright_attempted_install = False
 
 
 async def _get_playwright():
@@ -20,25 +22,60 @@ async def _get_playwright():
 
 
 async def _get_browser():
-    global _browser_instance
+    global _browser_instance, _playwright_disabled, _playwright_attempted_install
+    if _playwright_disabled:
+        return None
     async with _browser_lock:
         if _browser_instance is None or not _browser_instance.is_connected():
-            p = await _get_playwright()
-            _browser_instance = await p.chromium.launch(
-                headless=True,
-                args=[
-                    "--disable-blink-features=AutomationControlled",
-                    "--disable-features=IsolateOrigins,site-per-process",
-                    "--disable-site-isolation-trials",
-                    "--disable-web-security",
-                    "--no-sandbox",
-                    "--disable-gpu",  # Apaga procesamiento gráfico innecesario
-                    "--disable-dev-shm-usage",  # Previene agotamiento de memoria compartida
-                    "--no-first-run",
-                    "--no-default-browser-check",
-                    "--disable-http2",  # Evita ERR_HTTP2_PROTOCOL_ERROR en sitios protegidos como Banca y Negocios
-                ],
-            )
+            try:
+                p = await _get_playwright()
+                _browser_instance = await p.chromium.launch(
+                    headless=True,
+                    args=[
+                        "--disable-blink-features=AutomationControlled",
+                        "--disable-features=IsolateOrigins,site-per-process",
+                        "--disable-site-isolation-trials",
+                        "--disable-web-security",
+                        "--no-sandbox",
+                        "--disable-gpu",  # Apaga procesamiento gráfico innecesario
+                        "--disable-dev-shm-usage",  # Previene agotamiento de memoria compartida
+                        "--no-first-run",
+                        "--no-default-browser-check",
+                        "--disable-http2",  # Evita ERR_HTTP2_PROTOCOL_ERROR en sitios protegidos como Banca y Negocios
+                    ],
+                )
+            except Exception as e:
+                err_msg = str(e)
+                if ("Executable doesn't exist" in err_msg or "playwright install" in err_msg) and not _playwright_attempted_install:
+                    _playwright_attempted_install = True
+                    logging.info("[PLAYWRIGHT] Chromium no detectado. Intentando autoinstalación...")
+                    try:
+                        import subprocess
+                        import sys
+                        subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True, timeout=120)
+                        p = await _get_playwright()
+                        _browser_instance = await p.chromium.launch(
+                            headless=True,
+                            args=[
+                                "--disable-blink-features=AutomationControlled",
+                                "--disable-features=IsolateOrigins,site-per-process",
+                                "--disable-site-isolation-trials",
+                                "--disable-web-security",
+                                "--no-sandbox",
+                                "--disable-gpu",
+                                "--disable-dev-shm-usage",
+                                "--no-first-run",
+                                "--no-default-browser-check",
+                                "--disable-http2",
+                            ],
+                        )
+                        return _browser_instance
+                    except Exception as inst_err:
+                        logging.warning(f"[PLAYWRIGHT] No se pudo instalar Chromium automáticamente: {inst_err}")
+
+                logging.warning("[PLAYWRIGHT-DISABLED] Navegador Chromium no disponible. Continuando extracción vía HTTP/tls_client.")
+                _playwright_disabled = True
+                return None
         return _browser_instance
 
 
@@ -70,6 +107,9 @@ async def fetch_rss_with_browser(url: str, timeout: int = 30000) -> bytes:
     """
     async with _playwright_semaphore:
         browser = await _get_browser()
+        if browser is None:
+            logging.debug(f"[PLAYWRIGHT-SKIP] Browser no disponible para {url}")
+            return b""
         p = await _get_playwright()
         device = p.devices.get("Pixel 6") or {
             "viewport": {"width": 412, "height": 915},

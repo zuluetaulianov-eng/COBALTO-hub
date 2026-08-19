@@ -12,6 +12,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
 
 import feedparser
 import requests
@@ -19,7 +20,9 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from lxml_html_clean import Cleaner
 
+from config import RESIDENTIAL_PROXY_URL
 from osint_deep_scraper import scraper
+from osint_tls_backend import tls_manager
 from tiktok_extractor import get_tiktok_all, get_tiktok_profiles
 
 logger = logging.getLogger(__name__)
@@ -27,7 +30,7 @@ logger = logging.getLogger(__name__)
 # ── Configuración y Carga de Entorno ──────────────────────────────
 load_dotenv()
 
-# ── Utilidades de Limpieza ────────────────────────────────────────
+# ── Utilidades de Limpieza y Normalización ────────────────────────
 cleaner = Cleaner(
     allow_tags=["p", "br", "strong", "em", "a", "b", "i"],
     safe_attrs=["href", "title"],
@@ -38,6 +41,25 @@ cleaner = Cleaner(
     forms=False,
     annoying_tags=True,
 )
+
+
+def canonicalize_url(url: str) -> str:
+    """Normaliza una URL a un formato canónico sin subdominios espejo ni query params tracking."""
+    if not url or url == "#":
+        return "#"
+    try:
+        parsed = urlparse(url.lower().strip())
+        netloc = parsed.netloc
+        if ":" in netloc:
+            netloc = netloc.split(":")[0]
+        if "redlib" in netloc or "libreddit" in netloc or "reddit.com" in netloc:
+            netloc = "reddit.com"
+        elif netloc.startswith("www."):
+            netloc = netloc[4:]
+        path = parsed.path.rstrip("/")
+        return f"{netloc}{path}"
+    except Exception:
+        return url.lower().strip()
 
 
 def clean_html(html_content: str) -> str:
@@ -51,7 +73,7 @@ def clean_html(html_content: str) -> str:
         return html_content[:300]
 
 
-# ── Gestión de Conexión (Tor + Fallback) ──────────────────────────
+# ── Gestión de Conexión (Tor + Fallback + TLS Evasion + Proxies) ──
 TOR_BLOCKS = ["t.me", "telegram.org", "reddit.com", "facebook.com", "instagram.com", "tiktok.com"]
 
 _session = requests.Session()
@@ -59,15 +81,27 @@ _session.headers.update(scraper.get_headers())
 
 
 def safe_get(url: str, timeout: int = 12) -> Optional[requests.Response]:
-    """Conexión inteligente usando sesión reutilizable y Tor."""
+    """Conexión inteligente usando TLS manager rotativo, proxies residenciales y Tor."""
     domain = url.split("/")[2] if "://" in url else url
 
+    # 1. Si el dominio bloquea Tor (Reddit, Telegram, etc.)
     if any(b in domain for b in TOR_BLOCKS):
+        proxies = None
+        proxy_url = RESIDENTIAL_PROXY_URL or os.getenv("RESIDENTIAL_PROXY_URL")
+        if proxy_url:
+            proxies = {"http": proxy_url, "https": proxy_url}
+
+        # Usar tls_manager para evitar TLS fingerprinting
+        resp = tls_manager.request("GET", url, platform="social_hub", proxies=proxies, timeout=timeout)
+        if resp is not None:
+            return resp
+        # Fallback a session directa
         try:
-            return _session.get(url, timeout=timeout)
+            return _session.get(url, proxies=proxies, timeout=timeout)
         except Exception:
             return None
 
+    # 2. Si no bloquea Tor, intentar vía Tor SOCKS
     tor_port = None
     for port in [9150, 9050]:
         try:
@@ -86,25 +120,33 @@ def safe_get(url: str, timeout: int = 12) -> Optional[requests.Response]:
     if tor_port:
         proxies = {"http": f"socks5h://127.0.0.1:{tor_port}", "https": f"socks5h://127.0.0.1:{tor_port}"}
         try:
-            return _session.get(url, proxies=proxies, timeout=timeout + 5)
+            resp = tls_manager.request("GET", url, platform="social_hub", proxies=proxies, timeout=timeout + 5)
+            if resp is not None:
+                return resp
         except Exception:
             pass
 
+    # 3. Fallback final usando TLS manager o sesión directa
+    resp = tls_manager.request("GET", url, platform="social_hub", timeout=timeout)
+    if resp is not None:
+        return resp
     try:
         return _session.get(url, timeout=timeout)
     except Exception:
         return None
 
 
-# ── Deduplicación Centralizada (thread-safe) ────────────────────
+# ── Deduplicación Centralizada Canónica (thread-safe) ────────────
 _SEEN_HASHES = set()
 _SEEN_HASHES_LOCK = threading.Lock()
 
 
 def is_duplicate(item: Dict) -> bool:
-    """Verifica si el contenido ya fue procesado en la ejecución actual."""
-    content = f"{item.get('title', '')}|{item.get('link', '')}".lower().strip()
-    h = hashlib.md5(content.encode()).hexdigest()
+    """Verifica si el contenido ya fue procesado en la ejecución actual usando URL canónica."""
+    title = (item.get("title", "") or "").lower().strip()
+    canon_link = canonicalize_url(item.get("link", ""))
+    content = f"{title}|{canon_link}"
+    h = hashlib.md5(content.encode("utf-8")).hexdigest()
     with _SEEN_HASHES_LOCK:
         if h in _SEEN_HASHES:
             return True

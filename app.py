@@ -1525,6 +1525,77 @@ async def reject_agent_task(task_id: str):
     return {"status": "rejected"}
 
 
+# ---- TELEMETRÍA Y MONITOREO BFT OPERADORES MÓVILES ----
+class TelemetryHeartbeatPayload(BaseModel):
+    operator_id: str
+    operator_name: str
+    latitude: float
+    longitude: float
+    altitude: float = 0.0
+    battery_level: int = 100
+    status: str = "PATROL"
+    network_type: str = "4G"
+    device_model: str = "Dispositivo Móvil"
+    unit_group: str = "ALPHA"
+
+
+@app.post("/api/telemetry/heartbeat")
+async def post_operator_heartbeat(payload: TelemetryHeartbeatPayload):
+    """Recibe un latido de telemetría de COBALTO Mobile y lo transmite vía WebSocket."""
+    from database import save_operator_telemetry
+    ok = await asyncio.to_thread(
+        save_operator_telemetry,
+        payload.operator_id,
+        payload.operator_name,
+        payload.latitude,
+        payload.longitude,
+        payload.altitude,
+        payload.battery_level,
+        payload.status,
+        payload.network_type,
+        payload.device_model,
+        payload.unit_group
+    )
+    if not ok:
+        raise HTTPException(status_code=500, detail="Fallo guardando latido de telemetría")
+    
+    # Broadcast en tiempo real vía WebSocket
+    event_data = {
+        "type": "operator_telemetry_update",
+        "operator": {
+            "operator_id": payload.operator_id,
+            "operator_name": payload.operator_name,
+            "latitude": payload.latitude,
+            "longitude": payload.longitude,
+            "altitude": payload.altitude,
+            "battery_level": payload.battery_level,
+            "status": payload.status,
+            "network_type": payload.network_type,
+            "device_model": payload.device_model,
+            "unit_group": payload.unit_group,
+            "timestamp": datetime.now().isoformat()
+        }
+    }
+    await ws_manager.broadcast(json.dumps(event_data, ensure_ascii=False))
+    return {"status": "ok", "operator_id": payload.operator_id}
+
+
+@app.get("/api/telemetry/operators")
+async def get_active_operators_api():
+    """Retorna la lista de todos los operadores registrados y su última posición."""
+    from database import get_active_operators
+    ops = await asyncio.to_thread(get_active_operators)
+    return {"operators": ops, "total": len(ops)}
+
+
+@app.get("/api/telemetry/operators/{operator_id}/trail")
+async def get_operator_trail_api(operator_id: str, limit: int = 50):
+    """Retorna las últimas coordenadas GPS del rastro de un operador."""
+    from database import get_operator_trail
+    trail = await asyncio.to_thread(get_operator_trail, operator_id, limit)
+    return {"operator_id": operator_id, "trail": trail}
+
+
 @app.get("/api/agent/mode")
 async def get_agent_mode():
     from agent_orchestrator import orchestrator

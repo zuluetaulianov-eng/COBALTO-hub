@@ -1132,10 +1132,28 @@ window.CobaltoCore = {
                         continue;
                     }
                     var item = items[i];
-                    var searchText = ((item.title || '') + ' ' + (item.summary || '')).toLowerCase();
-                    html += `<div class="social-item" data-search-text="${this.utils.escapeHTML(searchText)}">
-                        <a href="${this.utils.escapeHTML(item.link || '#')}" target="_blank" rel="noopener noreferrer">${this.utils.escapeHTML(item.title || '')}</a>
-                        <p>${this.utils.escapeHTML(item.summary || '')}</p>
+                    var searchText = ((item.title || '') + ' ' + (item.summary || '') + ' ' + (item.source || '')).toLowerCase();
+                    var itemSrc = item.source || src || '';
+                    var itemLink = item.link || '#';
+                    var isReddit = itemSrc.indexOf('Reddit') !== -1 || itemSrc.indexOf('r/') !== -1 || itemLink.indexOf('reddit.com') !== -1;
+                    var isTelegram = itemSrc.indexOf('Telegram') !== -1 || itemLink.indexOf('t.me') !== -1;
+                    var tagHtml = '';
+                    if (isReddit) {
+                        tagHtml = `<span class="social-tag social-tag-reddit">🤖 ${this.utils.escapeHTML(itemSrc)}</span>`;
+                    } else if (isTelegram) {
+                        tagHtml = `<span class="social-tag social-tag-telegram">✈️ ${this.utils.escapeHTML(itemSrc)}</span>`;
+                    } else if (itemSrc) {
+                        tagHtml = `<span class="social-tag">📡 ${this.utils.escapeHTML(itemSrc)}</span>`;
+                    }
+                    var pubTime = item.published ? `<span style="font-size:0.7rem; color:var(--text-muted); margin-left:auto; font-family:'Roboto Mono', monospace;">${this.utils.escapeHTML(item.published.substring(0, 16))}</span>` : '';
+
+                    html += `<div class="social-item ${isReddit ? 'reddit-item' : ''}" data-search-text="${this.utils.escapeHTML(searchText)}">
+                        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem; flex-wrap:wrap;">
+                            ${tagHtml}
+                            ${pubTime}
+                        </div>
+                        <a href="${this.utils.escapeHTML(itemLink)}" target="_blank" rel="noopener noreferrer" style="font-weight:600; text-decoration:none;">${this.utils.escapeHTML(item.title || '')}</a>
+                        ${item.summary ? `<p style="margin-top:0.3rem; font-size:0.8rem; color:var(--text-muted); line-height:1.4;">${this.utils.escapeHTML(item.summary)}</p>` : ''}
                     </div>`;
                     renderedCount++;
                 }
@@ -1347,6 +1365,9 @@ window.CobaltoCore = {
             'tab-user-search': 'Búsqueda de Usuarios',
             'tab-osiris-global': 'OSIRIS Global Intelligence',
             'tab-predictive': '⚠️ Alertas Predictivas',
+            'tab-actors': 'Perfilamiento de Actores',
+            'tab-osiris-recon': 'OSIRIS RECON Toolkit',
+            'tab-operators': 'Monitoreo de Operadores BFT',
             'tab-finint': '💳 FININT & Dark Web',
             'tab-humint': '🕵️ HUMINT & Reportes de Campo',
             'tab-config': 'Configuración del Sistema'
@@ -1359,6 +1380,7 @@ window.CobaltoCore = {
         if (tabId === 'tab-social') { setTimeout(function() { if (window.CobaltoIntel) CobaltoIntel.filterSocial(); }, 100); }
         if (tabId === 'tab-alerts') { setTimeout(function() { if (window.CobaltoIntel) CobaltoIntel.filterAlerts(); }, 100); }
 
+        if (tabId === 'tab-operators') { if (window.OperatorsManager) window.OperatorsManager.init(); }
         if (tabId === 'tab-social') this.lazyLoadTab('tab-social', '/api/social', data => this.renderSocialTab(data));
         if (tabId === 'tab-realtime') this.lazyLoadTab('tab-realtime', '/api/realtime', data => this.renderRealtimeTab(data));
         if (tabId === 'tab-narrative') this.lazyLoadTab('tab-narrative', '/api/narrative', data => this.renderNarrativeTab(data));

@@ -139,6 +139,13 @@ SSL_VERIFY = os.getenv("SSL_VERIFY", "true").lower() == "true"
 RESIDENTIAL_PROXY_URL = os.getenv("RESIDENTIAL_PROXY_URL")
 USE_TOR_FALLBACK = os.getenv("USE_TOR_FALLBACK", "true").lower() == "true"
 TOR_SOCKS_PORT = int(os.getenv("TOR_SOCKS_PORT", "9150"))
+REDLIB_INSTANCES = [
+    "https://redlib.catsarch.com",
+    "https://redlib.vlink.dev",
+    "https://libreddit.privacydev.net",
+    "https://redlib.freedit.eu",
+    "https://libreddit.oxhead.nl",
+]
 
 # ── Configuración Geográfica Regional ──
 REGIONAL_BBOX = {"lat_min": -5.0, "lat_max": 18.0, "lon_min": -82.0, "lon_max": -50.0}

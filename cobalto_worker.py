@@ -17,11 +17,16 @@ Variables de entorno relevantes (heredadas de .env):
 """
 
 import asyncio
+import gc
 import json
 import logging
+import multiprocessing
 import os
 import sys
 import time
+
+if sys.platform == 'win32':
+    multiprocessing.freeze_support()
 from datetime import datetime
 from pathlib import Path
 
@@ -185,11 +190,20 @@ async def _save_cache(context: dict) -> bool:
             except Exception as e:
                 logger.warning(f"[CACHE] Falló guardado en Redis: {e}")
 
-        # Escritura atómica: escribir en tmp y luego renombrar
+        # Escritura atómica: escribir en tmp y luego renombrar con reintentos para Windows
         tmp_file = CACHE_FILE.with_suffix(".tmp")
         with open(tmp_file, "w", encoding="utf-8") as f:
             f.write(payload)
-        tmp_file.replace(CACHE_FILE)
+
+        for _attempt in range(5):
+            try:
+                tmp_file.replace(CACHE_FILE)
+                break
+            except PermissionError:
+                time.sleep(0.05)
+            except Exception as repl_err:
+                logger.warning(f"[CACHE] Intento {_attempt+1} de reemplazo de caché falló: {repl_err}")
+                time.sleep(0.05)
 
         entry_count = len(safe.get("all_entries", []))
         logger.info(f"[CACHE] Guardado: {entry_count} entradas -> {CACHE_FILE.name}")
@@ -391,7 +405,8 @@ async def _run_full_extraction_cycle():
             logger.error(f"[CICLO] Fallo al despachar Heavy track: {e}")
 
     finally:
-        pass # Las colas ahora se manejan a nivel del worker_loop global
+        gc.collect()
+        logger.debug("[WORKER-GC] Recolección de basura del Heap ejecutada")
 
     elapsed = time.time() - cycle_start
     logger.info(f"[CICLO] Completado en {elapsed:.1f}s")

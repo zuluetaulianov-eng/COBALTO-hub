@@ -11,15 +11,32 @@ en el orden que el operador prefiera).
 Soporta fallback automático a TUI (Modo Consola) en entornos headless.
 """
 
+import multiprocessing
 import os
+import sys
+
+# CRÍTICO PARA PYINSTALLER EN WINDOWS: Ejecutar freeze_support() de inmediato al tope del módulo
+if sys.platform == 'win32':
+    multiprocessing.freeze_support()
+
 import socket
 import subprocess
-import sys
 import threading
 import time
+import urllib.request
 import webbrowser
 from datetime import datetime
 from pathlib import Path
+
+
+def is_server_ready(host="127.0.0.1", port=8083):
+    """Verifica si el servidor FastAPI está respondiendo solicitudes HTTP."""
+    url = f"http://{host}:{port}/api/status"
+    try:
+        req = urllib.request.urlopen(url, timeout=0.8)
+        return req.status == 200
+    except Exception:
+        return False
 
 # Cargar dotenv para configuraciones del puerto, etc.
 try:
@@ -65,9 +82,14 @@ class CobaltoEngine:
         # Variables de estado esperado (para el Watchdog)
         self.expected_server_state = False
         self.expected_worker_state = False
+        self.last_server_restart = 0
+        self.last_worker_restart = 0
 
     def is_server_running(self):
-        return self.server_process is not None and self.server_process.poll() is None
+        if self.server_process is not None and self.server_process.poll() is None:
+            return True
+        port = int(os.getenv("PORT", "8083"))
+        return is_server_ready("127.0.0.1", port)
 
     def is_worker_running(self):
         return self.worker_process is not None and self.worker_process.poll() is None
@@ -812,18 +834,23 @@ class CobaltoGUI:
             self.btn_stop_worker.config(state="disabled")
             self.lbl_wrk_metrics.config(text="CPU: 0% │ RAM: 0.0 MB │ INACTIVO")
 
-        # 4.5 WATCHDOG (Auto-Heal)
+        # 4.5 WATCHDOG (Auto-Heal con Cooldown)
+        now_ts = time.time()
         if self.engine.expected_server_state and not self.engine.is_server_running():
-            self.txt_logs.insert("end", f"[{datetime.now().strftime('%H:%M:%S')}] [CRÍTICO] 🛡️ Watchdog: Servidor Web detectado como inactivo. Reiniciando...\n", "system")
-            if self.auto_scroll_var.get():
-                self.txt_logs.see("end")
-            self.engine.start_server(dev_mode=False)
+            if now_ts - self.engine.last_server_restart > 8:
+                self.engine.last_server_restart = now_ts
+                self.txt_logs.insert("end", f"[{datetime.now().strftime('%H:%M:%S')}] [CRÍTICO] 🛡️ Watchdog: Servidor Web detectado como inactivo. Reiniciando...\n", "system")
+                if self.auto_scroll_var.get():
+                    self.txt_logs.see("end")
+                self.engine.start_server(dev_mode=False)
 
         if self.engine.expected_worker_state and not self.engine.is_worker_running():
-            self.txt_logs.insert("end", f"[{datetime.now().strftime('%H:%M:%S')}] [CRÍTICO] 🛡️ Watchdog: Worker OSINT detectado como inactivo. Reiniciando...\n", "system")
-            if self.auto_scroll_var.get():
-                self.txt_logs.see("end")
-            self.engine.start_worker()
+            if now_ts - self.engine.last_worker_restart > 8:
+                self.engine.last_worker_restart = now_ts
+                self.txt_logs.insert("end", f"[{datetime.now().strftime('%H:%M:%S')}] [CRÍTICO] 🛡️ Watchdog: Worker OSINT detectado como inactivo. Reiniciando...\n", "system")
+                if self.auto_scroll_var.get():
+                    self.txt_logs.see("end")
+                self.engine.start_worker()
 
         # 5. Cargar logs
         self.read_live_logs()

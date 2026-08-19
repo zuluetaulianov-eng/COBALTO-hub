@@ -3,10 +3,15 @@ COBALTO HUB — Standalone Windows Desktop App Launcher
 Ejecuta la interfaz táctica en una ventana nativa de escritorio independiente usando WebView2 (pywebview).
 """
 
+import multiprocessing
 import os
 import sys
-import time
+
+if sys.platform == 'win32':
+    multiprocessing.freeze_support()
+
 import threading
+import time
 import urllib.request
 import uvicorn
 
@@ -61,17 +66,20 @@ def launch_desktop():
     print("==================================================")
     print(f" [*] Servidor Backend en: http://{HOST}:{PORT}")
 
-    # 1. Iniciar servidor FastAPI en hilo secundario (daemon)
-    server_thread = threading.Thread(target=run_backend, daemon=True)
-    server_thread.start()
+    # 1. Iniciar servidor FastAPI en hilo secundario (daemon) si no está ya activo
+    if is_server_ready(HOST, PORT) or is_server_ready("127.0.0.1", PORT):
+        print(" [OK] Servidor Backend ya se encuentra activo.")
+    else:
+        server_thread = threading.Thread(target=run_backend, daemon=True)
+        server_thread.start()
 
-    # 2. Esperar a que el servidor FastAPI esté listo
-    print(" [*] Esperando respuesta del servidor backend...")
-    for _ in range(30):
-        if is_server_ready(HOST, PORT):
-            print(" [OK] Backend sincronizado con exito.")
-            break
-        time.sleep(0.3)
+        # 2. Esperar a que el servidor FastAPI esté listo
+        print(" [*] Esperando respuesta del servidor backend...")
+        for _ in range(30):
+            if is_server_ready(HOST, PORT) or is_server_ready("127.0.0.1", PORT):
+                print(" [OK] Backend sincronizado con exito.")
+                break
+            time.sleep(0.3)
 
     if getattr(sys, 'frozen', False):
         base_dir = getattr(sys, '_MEIPASS', os.path.dirname(os.path.abspath(sys.executable)))

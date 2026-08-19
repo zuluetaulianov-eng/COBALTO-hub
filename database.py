@@ -5,6 +5,7 @@ import os
 import sqlite3
 from datetime import datetime, timedelta
 from pathlib import Path
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -49,7 +50,27 @@ CREATE TABLE IF NOT EXISTS card_notes (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (card_id, card_type)
 );
+CREATE TABLE IF NOT EXISTS operator_registry (
+    operator_id TEXT PRIMARY KEY,
+    operator_name TEXT NOT NULL,
+    device_model TEXT DEFAULT '',
+    unit_group TEXT DEFAULT 'ALPHA',
+    registered_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS operator_telemetry (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    operator_id TEXT NOT NULL,
+    latitude REAL NOT NULL,
+    longitude REAL NOT NULL,
+    altitude REAL DEFAULT 0,
+    battery_level INTEGER DEFAULT 100,
+    status TEXT DEFAULT 'PATROL',
+    network_type TEXT DEFAULT '4G',
+    timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+);
 CREATE INDEX IF NOT EXISTS idx_sent_news_ts ON sent_news(timestamp);
+CREATE INDEX IF NOT EXISTS idx_op_telem_ts ON operator_telemetry(timestamp);
+CREATE INDEX IF NOT EXISTS idx_op_telem_opid ON operator_telemetry(operator_id);
 """
 
 _DDL_PG = """
@@ -83,7 +104,27 @@ CREATE TABLE IF NOT EXISTS card_notes (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (card_id, card_type)
 );
+CREATE TABLE IF NOT EXISTS operator_registry (
+    operator_id TEXT PRIMARY KEY,
+    operator_name TEXT NOT NULL,
+    device_model TEXT DEFAULT '',
+    unit_group TEXT DEFAULT 'ALPHA',
+    registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE TABLE IF NOT EXISTS operator_telemetry (
+    id SERIAL PRIMARY KEY,
+    operator_id TEXT NOT NULL,
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    altitude DOUBLE PRECISION DEFAULT 0,
+    battery_level INTEGER DEFAULT 100,
+    status TEXT DEFAULT 'PATROL',
+    network_type TEXT DEFAULT '4G',
+    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 CREATE INDEX IF NOT EXISTS idx_sent_news_ts ON sent_news(timestamp);
+CREATE INDEX IF NOT EXISTS idx_op_telem_ts ON operator_telemetry(timestamp);
+CREATE INDEX IF NOT EXISTS idx_op_telem_opid ON operator_telemetry(operator_id);
 """
 
 class DBWrapper:
@@ -144,7 +185,7 @@ def get_connection() -> DBWrapper:
         conn = psycopg2.connect(_PG_URL, cursor_factory=DictCursor)
         return DBWrapper(conn)
     else:
-        conn = sqlite3.connect(str(DB_FILE), timeout=10, check_same_thread=False)
+        conn = sqlite3.connect(str(DB_FILE), timeout=30, check_same_thread=False)
         conn.row_factory = sqlite3.Row
         conn.execute("PRAGMA journal_mode=WAL;")
         conn.execute("PRAGMA synchronous=NORMAL;")
@@ -165,7 +206,7 @@ def init_db():
             conn.commit()
             conn.close()
         else:
-            conn = sqlite3.connect(str(DB_FILE))
+            conn = sqlite3.connect(str(DB_FILE), timeout=30)
             conn.executescript(_DDL_SQLITE)
             conn.commit()
             conn.close()
@@ -422,3 +463,109 @@ def get_all_notes() -> list:
     except Exception as e:
         logger.error(f"[NOTES] Error listando notas: {e}")
         return []
+
+
+# ---- TELEMETRÍA Y OPERADORES BFT ----
+def register_or_update_operator(operator_id: str, operator_name: str, device_model: str = "", unit_group: str = "ALPHA") -> bool:
+    """Registra o actualiza los datos de un operador de COBALTO Mobile."""
+    ensure_db()
+    try:
+        with get_connection() as conn:
+            row = conn.fetchone("SELECT operator_id FROM operator_registry WHERE operator_id = ?", (operator_id,))
+            if row:
+                conn.execute(
+                    "UPDATE operator_registry SET operator_name = ?, device_model = ?, unit_group = ? WHERE operator_id = ?",
+                    (operator_name, device_model, unit_group, operator_id)
+                )
+            else:
+                conn.execute(
+                    "INSERT INTO operator_registry (operator_id, operator_name, device_model, unit_group) VALUES (?, ?, ?, ?)",
+                    (operator_id, operator_name, device_model, unit_group)
+                )
+        return True
+    except Exception as e:
+        logger.error(f"[BFT] Error registrando operador: {e}")
+        return False
+
+
+def save_operator_telemetry(operator_id: str, operator_name: str, lat: float, lon: float, altitude: float = 0, battery: int = 100, status: str = "PATROL", network: str = "4G", device_model: str = "", unit_group: str = "ALPHA") -> bool:
+    """Guarda un latido de telemetría de un operador."""
+    ensure_db()
+    register_or_update_operator(operator_id, operator_name, device_model, unit_group)
+    try:
+        with get_connection() as conn:
+            conn.execute(
+                """INSERT INTO operator_telemetry
+                   (operator_id, latitude, longitude, altitude, battery_level, status, network_type, timestamp)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                (operator_id, float(lat), float(lon), float(altitude), int(battery), status, network, datetime.now().isoformat())
+            )
+        return True
+    except Exception as e:
+        logger.error(f"[BFT] Error guardando telemetría de operador {operator_id}: {e}")
+        return False
+
+
+def get_active_operators() -> list:
+    """Retorna la lista de todos los operadores registrados con su última posición y telemetría."""
+    ensure_db()
+    try:
+        with get_connection() as conn:
+            sql = """
+                SELECT r.operator_id, r.operator_name, r.device_model, r.unit_group, r.registered_at,
+                       t.latitude, t.longitude, t.altitude, t.battery_level, t.status, t.network_type, t.timestamp
+                FROM operator_registry r
+                LEFT JOIN operator_telemetry t ON t.id = (
+                    SELECT id FROM operator_telemetry
+                    WHERE operator_id = r.operator_id
+                    ORDER BY timestamp DESC LIMIT 1
+                )
+                ORDER BY t.timestamp DESC
+            """
+            rows = conn.fetchall(sql)
+            operators = []
+            for r in rows:
+                operators.append({
+                    "operator_id": r[0],
+                    "operator_name": r[1],
+                    "device_model": r[2] or "Dispositivo Móvil",
+                    "unit_group": r[3] or "ALPHA",
+                    "registered_at": str(r[4]),
+                    "latitude": r[5] if r[5] is not None else 0.0,
+                    "longitude": r[6] if r[6] is not None else 0.0,
+                    "altitude": r[7] if r[7] is not None else 0.0,
+                    "battery_level": r[8] if r[8] is not None else 100,
+                    "status": r[9] or "PATROL",
+                    "network_type": r[10] or "4G",
+                    "last_seen_iso": str(r[11]) if r[11] is not None else str(r[4]),
+                })
+            return operators
+    except Exception as e:
+        logger.error(f"[BFT] Error obteniendo operadores activos: {e}")
+        return []
+
+
+def get_operator_trail(operator_id: str, limit: int = 50) -> list:
+    """Retorna el histórico de coordenadas GPS de un operador."""
+    ensure_db()
+    try:
+        with get_connection() as conn:
+            rows = conn.fetchall(
+                "SELECT latitude, longitude, altitude, battery_level, status, timestamp FROM operator_telemetry WHERE operator_id = ? ORDER BY timestamp DESC LIMIT ?",
+                (operator_id, limit)
+            )
+            return [
+                {
+                    "latitude": r[0],
+                    "longitude": r[1],
+                    "altitude": r[2],
+                    "battery_level": r[3],
+                    "status": r[4],
+                    "timestamp": str(r[5])
+                }
+                for r in rows
+            ]
+    except Exception as e:
+        logger.error(f"[BFT] Error obteniendo rastro de operador {operator_id}: {e}")
+        return []
+

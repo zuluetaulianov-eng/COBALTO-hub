@@ -1,11 +1,15 @@
 # search_social.py - Búsqueda multiplataforma SIN credenciales
 # Busca noticias en fuentes públicas usando APIs y scraping básico
 
+import os
 from datetime import datetime
 from typing import Any, Dict, List
 
 import feedparser
 import requests
+
+from config import RESIDENTIAL_PROXY_URL
+from osint_tls_backend import tls_manager
 
 SEARCH_KEYWORDS = [
     "venezuela",
@@ -131,18 +135,42 @@ def search_telegram_channels(keyword: str, limit: int = 5) -> List[Dict[str, Any
 
 
 def search_reddit(keyword: str, limit: int = 5) -> List[Dict[str, Any]]:
-    """Busca en Reddit sin auth"""
+    """Busca en Reddit usando TLS Fingerprint Evasion"""
     results = []
     subreddits = ["vzla", "venezuela", "latinamerica"]
+    proxies = None
+    proxy_url = RESIDENTIAL_PROXY_URL or os.getenv("RESIDENTIAL_PROXY_URL")
+    if proxy_url:
+        proxies = {"http": proxy_url, "https": proxy_url}
+
     for sub in subreddits:
         try:
             url = f"https://www.reddit.com/r/{sub}/search.json?q={keyword}&sort=new&limit={limit}"
-            headers = {"User-Agent": "CobaltoHub/1.0"}
-            resp = requests.get(url, headers=headers, timeout=10)
-            if resp.status_code == 200:
-                data = resp.json()
+            resp = tls_manager.request("GET", url, platform="search_social", proxies=proxies, timeout=10)
+
+            data = None
+            if resp is not None:
+                if hasattr(resp, "json"):
+                    try:
+                        data = resp.json()
+                    except Exception:
+                        pass
+                elif hasattr(resp, "text"):
+                    import json
+                    try:
+                        data = json.loads(resp.text)
+                    except Exception:
+                        pass
+
+            if not data:
+                headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0 Safari/537.36"}
+                r = requests.get(url, headers=headers, proxies=proxies, timeout=10)
+                if r.status_code == 200:
+                    data = r.json()
+
+            if data and "data" in data and "children" in data["data"]:
                 for post in data["data"]["children"][:limit]:
-                    p = post["data"]
+                    p = post.get("data", {})
                     results.append(
                         {
                             "title": p.get("title", "")[:150],
