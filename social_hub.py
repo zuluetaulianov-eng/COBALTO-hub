@@ -307,6 +307,16 @@ def get_social_hub_data() -> Dict[str, Any]:
             try:
                 items = future.result(timeout=15)
                 if items:
+                    for item in items:
+                        if "country_tags" not in item:
+                            txt = f"{item.get('title', '')} {item.get('summary', '')}"
+                            dom = item.get("link", "")
+                            src = item.get("source", name)
+                            try:
+                                import theaters_config
+                                item["country_tags"] = theaters_config.detect_country_tags(text=txt, domain=dom, source=src)
+                            except Exception:
+                                item["country_tags"] = ["GLOBAL"]
                     social_data["sources"][name] = items
                     social_data["count"] += len(items)
             except Exception as e:

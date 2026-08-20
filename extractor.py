@@ -480,8 +480,14 @@ async def parse_single_feed_async(session, source, url, retry_count=0, problem_i
 
         # Fallback si quedó vacío pero tenía entradas recientes
         if not entries and feed.entries:
+                entry = feed.entries[0]
                 dt = parse_datetime(entry.get("published")) or parse_datetime(entry.get("published_parsed")) or now
                 if dt >= cutoff_time:
+                    try:
+                        import theaters_config
+                        c_tags = theaters_config.detect_country_tags(text=entry.get("title", ""), domain=url, source=source)
+                    except Exception:
+                        c_tags = ["GLOBAL"]
                     entries.append(
                         {
                             "title": "[MONITOREO] " + entry.get("title", "Sin título"),
@@ -492,6 +498,7 @@ async def parse_single_feed_async(session, source, url, retry_count=0, problem_i
                             "source": source,
                             "type": "external_low_priority",
                             "priority": False,
+                            "country_tags": c_tags,
                         }
                     )
 

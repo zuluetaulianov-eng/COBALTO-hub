@@ -118,31 +118,91 @@ def get_theater(code: str) -> Dict[str, Any]:
 def detect_country_tags(text: str = "", domain: str = "", source: str = "") -> List[str]:
     """
     Detect country codes associated with a piece of intelligence
-    based on domain, text keywords, and source name.
+    based on exact source mapping, TLDs, domain names, and text keywords.
     """
     tags = set()
     domain_lower = domain.lower()
     text_lower = text.lower()
     source_lower = source.lower()
 
+    # 1. Mapeo directo por nombre exacto de la fuente (sin ambigüedades)
+    VEN_SOURCES = {
+        "venevisión", "venevisión oficial", "noticiero venevisión", "el nacional",
+        "el estímulo", "el estimulo", "el diario", "runrun.es", "runrunes",
+        "efecto cocuyo", "caracas chronicles", "evtv miami", "evtv", "el pitazo",
+        "el pitazo venezuela", "crónica uno", "cronica uno", "últimas noticias",
+        "ultimas noticias", "2001 online", "el impulso", "el carabobeño",
+        "el carabobeno", "la patilla", "la patilla canal", "alnavío", "alnavio",
+        "descifrado", "telesur", "vtv canal 8", "vtv", "vencert alertas",
+        "vencert boletines", "vencert general", "banca y negocios",
+        "finanzas digital", "dolartoday", "albertorodnews (venezuela)", "albertorodnews",
+        "anonymousvenezuela", "cyberhuntersven", "teamhdp", "presidencialven",
+        "padrinovladimir"
+    }
+
+    COL_SOURCES = {
+        "noticias caracol", "el tiempo", "el tiempo colombia", "la silla vacía",
+        "la silla vacia", "el espectador", "revista semana", "semana",
+        "noticias rcn", "rcn", "blu radio colombia", "blu radio", "pulzo",
+        "vanguardia", "el país (colombia)", "el colombiano", "el heraldo",
+        "cambio colombia", "verdad abierta", "fundación pares", "pares",
+        "infopresidencia", "fuerzasmilcol", "policiacolombia", "mindefensa",
+        "arielavilaanaliza", "leonvalenciaa", "fip_col", "indepaz", "danielmejial",
+        "defensoriacol"
+    }
+
+    for s_name in VEN_SOURCES:
+        if s_name in source_lower:
+            tags.add("VEN")
+            break
+
+    for s_name in COL_SOURCES:
+        if s_name in source_lower:
+            tags.add("COL")
+            break
+
+    # 2. Análisis por Dominios / TLDs explícitos
+    if ".com.ve" in domain_lower or ".gob.ve" in domain_lower or ".ve/" in domain_lower or domain_lower.endswith(".ve"):
+        tags.add("VEN")
+    if ".com.co" in domain_lower or ".gov.co" in domain_lower or ".edu.co" in domain_lower:
+        tags.add("COL")
+
+    # 3. Análisis por Dominios registrados en teatros activos
     theaters = get_active_theaters()
     for code, t_data in theaters.items():
         if code == "GLOBAL":
             continue
 
-        # Check domain & source
         for d in t_data.get("domains", []):
-            d_clean = d.lower().split(".")[0]
-            if d.lower() in domain_lower or d_clean in source_lower or d.lower() in source_lower:
+            d_clean = d.lower()
+            if d_clean in domain_lower or (len(d_clean) > 4 and d_clean in source_lower):
                 tags.add(code)
                 break
 
-        # Check keywords
-        if code not in tags:
-            for kw in t_data.get("keywords", []):
-                if kw in text_lower or kw in source_lower:
-                    tags.add(code)
-                    break
+    # 4. Análisis por términos clave en el contenido o título de la noticia
+    VEN_KEYWORDS = [
+        "venezuela", "venezolano", "venezolana", "caracas", "maracaibo", "valencia",
+        "barquisimeto", "zulia", "táchira", "tachira", "fanb", "padrino lópez",
+        "padrino lopez", "maduro", "diosdado", "cantv", "sebin", "ceofanb",
+        "miraflores", "pdvsa", "esequibo", "anzoátegui", "monagas", "bolívar",
+        "aragua", "lara", "falcón", "margarita", "carabobo"
+    ]
+
+    COL_KEYWORDS = [
+        "colombia", "colombiano", "colombiana", "bogotá", "bogota", "medellín",
+        "medellin", "cali", "cauca", "catatumbo", "arauca", "tumaco", "putumayo",
+        "chocó", "choco", "eln", "emc", "marquetalia", "clan del golfo",
+        "gaitanistas", "petro", "caño limón", "paz total", "gaula",
+        "ffmm colombia", "cúcuta", "cucuta", "casa de nariño", "mindefensa"
+    ]
+
+    if "VEN" not in tags:
+        if any(kw in text_lower for kw in VEN_KEYWORDS):
+            tags.add("VEN")
+
+    if "COL" not in tags:
+        if any(kw in text_lower for kw in COL_KEYWORDS):
+            tags.add("COL")
 
     if not tags:
         tags.add("GLOBAL")
