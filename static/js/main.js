@@ -2647,15 +2647,23 @@ if (typeof window._startCobaltoApp === 'function') {
 /* ── SITREP GLOBAL ACTION HELPERS ────────────────────────────────────────── */
 window.sitrepFocusMap = function(countryTag, title) {
     if (window.CobaltoCore) window.CobaltoCore.switchTab('tab-map');
-    if (window.UnifiedMap && window.UnifiedMap.state && window.UnifiedMap.state.map) {
-        if (countryTag === 'COL') {
-            window.UnifiedMap.state.map.flyTo([6.5, -70.0], 6);
-        } else if (countryTag === 'VEN') {
-            window.UnifiedMap.state.map.flyTo([7.5, -66.5], 6.5);
-        } else {
-            window.UnifiedMap.state.map.flyTo([7.0, -68.0], 5);
+    setTimeout(function() {
+        if (window.UnifiedMap && window.UnifiedMap.state && window.UnifiedMap.state.map) {
+            var searched = false;
+            if (title && typeof window.UnifiedMap.searchVector === 'function') {
+                searched = window.UnifiedMap.searchVector(title);
+            }
+            if (!searched) {
+                if (countryTag === 'COL') {
+                    window.UnifiedMap.flyToTheater('COL');
+                } else if (countryTag === 'VEN') {
+                    window.UnifiedMap.flyToTheater('VEN');
+                } else {
+                    window.UnifiedMap.flyToTheater('GLOBAL');
+                }
+            }
         }
-    }
+    }, 150);
     if (typeof window.showTacticalToast === 'function') {
         window.showTacticalToast('📍 Enfocando mapa táctico en vector ' + countryTag, 'info');
     }

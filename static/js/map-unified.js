@@ -2,8 +2,11 @@ window.UnifiedMap = {
     state: {
         map: null,
         layers: {},
+        tileLayers: {},
+        currentBasemap: 'dark',
         pollTimers: [],
         active: false,
+        renderedMarkers: []
     },
 
     LAYER_DEFS: {
@@ -28,6 +31,13 @@ window.UnifiedMap = {
         operators: { 'Operador': 'operator_name', 'ID': 'operator_id', 'Grupo': 'unit_group', 'Batería (%)': 'battery_level', 'Estado': 'status', 'Red': 'network_type' },
     },
 
+    THEATERS: {
+        COL: { center: [4.5709, -74.2973], zoom: 6.0, name: 'Colombia' },
+        VEN: { center: [7.5000, -66.5000], zoom: 6.5, name: 'Venezuela' },
+        BORDER: { center: [7.1200, -71.2000], zoom: 8.5, name: 'Frontera Arauca-Apure-Cúcuta' },
+        GLOBAL: { center: [6.5000, -70.0000], zoom: 5.0, name: 'Vista Global' }
+    },
+
     init: function() {
         if (this.state.active) return;
         if (typeof L === 'undefined') {
@@ -48,16 +58,34 @@ window.UnifiedMap = {
         var self = this;
 
         this.state.map = L.map('unified-map-container', {
-            zoomControl: true,
-            attributionControl: true,
+            zoomControl: false,
+            attributionControl: false,
         }).setView([6.5, -70.0], 5);
 
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19,
-            attribution: '&copy; <a href="https://carto.com/">CARTO</a>',
-        }).addTo(this.state.map);
+        // Tile basemaps
+        this.state.tileLayers.dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 });
+        this.state.tileLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 });
+        this.state.tileLayers.light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 });
 
-        this.state.map.addControl(L.control.zoom({ position: 'bottomright' }));
+        this.state.tileLayers[this.state.currentBasemap].addTo(this.state.map);
+        L.control.zoom({ position: 'bottomright' }).addTo(this.state.map);
+
+        // Mouse Telemetry Listener
+        this.state.map.on('mousemove', function(e) {
+            var coordsEl = document.getElementById('map-telemetry-coords');
+            if (coordsEl) {
+                var latStr = e.latlng.lat.toFixed(4) + '° ' + (e.latlng.lat >= 0 ? 'N' : 'S');
+                var lngStr = e.latlng.lng.toFixed(4) + '° ' + (e.latlng.lng >= 0 ? 'E' : 'W');
+                coordsEl.textContent = latStr + ', ' + lngStr;
+            }
+        });
+
+        this.state.map.on('zoomend', function() {
+            var zoomEl = document.getElementById('map-telemetry-zoom');
+            if (zoomEl && self.state.map) {
+                zoomEl.textContent = self.state.map.getZoom().toFixed(1) + 'x';
+            }
+        });
 
         // Create cluster groups
         Object.keys(this.LAYER_DEFS).forEach(function(key) {
@@ -66,7 +94,7 @@ window.UnifiedMap = {
                 self.state.layers[key] = L.markerClusterGroup({
                     showCoverageOnHover: false,
                     spiderfyOnMaxZoom: true,
-                    maxClusterRadius: 50,
+                    maxClusterRadius: 45,
                     chunkedLoading: true,
                 });
             } else {
@@ -104,6 +132,65 @@ window.UnifiedMap = {
             this.state.map.remove();
             this.state.map = null;
         }
+    },
+
+    switchBasemap: function(type) {
+        if (!this.state.map || !this.state.tileLayers[type]) return;
+        if (this.state.tileLayers[this.state.currentBasemap]) {
+            this.state.map.removeLayer(this.state.tileLayers[this.state.currentBasemap]);
+        }
+        this.state.currentBasemap = type;
+        this.state.tileLayers[type].addTo(this.state.map);
+    },
+
+    flyToTheater: function(code) {
+        var t = this.THEATERS[code];
+        if (!t || !this.state.map) return;
+        this.state.map.flyTo(t.center, t.zoom, { duration: 1.5 });
+        if (typeof window.showTacticalToast === 'function') {
+            window.showTacticalToast('📍 Enfocando Teatro Táctico: ' + t.name, 'info');
+        }
+    },
+
+    searchVector: function(query) {
+        if (!query || !this.state.renderedMarkers.length || !this.state.map) return;
+        var q = query.toLowerCase().trim();
+
+        var match = this.state.renderedMarkers.find(function(m) {
+            var text = (m.title || '' ) + ' ' + (m.summary || '') + ' ' + (m.source || '') + ' ' + (m.callsign || '');
+            return text.toLowerCase().includes(q);
+        });
+
+        if (match && match.marker) {
+            this.state.map.flyTo([match.lat, match.lng], 12, { duration: 1.2 });
+            setTimeout(function() {
+                match.marker.openPopup();
+            }, 1300);
+            if (typeof window.showTacticalToast === 'function') {
+                window.showTacticalToast('🎯 Vector encontrado: ' + (match.title || match.callsign || query), 'info');
+            }
+        } else {
+            if (typeof window.showTacticalToast === 'function') {
+                window.showTacticalToast('⚠️ No se encontró vector coincidente para: ' + query, 'warning');
+            }
+        }
+    },
+
+    selectAllLayers: function(select) {
+        var self = this;
+        Object.keys(this.LAYER_DEFS).forEach(function(key) {
+            var def = self.LAYER_DEFS[key];
+            var layer = self.state.layers[key];
+            if (!def || !layer) return;
+            def.visible = select;
+            if (select) {
+                if (!self.state.map.hasLayer(layer)) self.state.map.addLayer(layer);
+            } else {
+                if (self.state.map.hasLayer(layer)) self.state.map.removeLayer(layer);
+            }
+        });
+        this._renderLayerPanel();
+        this._updateLayerCount();
     },
 
     _loadAllLayers: function() {
@@ -165,17 +252,13 @@ window.UnifiedMap = {
 
         layer.clearLayers();
 
+        // Filter out existing rendered markers for this layer
+        this.state.renderedMarkers = this.state.renderedMarkers.filter(function(m) { return m.layerKey !== key; });
+
         if (!items || !items.length) {
             this._updateLayerCount();
             return;
         }
-
-        var esc = function(s) {
-            if (s === null || s === undefined) return '';
-            return String(s).replace(/[&<>"']/g, function(m) {
-                return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m];
-            });
-        };
 
         for (var i = 0; i < items.length; i++) {
             var item = items[i];
@@ -186,15 +269,26 @@ window.UnifiedMap = {
 
             var marker = this._createMarker(def, item, lat, lng);
 
-            var popupHtml = this._buildPopupHtml(item, def);
+            var popupHtml = this._buildPopupHtml(item, def, lat, lng);
             marker.bindPopup(popupHtml, {
                 className: 'unified-map-popup',
                 closeButton: true,
                 maxWidth: 320,
-                minWidth: 200,
+                minWidth: 220,
             });
 
             layer.addLayer(marker);
+
+            this.state.renderedMarkers.push({
+                layerKey: key,
+                title: item.title || item.name || item.callsign || item.place || '',
+                summary: item.summary || item.description || '',
+                source: item.source || key,
+                callsign: item.callsign || '',
+                lat: lat,
+                lng: lng,
+                marker: marker
+            });
         }
 
         this._updateLayerCount();
@@ -202,21 +296,13 @@ window.UnifiedMap = {
 
     _createMarker: function(def, item, lat, lng) {
         if (def.id === 'cctv') {
-            var feedStatus = item.feed_url ? 'live' : 'nofeed';
             var marker = L.marker([lat, lng], {
                 icon: L.divIcon({
                     className: 'cctv-marker',
-                    html: '<div style="background:' + def.color + ';width:14px;height:14px;border-radius:4px;box-shadow:0 0 12px ' + def.color + ';display:flex;align-items:center;justify-content:center;font-size:9px;cursor:pointer;">📹</div>',
-                    iconSize: [18, 18],
-                    iconAnchor: [9, 9],
+                    html: '<div style="background:' + def.color + ';width:16px;height:16px;border-radius:4px;box-shadow:0 0 12px ' + def.color + ';display:flex;align-items:center;justify-content:center;font-size:10px;cursor:pointer;border:1px solid #fff;">📹</div>',
+                    iconSize: [20, 20],
+                    iconAnchor: [10, 10],
                 }),
-            });
-            var popupHtml = this._buildPopupHtml(item, def);
-            marker.bindPopup(popupHtml, {
-                className: 'unified-map-popup',
-                closeButton: true,
-                maxWidth: 320,
-                minWidth: 200,
             });
             return marker;
         }
@@ -225,18 +311,11 @@ window.UnifiedMap = {
             radius: this._getRadius(def, item),
             color: def.color,
             fillColor: def.color,
-            fillOpacity: 0.35,
+            fillOpacity: 0.4,
             weight: 1.5,
-            opacity: 0.8,
+            opacity: 0.9,
         });
 
-        var popupHtml = this._buildPopupHtml(item, def);
-        marker.bindPopup(popupHtml, {
-            className: 'unified-map-popup',
-            closeButton: true,
-            maxWidth: 320,
-            minWidth: 200,
-        });
         return marker;
     },
 
@@ -244,37 +323,43 @@ window.UnifiedMap = {
         var r = 6;
         if (def.id === 'earthquakes') {
             var mag = parseFloat(item.magnitude) || 0;
-            r = Math.max(4, Math.min(24, mag * 3));
+            r = Math.max(5, Math.min(26, mag * 3.5));
         } else if (def.id === 'fires') {
-            r = 5;
+            r = 6;
         } else if (def.id === 'satellites') {
-            r = 4;
-        } else if (def.id === 'cctv') {
             r = 5;
+        } else if (def.id === 'cctv') {
+            r = 6;
         } else if (def.id === 'flights') {
-            r = 7;
+            r = 8;
         }
         return r;
     },
 
-    _buildPopupHtml: function(item, def) {
+    _buildPopupHtml: function(item, def, lat, lng) {
         var esc = function(s) {
             if (s === null || s === undefined) return '';
-            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
         };
         var fields = this.POPUP_FIELDS[def.id] || {};
-        var html = '<div style="font-family:monospace;font-size:11px;color:#fff;max-width:280px;">';
-        html += '<div style="color:' + def.color + ';font-weight:bold;font-size:12px;margin-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.1);padding-bottom:4px;">' + def.icon + ' ' + esc(def.label) + '</div>';
+        var itemTitle = esc(item.title || item.name || item.callsign || def.label);
+        var coordsStr = lat.toFixed(4) + ', ' + lng.toFixed(4);
+
+        var html = '<div style="font-family:\'Roboto Mono\',monospace;font-size:11px;color:#fff;max-width:290px;">';
+        html += '<div style="color:' + def.color + ';font-weight:bold;font-size:12px;margin-bottom:6px;border-bottom:1px solid rgba(0,229,255,0.2);padding-bottom:4px;display:flex;align-items:center;justify-content:space-between;">' +
+            '<span>' + def.icon + ' ' + itemTitle + '</span>' +
+            '<span style="font-size:9px;color:#94A3B8;">' + esc(def.label) + '</span>' +
+            '</div>';
 
         if (def.id === 'cctv') {
             if (item.feed_url) {
                 var camId = 'cctv-ph-' + Math.random().toString(36).slice(2,8);
                 var proxyUrl = '/api/osiris/cctv/image?url=' + encodeURIComponent(item.feed_url);
                 html += '<div style="margin-bottom:6px;position:relative;">' +
-                    '<div id="' + camId + '" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#64748B;font-size:9px;font-family:monospace;background:#050505;border-radius:4px;z-index:1;">CONNECTING...</div>' +
-                    '<img src="' + proxyUrl + '" style="width:100%;border-radius:4px;max-height:120px;object-fit:cover;position:relative;z-index:2;" loading="lazy" onload="var p=document.getElementById(\'' + camId + '\');if(p)p.style.display=\'none\';" onerror="var p=document.getElementById(\'' + camId + '\');if(p){p.textContent=\'📹 OFFLINE\';p.style.color=\'#FF4444\';}" /></div>';
+                    '<div id="' + camId + '" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#64748B;font-size:9px;font-family:monospace;background:#050505;border-radius:4px;z-index:1;">CONECTANDO TRANSMISIÓN...</div>' +
+                    '<img src="' + proxyUrl + '" style="width:100%;border-radius:4px;max-height:130px;object-fit:cover;position:relative;z-index:2;" loading="lazy" onload="var p=document.getElementById(\'' + camId + '\');if(p)p.style.display=\'none\';" onerror="var p=document.getElementById(\'' + camId + '\');if(p){p.textContent=\'📹 OFFLINE\';p.style.color=\'#FF4444\';}" /></div>';
             } else {
-                html += '<div style="margin-bottom:6px;padding:20px;text-align:center;color:#64748B;font-size:10px;font-family:monospace;background:#050505;border-radius:4px;">📹 NO FEED URL</div>';
+                html += '<div style="margin-bottom:6px;padding:16px;text-align:center;color:#64748B;font-size:10px;font-family:monospace;background:#050505;border-radius:4px;">📹 TRANSMISIÓN EN VIVO NO DISPONIBLE</div>';
             }
         }
 
@@ -282,8 +367,13 @@ window.UnifiedMap = {
             var val = item[fields[f]];
             if (val === null || val === undefined || val === '') continue;
             var displayVal = typeof val === 'number' ? val.toLocaleString() : esc(val);
-            html += '<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><span style="color:#94A3B8;">' + esc(f) + '</span><span style="color:#ddd;">' + displayVal + '</span></div>';
+            html += '<div style="display:flex;justify-content:space-between;padding:2px 0;border-bottom:1px solid rgba(255,255,255,0.03);"><span style="color:#94A3B8;">' + esc(f) + '</span><span style="color:#ddd;font-weight:bold;">' + displayVal + '</span></div>';
         }
+
+        html += '<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.08);display:flex;gap:4px;flex-wrap:wrap;">' +
+            '<button onclick="navigator.clipboard.writeText(\'' + coordsStr + '\');if(typeof showTacticalToast===\'function\')showTacticalToast(\'📍 Coordenadas copiadas: ' + coordsStr + '\',\'info\')" style="flex:1;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.3);color:#00E5FF;border-radius:4px;padding:3px;font-size:9px;font-family:monospace;cursor:pointer;">📍 Coordenadas</button>' +
+            '<button onclick="if(window.sitrepInvestigateRAG)window.sitrepInvestigateRAG(\'' + itemTitle.replace(/'/g, "\\'") + '\')" style="flex:1;background:rgba(179,136,255,0.1);border:1px solid rgba(179,136,255,0.3);color:#B388FF;border-radius:4px;padding:3px;font-size:9px;font-family:monospace;cursor:pointer;">🎯 Investigar RAG</button>' +
+            '</div>';
 
         html += '</div>';
         return html;
@@ -333,11 +423,14 @@ window.UnifiedMap = {
         keys.forEach(function(key) {
             var def = self.LAYER_DEFS[key];
             var checked = def.visible ? 'checked' : '';
-            html += '<div style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid rgba(255,255,255,0.03);cursor:pointer;" onclick="window.UnifiedMap.toggleLayer(\'' + key + '\')">' +
+            var itemCount = self.state.renderedMarkers.filter(function(m) { return m.layerKey === key; }).length;
+
+            html += '<div style="display:flex;align-items:center;gap:8px;padding:6px 6px;border-bottom:1px solid rgba(255,255,255,0.03);border-radius:6px;cursor:pointer;background:rgba(255,255,255,0.01);" onclick="window.UnifiedMap.toggleLayer(\'' + key + '\')">' +
                 '<input type="checkbox" ' + checked + ' style="accent-color:' + def.color + ';width:14px;height:14px;cursor:pointer;" onclick="event.stopPropagation();window.UnifiedMap.toggleLayer(\'' + key + '\')" />' +
-                '<span style="font-size:14px;">' + def.icon + '</span>' +
-                '<span style="flex:1;font-size:0.7rem;color:#ddd;">' + def.label + '</span>' +
-                '<button onclick="event.stopPropagation();window.UnifiedMap.refreshLayer(\'' + key + '\')" style="background:none;border:none;color:#64748B;cursor:pointer;font-size:0.7rem;padding:2px;">⟳</button>' +
+                '<span style="font-size:13px;">' + def.icon + '</span>' +
+                '<span style="flex:1;font-size:0.7rem;color:#E2E8F0;">' + def.label + '</span>' +
+                '<span style="font-size:0.65rem;color:var(--primary);background:rgba(0,229,255,0.08);padding:1px 5px;border-radius:4px;font-weight:bold;">' + itemCount + '</span>' +
+                '<button onclick="event.stopPropagation();window.UnifiedMap.refreshLayer(\'' + key + '\')" style="background:none;border:none;color:#64748B;cursor:pointer;font-size:0.75rem;padding:2px;" title="Refrescar capa">⟳</button>' +
                 '</div>';
         });
         list.innerHTML = html;
@@ -345,13 +438,17 @@ window.UnifiedMap = {
 
     _updateLayerCount: function() {
         var countEl = document.getElementById('unified-layer-count');
-        if (!countEl) return;
+        var hudMarkerCountEl = document.getElementById('map-hud-marker-count');
+
         var visible = 0;
         var total = 0;
         for (var key in this.LAYER_DEFS) {
             total++;
             if (this.LAYER_DEFS[key].visible) visible++;
         }
-        countEl.textContent = visible + '/' + total;
+        if (countEl) countEl.textContent = visible + '/' + total;
+
+        var totalMarkers = this.state.renderedMarkers.length;
+        if (hudMarkerCountEl) hudMarkerCountEl.textContent = totalMarkers + ' VECTORES';
     },
 };

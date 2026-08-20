@@ -4163,4 +4163,51 @@ body.ai-collapsed .telemetry-drawer {
     display: none;
 }
 
+/* ── TACTICAL UNIFIED MAP C4ISR STYLES ──────────────────────────────────── */
+.unified-map-popup .leaflet-popup-content-wrapper {
+    background: rgba(10, 12, 18, 0.94) !important;
+    border: 1px solid rgba(0, 229, 255, 0.3) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 229, 255, 0.15) !important;
+    backdrop-filter: blur(14px) !important;
+    color: #E2E8F0 !important;
+    padding: 2px !important;
+}
+.unified-map-popup .leaflet-popup-tip {
+    background: rgba(10, 12, 18, 0.94) !important;
+    border: 1px solid rgba(0, 229, 255, 0.3) !important;
+}
+.unified-map-popup .leaflet-popup-close-button {
+    color: var(--primary) !important;
+    padding: 4px 6px 0 0 !important;
+}
 
+.map-hud-chip {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    transition: all 0.2s ease;
+}
+.map-hud-chip:hover {
+    border-color: var(--primary) !important;
+    box-shadow: 0 4px 20px rgba(0, 229, 255, 0.25);
+}
+
+.cctv-marker {
+    transition: transform 0.2s ease;
+}
+.cctv-marker:hover {
+    transform: scale(1.25);
+}
+
+/* Cluster Custom Styling */
+.marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+    background: rgba(0, 229, 255, 0.25) !important;
+    border: 1px solid var(--primary) !important;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.4) !important;
+}
+.marker-cluster div {
+    background: rgba(10, 12, 18, 0.85) !important;
+    color: #00E5FF !important;
+    font-family: 'Roboto Mono', monospace !important;
+    font-weight: bold !important;
+    font-size: 12px !important;
+}
