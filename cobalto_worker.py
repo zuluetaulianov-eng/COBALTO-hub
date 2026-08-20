@@ -257,6 +257,13 @@ async def _run_full_cycle() -> bool:
             get_dashboard_data(priority_only=False), timeout=1200
         )
         if ctx:
+            # Cosechar términos emergentes para auto-alimentación continua
+            try:
+                import keyword_harvester
+                ctx["emerging_keywords"] = keyword_harvester.get_emerging_summary_by_theater()
+            except Exception as kh_err:
+                logger.debug(f"[HARVESTER] Error cosechando términos: {kh_err}")
+
             await _save_cache(ctx)
             count = len(ctx.get('all_entries', []))
             sources = ctx.get('total_sources', 0)

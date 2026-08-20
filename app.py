@@ -2211,6 +2211,17 @@ async def get_dossier_targets_api():
     return JSONResponse(dossier_engine.get_preloaded_tactical_targets())
 
 
+@app.get("/api/analytics/emerging-keywords")
+async def get_emerging_keywords_api(theater: Optional[str] = "ALL"):
+    """Retorna los términos y palabras clave emergentes cosechadas del flujo de inteligencia."""
+    import keyword_harvester
+    if theater == "SUMMARY":
+        return JSONResponse(keyword_harvester.get_emerging_summary_by_theater())
+    keywords = keyword_harvester.harvest_emerging_keywords(theater_filter=theater)
+    return JSONResponse({"theater": theater, "keywords": keywords})
+
+
+
 
 @app.post("/api/extractor/run")
 async def trigger_extractor_run():
