@@ -43,6 +43,63 @@ search_multiple_users_for_dashboard = _user_search.get(
 SOCIAL_SEMAPHORE = asyncio.Semaphore(5)
 
 
+import re
+
+STOPWORDS = {
+    "de", "del", "la", "el", "los", "las", "un", "una", "unos", "unas", "en", "para", "por", "con", "sin",
+    "sobre", "entre", "tras", "hacia", "hasta", "contra", "y", "o", "que", "es", "son", "se", "su", "sus",
+    "al", "lo", "como", "mas", "más", "pero", "este", "esta", "estos", "estas"
+}
+
+def extract_keywords(text: str) -> set:
+    if not text:
+        return set()
+    words = re.findall(r'\b[a-zA-ZáéíóúñÁÉÍÓÚÑ0-9]{3,}\b', text.lower())
+    return {w for w in words if w not in STOPWORDS}
+
+def cluster_similar_entries(entries: List[Dict]) -> List[Dict]:
+    clustered = []
+    for entry in entries:
+        title = entry.get("title", "")
+        summary = entry.get("summary", "")
+        entry_kw = extract_keywords(title + " " + summary[:100])
+        
+        matched_cluster = None
+        for existing in clustered:
+            ex_kw = existing.get("_keywords")
+            if not ex_kw or not entry_kw:
+                continue
+            
+            intersection = entry_kw.intersection(ex_kw)
+            union = entry_kw.union(ex_kw)
+            jaccard = len(intersection) / len(union) if union else 0.0
+            
+            if jaccard >= 0.38 or (len(intersection) >= 3 and len(entry_kw) >= 3):
+                matched_cluster = existing
+                break
+        
+        if matched_cluster:
+            rel_sources = matched_cluster.setdefault("related_sources", [])
+            src_info = {
+                "source": entry.get("source", "OSINT"),
+                "title": title,
+                "link": entry.get("link", "#"),
+                "published": entry.get("published", "")
+            }
+            if not any(s.get("link") == src_info["link"] or s.get("source") == src_info["source"] for s in rel_sources):
+                rel_sources.append(src_info)
+            matched_cluster["sources_count"] = 1 + len(rel_sources)
+        else:
+            entry_copy = entry.copy()
+            entry_copy["_keywords"] = entry_kw
+            entry_copy["related_sources"] = []
+            entry_copy["sources_count"] = 1
+            clustered.append(entry_copy)
+            
+    for item in clustered:
+        item.pop("_keywords", None)
+    return clustered
+
 async def _build_pipeline_async(priority_only: bool = False) -> Dict[str, Any]:
     state.progress_state.update({"step": "Escaneando RSS", "percentage": 25})
     external_raw = await fetch_external_news_async(priority_only=priority_only)
@@ -74,6 +131,7 @@ async def _build_pipeline_async(priority_only: bool = False) -> Dict[str, Any]:
             return 0
 
     all_entries.sort(key=sort_key, reverse=True)
+    all_entries = cluster_similar_entries(all_entries)
     state.last_entries_cache = all_entries[:2000]
     return {
         "external": external_raw,

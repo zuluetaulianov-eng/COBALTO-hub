@@ -103,6 +103,9 @@
 
                         <!-- Acciones Especiales y Vistas -->
                         <div class="flex items-center gap-05">
+                            <button type="button" id="btn-toggle-sitrep-grouping" onclick="window.toggleSitrepGrouping()" class="btn-tactical active" title="Agrupar noticias similares de múltiples medios o canales">
+                                <span id="sitrep-group-icon">🔗</span> <span id="sitrep-group-label" class="text-xs">Agrupar Fuentes</span>
+                            </button>
                             <button type="button" onclick="CobaltoCore.loadExpressBriefing(); document.getElementById('sitrep-ai-briefing-wrapper').style.display='block';" class="btn-tactical" style="background: linear-gradient(135deg, rgba(0, 229, 255, 0.2) 0%, rgba(179, 136, 255, 0.2) 100%); border-color: var(--primary); color: #fff; font-weight: bold;">
                                 ⚡ SITREP IA
                             </button>
@@ -129,11 +132,15 @@
                     {% if all_entries %}
                     {% for item in all_entries[:30] %}
                     {% set country_tag = item.country_tags[0] if item.country_tags else 'GLOBAL' %}
-                    <div class="news-card" data-title="{{ item.title|lower }}" data-summary="{{ item.summary|lower }}" data-country="{% if item.country_tags %}{{ item.country_tags|join(' ') }}{% else %}GLOBAL{% endif %}" data-category="ALL" data-severity="INFO">
+                    {% set sources_count = item.sources_count|default(1) %}
+                    <div class="news-card" data-title="{{ item.title|lower }}" data-summary="{{ item.summary|lower }}" data-country="{% if item.country_tags %}{{ item.country_tags|join(' ') }}{% else %}GLOBAL{% endif %}" data-category="ALL" data-severity="INFO" data-sources-count="{{ sources_count }}">
                         <div>
                             <div class="news-header">
-                                <div class="flex items-center gap-05">
+                                <div class="flex items-center gap-05 flex-wrap">
                                     <span class="news-source">{{ item.source }}</span>
+                                    {% if sources_count > 1 %}
+                                    <span class="config-chip" style="font-size:0.68rem; background:rgba(0,229,255,0.15); border:1px solid var(--primary); color:#00E5FF; font-weight:bold;">🌐 {{ sources_count }} FUENTES</span>
+                                    {% endif %}
                                     <span class="news-country-tag {{ country_tag|lower }}">{% if country_tag == 'COL' %}🇨🇴 COL{% elif country_tag == 'VEN' %}🇻🇪 VEN{% else %}🌐 INTL{% endif %}</span>
                                 </div>
                                 <span class="news-time">{{ item.published }}</span>
@@ -166,7 +173,7 @@
                     
                     <!-- Header del Modal -->
                     <div class="sitrep-modal-header p-2 flex-between" style="background:rgba(15,20,30,0.85); border-bottom:1px solid rgba(255,255,255,0.08);">
-                        <div class="flex items-center gap-1">
+                        <div class="flex items-center gap-1 flex-wrap">
                             <span class="news-country-tag" id="sitrep-modal-country">🇨🇴 COL</span>
                             <span class="news-severity-tag" id="sitrep-modal-severity">🔴 CRÍTICO</span>
                             <span class="text-muted font-mono text-xs" id="sitrep-modal-source">FUENTE OSINT</span>
@@ -186,6 +193,15 @@
 
                         <!-- Título Principal -->
                         <h2 id="sitrep-modal-title" class="text-white font-bold" style="font-size:1.35rem; line-height:1.4; margin:0; color:#fff;"></h2>
+
+                        <!-- Panel de Fuentes Coincidentes / Agrupadas -->
+                        <div id="sitrep-modal-sources-box" class="p-2 rounded-lg" style="background:rgba(0,229,255,0.04); border:1px solid rgba(0,229,255,0.2);">
+                            <div class="flex-between items-center mb-1">
+                                <span class="text-primary font-mono text-xs font-bold">🌐 FUENTES QUE REPORTAN ESTE EVENTO MÁS RECIENTEMENTE:</span>
+                                <span class="config-chip" id="sitrep-modal-sources-count" style="font-size:0.7rem; background:rgba(0,229,255,0.15); color:var(--primary);">1 FUENTE</span>
+                            </div>
+                            <div id="sitrep-modal-sources-list" class="flex flex-column gap-05" style="display:flex; flex-direction:column;"></div>
+                        </div>
 
                         <!-- Entidades Detectadas -->
                         <div class="sitrep-entities-panel p-2 rounded-lg" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06);">
@@ -217,7 +233,7 @@
                             <button type="button" class="btn-tactical" onclick="window.sitrepInvestigateRAG(window._activeSitrepModalData.title); window.closeSitrepReader();">🎯 Investigar RAG</button>
                             <button type="button" class="btn-tactical" onclick="if(window.CobaltoNotes && window._activeSitrepModalCard) window.CobaltoNotes._toggleNote(window._activeSitrepModalCard);">📝 Nota</button>
                         </div>
-                        <a id="sitrep-modal-link" href="#" target="_blank" rel="noopener noreferrer" class="btn-tactical" style="background:rgba(0,229,255,0.2); color:#fff; border-color:var(--primary);">🔗 Fuente Original ↗</a>
+                        <a id="sitrep-modal-link" href="#" target="_blank" rel="noopener noreferrer" class="btn-tactical" style="background:rgba(0,229,255,0.2); color:#fff; border-color:var(--primary);">🔗 Fuente Principal ↗</a>
                     </div>
                 </div>
             </div>
@@ -227,6 +243,7 @@ window._allNews = null;
 window._newsPage = 1;
 window._newsPerPage = 30;
 window._sitrepViewMode = 'grid';
+window._sitrepGroupDuplicates = true;
 
 window.setSitrepTheater = function(code, btn) {
     document.querySelectorAll('.sitrep-pill').forEach(function(b) { b.classList.remove('active'); });
@@ -250,6 +267,27 @@ window.toggleSitrepView = function() {
         grid.classList.remove('news-stream-mode');
         if (label) label.textContent = 'Stream';
         if (icon) icon.textContent = '🔀';
+    }
+};
+
+window.toggleSitrepGrouping = function() {
+    window._sitrepGroupDuplicates = !window._sitrepGroupDuplicates;
+    var btn = document.getElementById('btn-toggle-sitrep-grouping');
+    var label = document.getElementById('sitrep-group-label');
+    if (btn && label) {
+        if (window._sitrepGroupDuplicates) {
+            btn.classList.add('active');
+            label.textContent = 'Agrupar Fuentes';
+            if (typeof window.showTacticalToast === 'function') window.showTacticalToast('🔗 Agrupamiento de noticias repetidas ACTIVADO', 'info');
+        } else {
+            btn.classList.remove('active');
+            label.textContent = 'Todas las Fuentes';
+            if (typeof window.showTacticalToast === 'function') window.showTacticalToast('📄 Mostrando todas las publicaciones individuales', 'info');
+        }
+    }
+    if (window.CobaltoCore && typeof window.CobaltoCore.loadNews === 'function') {
+        window._newsPage = 1;
+        window.CobaltoCore.loadNews(true);
     }
 };
 

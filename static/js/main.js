@@ -694,9 +694,11 @@ window.CobaltoCore = {
         const grid = document.getElementById('news-grid');
         if (!grid || !this.state.allNews) return;
         const start = (page - 1) * this.state.newsPerPage;
-        const items = this.state.allNews.slice(start, start + this.state.newsPerPage);
-        if (!items.length) return;
+        var rawItems = this.state.allNews.slice(start, start + this.state.newsPerPage);
+        if (!rawItems.length) return;
         
+        var items = window.clusterNewsItems ? window.clusterNewsItems(rawItems) : rawItems;
+
         const html = items.map(item => {
             var t = (item.title || '').toLowerCase();
             var s = (item.summary || '').toLowerCase();
@@ -726,16 +728,21 @@ window.CobaltoCore = {
             else if (/gobierno|presidente|cancillería|congreso|asamblea|política/i.test(textCombined)) category = 'POLITICS';
             else if (/dólar|sanción|economía|petróleo|inflación|banca/i.test(textCombined)) category = 'ECONOMY';
             
+            var sourcesCount = item.sources_count || 1;
+            var sourcesBadgeHtml = sourcesCount > 1 ? `<span class="config-chip" style="font-size:0.68rem; background:rgba(0,229,255,0.15); border:1px solid var(--primary); color:#00E5FF; font-weight:bold;">🌐 ${sourcesCount} FUENTES</span>` : '';
+            var relatedJson = item.related_sources ? this.utils.escapeHTML(JSON.stringify(item.related_sources)) : '[]';
+
             var imgHtml = item.image ? `<img src="${this.utils.escapeHTML(item.image)}" class="card-image" style="margin-bottom: 0.8rem; border-radius: 8px; cursor:pointer;" alt="" loading="lazy" onclick="window.openSitrepReader(this.closest('.news-card'))">` : '';
             var titleClean = (item.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
             var linkEsc = this.utils.escapeHTML(item.link || '#');
 
             return `
-                <div class="news-card" data-title="${this.utils.escapeHTML(t)}" data-summary="${this.utils.escapeHTML(s)}" data-country="${countryTag}" data-category="${category}" data-severity="${severity}">
+                <div class="news-card" data-title="${this.utils.escapeHTML(t)}" data-summary="${this.utils.escapeHTML(s)}" data-country="${countryTag}" data-category="${category}" data-severity="${severity}" data-sources-count="${sourcesCount}" data-related="${relatedJson}">
                     <div>
                         <div class="news-header">
-                            <div class="flex items-center gap-05">
+                            <div class="flex items-center gap-05 flex-wrap">
                                 <span class="news-source">${this.utils.escapeHTML(item.source || '')}</span>
+                                ${sourcesBadgeHtml}
                                 <span class="news-country-tag ${countryClass}">${countryFlag}</span>
                                 <span class="news-severity-tag ${severityClass}">${severityLabel}</span>
                             </div>
@@ -2680,6 +2687,68 @@ window.sitrepCopyLink = function(url) {
     }
 };
 
+/* ── SITREP CLUSTERING & DEDUPLICATION ENGINE ───────────────────────────── */
+window.clusterNewsItems = function(items) {
+    if (!window._sitrepGroupDuplicates || !items || !items.length) return items;
+
+    var stopwords = new Set(["de", "del", "la", "el", "los", "las", "un", "una", "unos", "unas", "en", "para", "por", "con", "sin", "sobre", "entre", "tras", "hacia", "hasta", "contra", "y", "o", "que", "es", "son", "se", "su", "sus", "al", "lo", "como", "mas", "más", "pero", "este", "esta", "estos", "estas"]);
+
+    function getKeywords(text) {
+        if (!text) return new Set();
+        var words = text.toLowerCase().match(/[a-záéíóúñ0-9]{3,}/g) || [];
+        var kw = new Set();
+        words.forEach(w => { if (!stopwords.has(w)) kw.add(w); });
+        return kw;
+    }
+
+    var clusters = [];
+    items.forEach(function(item) {
+        var t = item.title || '';
+        var s = item.summary || '';
+        var kw = getKeywords(t + ' ' + s.slice(0, 100));
+
+        var found = null;
+        for (var i = 0; i < clusters.length; i++) {
+            var exKw = clusters[i]._kw;
+            if (!exKw || !kw.size) continue;
+
+            var matchCount = 0;
+            kw.forEach(w => { if (exKw.has(w)) matchCount++; });
+
+            var unionSize = new Set([...kw, ...exKw]).size;
+            var jaccard = unionSize > 0 ? (matchCount / unionSize) : 0;
+
+            if (jaccard >= 0.38 || (matchCount >= 3 && kw.size >= 3)) {
+                found = clusters[i];
+                break;
+            }
+        }
+
+        if (found) {
+            if (!found.related_sources) found.related_sources = [];
+            var srcObj = {
+                source: item.source || 'OSINT',
+                title: item.title || '',
+                link: item.link || '#',
+                published: item.published || ''
+            };
+            if (!found.related_sources.some(s => s.source === srcObj.source || s.link === srcObj.link)) {
+                found.related_sources.push(srcObj);
+            }
+            found.sources_count = 1 + found.related_sources.length;
+        } else {
+            var itemCopy = Object.assign({}, item);
+            itemCopy._kw = kw;
+            itemCopy.related_sources = item.related_sources ? [...item.related_sources] : [];
+            itemCopy.sources_count = item.sources_count || 1;
+            clusters.push(itemCopy);
+        }
+    });
+
+    clusters.forEach(c => delete c._kw);
+    return clusters;
+};
+
 /* ── SITREP TACTICAL READER MODAL HANDLERS ───────────────────────────────── */
 window._activeSitrepModalData = null;
 window._activeSitrepModalCard = null;
@@ -2698,6 +2767,14 @@ window.openSitrepReader = function(card) {
     var img = card.querySelector('.card-image')?.src || '';
     var link = card.querySelector('.news-card-actions .news-action-btn[onclick*="sitrepCopyLink"]')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1] || card.querySelector('.news-title')?.href || '#';
 
+    var rawRelated = card.getAttribute('data-related') || '[]';
+    var relatedSources = [];
+    try {
+        relatedSources = JSON.parse(rawRelated);
+    } catch(e) {
+        relatedSources = [];
+    }
+
     window._activeSitrepModalCard = card;
     window._activeSitrepModalData = {
         title: title,
@@ -2707,7 +2784,8 @@ window.openSitrepReader = function(card) {
         source: source,
         time: time,
         img: img,
-        link: link
+        link: link,
+        relatedSources: relatedSources
     };
 
     var titleEl = document.getElementById('sitrep-modal-title');
@@ -2744,6 +2822,37 @@ window.openSitrepReader = function(card) {
         imgWrapper.style.display = 'block';
     } else if (imgWrapper) {
         imgWrapper.style.display = 'none';
+    }
+
+    // Populate Multi-Source Box
+    var sourcesBox = document.getElementById('sitrep-modal-sources-box');
+    var sourcesList = document.getElementById('sitrep-modal-sources-list');
+    var sourcesCountBadge = document.getElementById('sitrep-modal-sources-count');
+    var totalSourcesCount = 1 + relatedSources.length;
+
+    if (sourcesBox && sourcesList) {
+        if (sourcesCountBadge) sourcesCountBadge.textContent = totalSourcesCount + (totalSourcesCount === 1 ? ' FUENTE' : ' FUENTES');
+        
+        var mainSourceHtml = `
+            <div class="flex-between items-center p-1 rounded" style="background:rgba(0,229,255,0.08); border-left:3px solid var(--primary);">
+                <div class="flex items-center gap-05">
+                    <span class="text-primary font-bold text-xs">⭐ ${source.toUpperCase()} (Principal)</span>
+                </div>
+                <a href="${link}" target="_blank" rel="noopener noreferrer" class="text-xs text-primary font-mono" style="text-decoration:underline;">Abrir Noticia ↗</a>
+            </div>
+        `;
+
+        var relatedHtml = relatedSources.map(s => `
+            <div class="flex-between items-center p-1 rounded" style="background:rgba(255,255,255,0.03); border-left:3px solid rgba(255,255,255,0.2);">
+                <div>
+                    <span class="text-white font-mono text-xs font-bold">${(s.source || 'OSINT').toUpperCase()}:</span>
+                    <span class="text-muted text-xs ms-1">${(s.title || '').slice(0, 70)}...</span>
+                </div>
+                <a href="${s.link || '#'}" target="_blank" rel="noopener noreferrer" class="text-xs text-muted font-mono" style="text-decoration:underline;">Ver ↗</a>
+            </div>
+        `).join('');
+
+        sourcesList.innerHTML = mainSourceHtml + relatedHtml;
     }
 
     var entitiesContainer = document.getElementById('sitrep-modal-entities');
