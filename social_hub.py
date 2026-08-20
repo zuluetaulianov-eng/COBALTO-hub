@@ -166,7 +166,7 @@ def is_duplicate(item: Dict) -> bool:
 
 
 # ── Extractores: Scrapers Públicos (v3) ──────────────────────────
-NITTER_INSTANCES = ["https://nitter.net", "https://nitter.privacydev.net", "https://twitt.re"]
+NITTER_INSTANCES = ["https://nitter.projectsegfau.lt", "https://nitter.cz"]
 
 
 def fetch_rss(name: str, url: str, max_items: int = 5) -> List[Dict]:

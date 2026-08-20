@@ -335,9 +335,12 @@ def get_news_international() -> List[Dict[str, Any]]:
 # AGREGADORES DE NOTICIAS
 # ==========================================
 NEWS_AGGREGATORS = {
-    "News.google (Venezuela)": "https://news.google.com/rss/search?q=venezuela&hl=es-CO&gl=CO&ceid=CO:es",
+    "Google News (Venezuela)": "https://news.google.com/rss/search?q=venezuela&hl=es-CO&gl=CO&ceid=CO:es",
+    "Google News (Colombia)": "https://news.google.com/rss/search?q=colombia&hl=es-CO&gl=CO&ceid=CO:es",
+    "Google News (Conflicto Colombia)": "https://news.google.com/rss/search?q=eln+OR+emc+OR+clan+del+golfo+colombia&hl=es-CO&gl=CO&ceid=CO:es",
     "Yahoo News Venezuela": "https://news.yahoo.com/rss/tag/venezuela",
     "Microsoft News Venezuela": "https://www.bing.com/news/search?q=venezuela&format=rss",
+    "Microsoft News Colombia": "https://www.bing.com/news/search?q=colombia&format=rss",
 }
 
 

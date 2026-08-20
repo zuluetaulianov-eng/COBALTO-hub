@@ -106,20 +106,14 @@ RSS_FEEDS = {
 TELEGRAM_SOURCES = {
     # Venezuela
     "Venevisión Oficial": "https://t.me/s/noticierovenevision",
-    "El Pitazo Venezuela": "https://t.me/s/elpitazove",
-    "La Patilla Canal": "https://t.me/s/lapatillaoficial",
-    "Efecto Cocuyo": "https://t.me/s/efectococuyo",
-    "AlbertoRodNews (Venezuela)": "https://t.me/s/AlbertoRodNews",
-    "RunRunes": "https://t.me/s/runrunesweb",
+    "AlbertoRodNews (Venezuela)": "https://t.me/s/albertorodnews",
+    "Runrunes": "https://t.me/s/runrunes",
+    "EVTV Miami": "https://t.me/s/evtvmiami",
+    "NotiVenezuela": "https://t.me/s/notivenezuelaarma",
     # Colombia
-    "Noticias Caracol": "https://t.me/s/NoticiasCaracol",
-    "El Tiempo Colombia": "https://t.me/s/ElTiempoColombia",
-    "Revista Semana": "https://t.me/s/RevistaSemana",
-    "Noticias RCN": "https://t.me/s/NoticiasRCN",
-    "El Espectador": "https://t.me/s/elespectadorcom",
-    "Blu Radio Colombia": "https://t.me/s/bluradioco",
-    "Caracol Radio Oficial": "https://t.me/s/CaracolRadio",
-    "W Radio Colombia": "https://t.me/s/WRadioColombia",
+    "Revista Semana": "https://t.me/s/semana",
+    "Blu Radio Colombia": "https://t.me/s/bluradio",
+    "Cambio Colombia": "https://t.me/s/cambiocolombia",
 }
 
 # ── Fuentes Prioritarias (para carga rápida inicial) ──
