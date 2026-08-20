@@ -4,7 +4,6 @@ Rutas: /api/analytics-data, /api/graph-timeline, /api/realtime,
        /api/social, /api/cyber, /api/narrative
 Nota: accede a app_state via lazy import.
 """
-import asyncio
 import logging
 from datetime import datetime
 

@@ -26,6 +26,18 @@ dependencies = [
 [tool.ruff]
 line-length = 120
 target-version = "py311"
+exclude = [
+    "crawl4ai-main",
+    "sistema inteligente",
+    "BOTDOCUMENTO",
+    "Ollama_Interfaz_Windows CON REPORTE",
+    "deprecated_social",
+    "scratch",
+    "scripts",
+    "cobalto_mobile",
+    "dist_nuitka",
+    "dist_installer",
+]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "N", "W"]
@@ -35,6 +47,21 @@ ignore = ["E501", "F403", "F405"]
 python_version = "3.11"
 ignore_missing_imports = true
 check_untyped_defs = false
+exclude = [
+    "crawl4ai-main",
+    "sistema inteligente",
+    "BOTDOCUMENTO",
+    "Ollama_Interfaz_Windows CON REPORTE",
+    "deprecated_social",
+    "scratch",
+    "scripts",
+    "cobalto_mobile",
+    "dist",
+    "dist_nuitka",
+    "dist_installer",
+    "build",
+    "tests",
+]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

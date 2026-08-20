@@ -2,6 +2,7 @@
 
 import os
 import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
@@ -83,6 +84,7 @@ def test_event_bus_history():
 
 def test_event_bus_async():
     import asyncio
+
     from event_bus import EventBus
     eb = EventBus()
     received = []
@@ -107,7 +109,7 @@ def test_event_bus_handler_count():
 
 
 def test_historical_store_imports():
-    from historical_store import store_entries, query_range, get_stats, delete_older_than
+    from historical_store import delete_older_than, get_stats, query_range, store_entries
     assert callable(store_entries)
     assert callable(query_range)
     assert callable(get_stats)
@@ -116,7 +118,8 @@ def test_historical_store_imports():
 
 def test_historical_store_store_and_query():
     from datetime import datetime, timedelta
-    from historical_store import store_entries, query_range, get_stats
+
+    from historical_store import query_range, store_entries
 
     now = datetime.now()
     entries = [
@@ -152,7 +155,8 @@ def test_historical_store_stats():
 
 def test_historical_store_delete():
     from datetime import datetime, timedelta
-    from historical_store import store_entries, query_range, delete_older_than
+
+    from historical_store import delete_older_than, query_range, store_entries
 
     old_dt = datetime.now() - timedelta(days=400)
     entries = [

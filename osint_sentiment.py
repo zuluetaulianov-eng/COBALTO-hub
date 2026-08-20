@@ -368,7 +368,8 @@ def puntuar_sentimiento(tokens: list[str], raw_text: str = "") -> dict:
 
 
 def _calcular_entropia(texto: str) -> float:
-    if not texto: return 0.0
+    if not texto:
+        return 0.0
     probs = [float(texto.count(c)) / len(texto) for c in set(texto)]
     return -sum(p * math.log(p, 2) for p in probs)
 
@@ -505,13 +506,10 @@ async def get_sentiment_data(entries: list[dict]) -> dict:
     # ── Limitar corpus para rendimiento (límite configurable) ──
     muestra = entries[:_max_muestras()]
 
-    # D1: Obtener las nuevas para evitar llamadas repetidas al LLM más adelante
-    nuevas = muestra
+    # D1: Registrar hashes de entradas procesadas para deduplicación futura
     if _HIST_OK:
         try:
-            _nuevas_filtradas = _hist.filter_new_entries(muestra)
-            if _nuevas_filtradas is not None:
-                nuevas = _nuevas_filtradas
+            _hist.filter_new_entries(muestra)
         except Exception as e:
             logger.debug(f"[SENTIMENT] Hash filter error: {e}")
 
@@ -782,7 +780,7 @@ def _analizar_narrativas_geo(resultados: list[dict]) -> list[dict]:
         textos = [r["title"] for r in resultados if len(r["title"]) > 20]
         if len(textos) > 20:
             vectorizer = TfidfVectorizer(max_features=10, stop_words=list(STOPWORDS_ES))
-            X = vectorizer.fit_transform(textos)
+            vectorizer.fit_transform(textos)
             top_words = vectorizer.get_feature_names_out()
             # Filtrar palabras que ya estén en las narrativas predefinidas
             all_predefined = set(w for kws in narrativas_kw.values() for w in kws)

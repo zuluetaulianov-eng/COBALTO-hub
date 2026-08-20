@@ -2,6 +2,7 @@
 
 import os
 import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
@@ -17,8 +18,9 @@ def test_early_warning_imports():
 
 
 def test_entity_threat_scoring():
-    from predictive_scorer import compute_entity_threat
     from datetime import datetime
+
+    from predictive_scorer import compute_entity_threat
 
     entity = {
         "id": "test_ent_001",
@@ -46,8 +48,9 @@ def test_entity_threat_scoring():
 
 
 def test_entity_threat_score_bounds():
-    from predictive_scorer import compute_entity_threat
     from datetime import datetime
+
+    from predictive_scorer import compute_entity_threat
 
     # Minimum score entity
     entity = {

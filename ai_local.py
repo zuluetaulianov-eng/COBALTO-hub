@@ -67,6 +67,7 @@ async def query_local_llm(prompt: str, max_tokens: int = 500, temperature: float
 
     try:
         from openai import AsyncOpenAI
+
         from ollama_provider import ollama_settings
         ollama_cfg = ollama_settings()
 

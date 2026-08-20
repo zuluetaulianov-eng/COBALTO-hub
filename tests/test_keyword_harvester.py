@@ -2,8 +2,7 @@
 tests/test_keyword_harvester.py - Pruebas Unitarias para el Motor de Cosecha de Términos Emergentes
 """
 
-import pytest
-from keyword_harvester import harvest_emerging_keywords, get_emerging_summary_by_theater
+from keyword_harvester import get_emerging_summary_by_theater, harvest_emerging_keywords
 
 
 def test_harvest_emerging_keywords_basic():

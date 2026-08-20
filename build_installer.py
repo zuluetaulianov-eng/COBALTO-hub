@@ -6,7 +6,6 @@ Genera el paquete oficial de instalación listo para llevar e instalar en cualqu
 import os
 import sys
 import zipfile
-import shutil
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DIST_DIR = os.path.join(BASE_DIR, "dist", "CobaltoHUB")
@@ -17,7 +16,7 @@ def create_inno_setup_script():
     out_dir_clean = OUTPUT_DIR.replace('\\', '\\\\')
     icon_path_clean = os.path.join(BASE_DIR, 'static', 'icons', 'cobalto.ico').replace('\\', '\\\\')
     dist_dir_clean = DIST_DIR.replace('\\', '\\\\')
-    
+
     iss_content = f"""; Script de Instalación Inno Setup para COBALTO HUB C4I
 #define MyAppName "COBALTO HUB"
 #define MyAppVersion "12.1"
@@ -64,7 +63,7 @@ def build_zip_package():
     """Crea un paquete ZIP autocomprimido portable listo para extraer en cualquier PC."""
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     zip_path = os.path.join(OUTPUT_DIR, "CobaltoHUB_v12.1_Portable.zip")
-    
+
     print(f" [*] Comprimiendo paquete ejecutable en: {zip_path} ...")
     with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
         for root, dirs, files in os.walk(DIST_DIR):
@@ -72,7 +71,7 @@ def build_zip_package():
                 abs_file = os.path.join(root, file)
                 rel_file = os.path.relpath(abs_file, DIST_DIR)
                 zipf.write(abs_file, os.path.join("CobaltoHUB", rel_file))
-                
+
     print(f" [OK] Paquete Portable listo: {zip_path} ({os.path.getsize(zip_path) / (1024*1024):.1f} MB)")
 
 def create_windows_auto_installer_bat():
@@ -117,7 +116,7 @@ if __name__ == "__main__":
     if not os.path.exists(DIST_DIR):
         print(f"[!] ERROR: No existe la carpeta {DIST_DIR}. Ejecuta build_exe.py primero.")
         sys.exit(1)
-        
+
     print("==================================================")
     print(" [*] GENERANDO PAQUETES DE INSTALACION — COBALTO HUB")
     print("==================================================")

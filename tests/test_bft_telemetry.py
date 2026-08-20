@@ -1,7 +1,8 @@
 import os
 import sys
-import pytest
+
 import httpx
+import pytest
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
@@ -10,7 +11,7 @@ from database import ensure_db, get_active_operators, get_operator_trail, save_o
 
 
 def _make_client():
-    return httpx.AsyncClient(app=app, base_url="http://test")
+    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test")
 
 
 def test_bft_database_telemetry_functions():

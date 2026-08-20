@@ -83,7 +83,7 @@ _session.headers.update(scraper.get_headers())
 def safe_get(url: str, timeout: int = 12) -> Optional[requests.Response]:
     """Conexión inteligente usando TLS manager rotativo, proxies residenciales y Tor."""
     domain = url.split("/")[2] if "://" in url else url
-    
+
     if "reddit.com" in domain:
         headers = {"User-Agent": "cobalto-hub:v9.0 (by /u/cobaltouser)"}
         try:

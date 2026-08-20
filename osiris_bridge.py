@@ -508,7 +508,8 @@ async def data_cctv(region: str = Query("all"), request: Request = None):
             cid = c.get('id', '')
             lat = c.get("lat", 0)
             lng = c.get("lon", 0)
-            if not cid or not lat or not lng: continue
+            if not cid or not lat or not lng:
+                continue
             cameras.append({
                 "id": f"tfl-{cid}",
                 "lat": lat, "lng": lng,
@@ -529,7 +530,8 @@ async def data_cctv(region: str = Query("all"), request: Request = None):
                 feed_url = cam.get("ImageUrl", "")
                 lat = cam.get("Latitude", 0)
                 lng = cam.get("Longitude", 0)
-                if not feed_url or not lat or not lng: continue
+                if not feed_url or not lat or not lng:
+                    continue
                 cameras.append({
                     "id": f"wsdot-{c.get('Id', '')}_{cam.get('Id', '')}",
                     "lat": lat, "lng": lng,
@@ -551,7 +553,8 @@ async def data_cctv(region: str = Query("all"), request: Request = None):
                 feed_url = cam.get("image", "")
                 lat = loc.get("latitude", 0)
                 lng = loc.get("longitude", 0)
-                if not feed_url or not lat or not lng: continue
+                if not feed_url or not lat or not lng:
+                    continue
                 cameras.append({
                     "id": f"sg-{cam.get('camera_id', '')}",
                     "lat": lat, "lng": lng,
@@ -608,7 +611,7 @@ async def data_cctv(region: str = Query("all"), request: Request = None):
                     break
             if ve_key:
                 async with session.get(
-                    f"http://insecam.org/en/json/VE/",
+                    "http://insecam.org/en/json/VE/",
                     headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
                 ) as resp:
                     ve_data = await resp.json()

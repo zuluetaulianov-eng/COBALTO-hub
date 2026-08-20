@@ -4,8 +4,9 @@ Genera un ejecutable binario nativo optimizado 'dist_nuitka/cobalto_desktop.dist
 """
 
 import os
-import sys
 import subprocess
+import sys
+
 import tls_client
 
 if sys.platform == 'win32':

@@ -5,8 +5,6 @@ and records metadata in historical_store.
 """
 import asyncio
 import logging
-import os
-import time
 from collections import defaultdict, deque
 from datetime import datetime
 from pathlib import Path

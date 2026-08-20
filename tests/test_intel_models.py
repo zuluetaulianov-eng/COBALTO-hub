@@ -19,7 +19,6 @@ from models.intel_models import (
     load_static_intel,
 )
 
-
 # ── OwnPost ──────────────────────────────────────────────────────────────────
 
 def test_own_post_minimal_valid():

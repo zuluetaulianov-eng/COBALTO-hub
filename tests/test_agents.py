@@ -2,18 +2,19 @@
 
 import os
 import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 def test_agent_tools_imports():
-    from agent_tools import init_registry, list_tools, get_tool
+    from agent_tools import get_tool, init_registry, list_tools
     assert callable(init_registry)
     assert callable(list_tools)
     assert callable(get_tool)
 
 
 def test_agent_tools_registry():
-    from agent_tools import init_registry, list_tools, get_tool
+    from agent_tools import get_tool, init_registry, list_tools
     init_registry()
     tools_dict = list_tools()
     assert len(tools_dict) > 0
@@ -57,7 +58,7 @@ async def test_ares_investigator_empty_context():
 
 
 def test_agent_orchestrator_imports():
-    from agent_orchestrator import orchestrator, Task
+    from agent_orchestrator import orchestrator
     assert orchestrator is not None
     assert hasattr(orchestrator, "add_task")
     assert callable(orchestrator.list_tasks)
@@ -68,7 +69,7 @@ def test_agent_orchestrator_imports():
 
 
 def test_agent_orchestrator_add_task():
-    from agent_orchestrator import orchestrator, Task
+    from agent_orchestrator import Task, orchestrator
 
     task = Task(task_type="recon", title="Test task", description="DNS lookup", tool_name="recon_dns", tool_params={"domain": "example.com"})
     task_id = orchestrator.add_task(task)
@@ -94,7 +95,7 @@ def test_agent_orchestrator_modes():
 
 
 def test_agent_orchestrator_approve_reject():
-    from agent_orchestrator import orchestrator, Task
+    from agent_orchestrator import Task, orchestrator
 
     original_mode = orchestrator.get_mode()
     orchestrator.set_mode("approval")
@@ -118,7 +119,7 @@ def test_agent_orchestrator_approve_reject():
 
 
 def test_agent_memory_imports():
-    from agent_memory import create_session, get_context, get_session, list_sessions, cleanup
+    from agent_memory import cleanup, create_session, get_context, get_session, list_sessions
     assert callable(create_session)
     assert callable(get_context)
     assert callable(get_session)
@@ -127,7 +128,7 @@ def test_agent_memory_imports():
 
 
 def test_agent_memory_session_lifecycle():
-    from agent_memory import create_session, get_session, append_context, get_context, list_sessions, cleanup
+    from agent_memory import append_context, cleanup, create_session, get_context, get_session, list_sessions
 
     session_id = create_session("test_agent")
     assert session_id is not None
@@ -151,7 +152,7 @@ def test_agent_memory_session_lifecycle():
 
 
 def test_agent_memory_context_trimming():
-    from agent_memory import create_session, append_context, get_context
+    from agent_memory import append_context, create_session, get_context
     session_id = create_session("stress_test")
     for i in range(60):
         append_context(session_id, "system", f"message {i}")

@@ -3,10 +3,10 @@
 # Versión 2.1 - Monitor de cambios en perfiles de targets
 
 import json
+import logging
 import re
 import threading
 import time
-import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List

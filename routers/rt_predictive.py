@@ -57,16 +57,16 @@ async def get_predictive_stats():
 @router.get("/api/predictive/run")
 async def run_predictive_cycle():
     """Trigger a predictive scoring cycle manually."""
-    from predictive_scorer import compute_entity_threat
+    from agent_orchestrator import orchestrator
+    from dashboard import get_dashboard_data
     from early_warning import early_warning
     from entity_registry import list_all as list_entities
     from event_bus import bus
-    from agent_orchestrator import orchestrator
-    from dashboard import get_dashboard_data
+    from predictive_scorer import compute_entity_threat
 
     entities = await asyncio.to_thread(list_entities, limit=200)
     if not entities:
-        from backfill_entities import backfill_from_sanctions, backfill_from_historical_store
+        from backfill_entities import backfill_from_historical_store, backfill_from_sanctions
         await asyncio.to_thread(backfill_from_sanctions)
         await asyncio.to_thread(backfill_from_historical_store)
         entities = await asyncio.to_thread(list_entities, limit=200)

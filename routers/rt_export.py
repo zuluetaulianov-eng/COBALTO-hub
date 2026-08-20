@@ -28,7 +28,6 @@ def _get_ctx() -> dict:
 @router.get("/api/export/sitrep")
 async def export_sitrep_json():
     """Exporta el SitRep actual como JSON descargable."""
-    import asyncio
     from dashboard import state
 
     ctx = _get_ctx()

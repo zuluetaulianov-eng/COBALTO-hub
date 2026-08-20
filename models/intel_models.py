@@ -7,7 +7,7 @@ so that malformed entries are caught at load time, not silently corrupted.
 from __future__ import annotations
 
 import logging
-from typing import List, Literal, Optional
+from typing import List, Literal
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 

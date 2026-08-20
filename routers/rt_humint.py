@@ -2,7 +2,6 @@
 routers/rt_humint.py — HUMINT endpoints extracted from app.py
 Rutas: /api/humint/*  (7 endpoints)
 """
-import asyncio
 import logging
 
 from fastapi import APIRouter, HTTPException

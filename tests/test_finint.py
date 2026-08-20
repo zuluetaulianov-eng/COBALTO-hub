@@ -2,11 +2,12 @@
 
 import os
 import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 def test_finint_blockchain_imports():
-    from finint_blockchain import check_wallet, get_known_sanctioned_wallets, check_wallet_batch
+    from finint_blockchain import check_wallet, check_wallet_batch, get_known_sanctioned_wallets
     assert callable(check_wallet)
     assert callable(get_known_sanctioned_wallets)
     assert callable(check_wallet_batch)
@@ -23,8 +24,9 @@ def test_finint_sanctioned_wallets():
 
 
 def test_finint_risk_scoring():
-    from finint_blockchain import check_wallet
     import asyncio
+
+    from finint_blockchain import check_wallet
     # Test with known sanctioned address (offline check)
     result = asyncio.run(check_wallet("1F1tAaz5x1HUXrCNLbtMDqcw6o5GNn4xqX", chain="bitcoin"))
     assert result["sanctioned"] is True
@@ -33,8 +35,9 @@ def test_finint_risk_scoring():
 
 
 def test_finint_non_sanctioned_wallet():
-    from finint_blockchain import check_wallet
     import asyncio
+
+    from finint_blockchain import check_wallet
     result = asyncio.run(check_wallet("1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa", chain="bitcoin"))
     assert result["sanctioned"] is False
     assert isinstance(result["risk_score"], (int, float))
@@ -77,7 +80,12 @@ def test_darkweb_empty_text():
 
 
 def test_finint_entity_linker_imports():
-    from finint_entity_linker import link_wallet_to_entity, link_onion_to_entity, check_wallet_against_entities, run_finint_link_cycle
+    from finint_entity_linker import (
+        check_wallet_against_entities,
+        link_onion_to_entity,
+        link_wallet_to_entity,
+        run_finint_link_cycle,
+    )
     assert callable(link_wallet_to_entity)
     assert callable(link_onion_to_entity)
     assert callable(check_wallet_against_entities)

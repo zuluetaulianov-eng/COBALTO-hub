@@ -20,6 +20,7 @@ if sys.platform == 'win32':
 
 import io
 
+
 class SafeStream(io.TextIOBase):
     def __init__(self, target):
         self.target = target
@@ -66,7 +67,6 @@ import subprocess
 import threading
 import time
 import urllib.request
-import webbrowser
 from datetime import datetime
 from pathlib import Path
 
@@ -919,6 +919,7 @@ class CobaltoGUI:
 
 
 import multiprocessing
+
 
 def launch_control_panel():
     engine = CobaltoEngine()

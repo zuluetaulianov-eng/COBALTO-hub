@@ -2,11 +2,18 @@
 
 import os
 import sys
+
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 def test_entity_resolver_imports():
-    from entity_resolver import fuzzy_match_name, levenshtein_ratio, token_set_ratio, resolve_against_index, batch_resolve
+    from entity_resolver import (
+        batch_resolve,
+        fuzzy_match_name,
+        levenshtein_ratio,
+        resolve_against_index,
+        token_set_ratio,
+    )
     assert callable(fuzzy_match_name)
     assert callable(levenshtein_ratio)
     assert callable(token_set_ratio)
@@ -77,7 +84,7 @@ def test_batch_resolve():
 
 
 def test_entity_registry_imports():
-    from entity_registry import register, search, get_by_id, get_ofac_matched, get_stats, list_all
+    from entity_registry import get_by_id, get_ofac_matched, get_stats, list_all, register, search
     assert callable(register)
     assert callable(search)
     assert callable(get_by_id)
@@ -87,7 +94,7 @@ def test_entity_registry_imports():
 
 
 def test_entity_registry_register_and_search():
-    from entity_registry import register, search, get_by_id
+    from entity_registry import get_by_id, register, search
 
     eid = register("Test Person", entity_type="person", source="test", properties={"country": "VE"})
     assert eid is not None
@@ -104,7 +111,7 @@ def test_entity_registry_register_and_search():
 
 
 def test_entity_registry_ofac_flag():
-    from entity_registry import register, get_ofac_matched, search
+    from entity_registry import get_ofac_matched, register, search
 
     eid = register("OFAC Listed", entity_type="person", source="ofac", ofac_match=True)
     matched = get_ofac_matched()
@@ -131,7 +138,7 @@ def test_entity_registry_list_all():
 
 
 def test_entity_linker_imports():
-    from entity_linker import link_social_graph_nodes, link_sanctions_entries, run_full_link_cycle
+    from entity_linker import link_sanctions_entries, link_social_graph_nodes, run_full_link_cycle
     assert callable(link_social_graph_nodes)
     assert callable(link_sanctions_entries)
     assert callable(run_full_link_cycle)

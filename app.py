@@ -10,7 +10,7 @@ from collections import defaultdict
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
@@ -209,13 +209,13 @@ app.include_router(avalanche_bridge.router)
 app.include_router(osiris_router)
 
 # ── Sub-routers temáticos (extraídos de app.py para modularidad) ──
-from routers.rt_humint import router as humint_router
-from routers.rt_finint import router as finint_router
-from routers.rt_entities import router as entities_router
-from routers.rt_predictive import router as predictive_router
 from routers.rt_agents import router as agents_router
 from routers.rt_analytics import router as analytics_router
+from routers.rt_entities import router as entities_router
 from routers.rt_export import router as export_router
+from routers.rt_finint import router as finint_router
+from routers.rt_humint import router as humint_router
+from routers.rt_predictive import router as predictive_router
 
 app.include_router(humint_router)
 app.include_router(finint_router)
@@ -1101,8 +1101,8 @@ async def sentiment_llm_analysis(request: Request):
             f"Entradas a clasificar:\n{textos}"
         )
 
-        from ai_core import get_next_groq_client, report_groq_success
         import config
+        from ai_core import get_next_groq_client, report_groq_success
         client = get_next_groq_client()
         if not client:
             return {"error": "Sin cliente Groq disponible", "resultados": []}
@@ -1398,15 +1398,15 @@ async def get_predictive_stats():
 @app.get("/api/predictive/run")
 async def run_predictive_cycle():
     """Trigger a predictive scoring cycle manually."""
-    from predictive_scorer import compute_entity_threat
-    from early_warning import early_warning, early_warning as ew
+    from agent_orchestrator import orchestrator
+    from early_warning import early_warning
     from entity_registry import list_all as list_entities
     from event_bus import bus
-    from agent_orchestrator import orchestrator
+    from predictive_scorer import compute_entity_threat
 
     entities = await asyncio.to_thread(list_entities, limit=200)
     if not entities:
-        from backfill_entities import backfill_from_sanctions, backfill_from_historical_store
+        from backfill_entities import backfill_from_historical_store, backfill_from_sanctions
         await asyncio.to_thread(backfill_from_sanctions)
         await asyncio.to_thread(backfill_from_historical_store)
         entities = await asyncio.to_thread(list_entities, limit=200)
@@ -1558,7 +1558,7 @@ async def post_operator_heartbeat(payload: TelemetryHeartbeatPayload):
     )
     if not ok:
         raise HTTPException(status_code=500, detail="Fallo guardando latido de telemetría")
-    
+
     # Broadcast en tiempo real vía WebSocket
     event_data = {
         "type": "operator_telemetry_update",
@@ -2056,8 +2056,8 @@ async def chat_endpoint(msg: ChatMessage):
             return None
 
         async def _attempt():
-            from ai_core import get_next_groq_client, report_groq_failure, report_groq_success
             import config
+            from ai_core import get_next_groq_client, report_groq_failure, report_groq_success
 
             client = get_next_groq_client()
             if not client:
@@ -2570,7 +2570,6 @@ async def generar_informe_osint_word(request: Request):
         except Exception as e:
             logger.warning(f"[INFORME OSINT] Análisis IA omitido: {e}")
 
-    from export_informe_fuentes import cargar_informe
     from export_informe_osint import build_informe_desde_entries, generar_informe_osint_bytes
 
     info = build_informe_desde_entries(entries, max_docs=max_entries, analisis_por_entry=analisis_map)
@@ -2656,8 +2655,8 @@ async def ai_rag_query(request: Request):
     ctx = app_state["context"]
     entries = ctx.get("all_entries", []) or []
 
-    from rag_retriever import retrieve_relevant_entries, build_rag_prompt
-    from ollama_provider import ollama_chat, ollama_settings, ollama_available
+    from ollama_provider import ollama_available, ollama_chat, ollama_settings
+    from rag_retriever import build_rag_prompt, retrieve_relevant_entries
 
     docs = retrieve_relevant_entries(query=query, entries=entries, max_docs=max_docs)
     prompt = build_rag_prompt(query=query, docs=docs)
@@ -3002,8 +3001,9 @@ async def reset_config():
 @app.get("/api/ollama/models")
 async def get_ollama_models(host: Optional[str] = None, port: Optional[int] = None):
     """Escanea y detecta automáticamente los modelos instalados en la PC con Ollama local."""
-    import config
     import aiohttp
+
+    import config
 
     target_host = host or getattr(config, "OLLAMA_HOST", "192.168.1.213")
     target_port = port or getattr(config, "OLLAMA_PORT", 11434)
@@ -3047,24 +3047,24 @@ async def api_intel_research(payload: dict):
     """Ejecuta una investigación asistida por IA Local (Ollama + RAG) sobre un tema especificado."""
     try:
         from intel_reports import ejecutar_investigacion_local
-        
+
         query = payload.get("query", "").strip()
         preset = payload.get("preset", "general")
         include_rag = payload.get("include_rag", True)
-        
+
         if not query:
             return JSONResponse(status_code=400, content={"status": "error", "message": "Debe proporcionar un tema de investigación."})
-            
+
         # Obtener pool de entradas en RAM si existen
         entries_pool = getattr(app.state, "current_entries", []) if hasattr(app.state, "current_entries") else None
-        
+
         report_data = await ejecutar_investigacion_local(
             query=query,
             preset=preset,
             include_rag=include_rag,
             entries_pool=entries_pool
         )
-        
+
         return {"status": "ok", "data": report_data.to_dict()}
     except Exception as e:
         logger.error(f"[INTEL RESEARCH] Error ejecutando investigación: {e}")
@@ -3075,14 +3075,14 @@ async def api_intel_research(payload: dict):
 async def api_intel_export_docx(payload: dict):
     """Genera y descarga un informe de inteligencia en formato Word (.docx)."""
     try:
-        from intel_reports import InformeIntelData, DocumentoIntel, generar_docx_informe
-        
+        from intel_reports import DocumentoIntel, InformeIntelData, generar_docx_informe
+
         docs = [DocumentoIntel(**d) if isinstance(d, dict) else d for d in payload.get("documentos", [])]
         payload["documentos"] = docs
-        
+
         report_data = InformeIntelData(**{k: v for k, v in payload.items() if k in InformeIntelData.__dataclass_fields__})
         docx_bytes = generar_docx_informe(report_data)
-        
+
         filename = f"informe_inteligencia_coporo_{int(time.time())}.docx"
         return Response(
             content=docx_bytes,
@@ -3098,14 +3098,14 @@ async def api_intel_export_docx(payload: dict):
 async def api_intel_export_pdf(payload: dict):
     """Genera y descarga un informe de inteligencia en formato PDF."""
     try:
-        from intel_reports import InformeIntelData, DocumentoIntel, generar_pdf_informe
-        
+        from intel_reports import DocumentoIntel, InformeIntelData, generar_pdf_informe
+
         docs = [DocumentoIntel(**d) if isinstance(d, dict) else d for d in payload.get("documentos", [])]
         payload["documentos"] = docs
-        
+
         report_data = InformeIntelData(**{k: v for k, v in payload.items() if k in InformeIntelData.__dataclass_fields__})
         pdf_bytes = generar_pdf_informe(report_data)
-        
+
         filename = f"informe_inteligencia_coporo_{int(time.time())}.pdf"
         return Response(
             content=pdf_bytes,

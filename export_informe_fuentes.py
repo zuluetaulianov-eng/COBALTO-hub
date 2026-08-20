@@ -10,7 +10,7 @@ import os
 import sqlite3
 from dataclasses import dataclass, field
 
-from export_informe_osint import InformeData, Documento, datos_ejemplo
+from export_informe_osint import Documento, InformeData, datos_ejemplo
 
 
 @dataclass

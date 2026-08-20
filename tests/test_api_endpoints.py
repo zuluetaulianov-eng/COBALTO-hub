@@ -19,8 +19,9 @@ os.environ.setdefault("OLLAMA_ENABLED", "false")  # No conectar a Ollama en CI
 def _make_client():
     """Crea un nuevo AsyncClient con la app FastAPI montada in-process."""
     import httpx
+
     from app import app
-    return httpx.AsyncClient(app=app, base_url="http://test")
+    return httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test")
 
 
 # ── Health & Config ──

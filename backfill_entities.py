@@ -4,7 +4,6 @@ Populates the entity registry from historical OSINT entries (social graph,
 news articles, sanctions index) to bootstrap the knowledge graph.
 Run:  python backfill_entities.py
 """
-import json
 import logging
 import sys
 import time
@@ -20,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def backfill_from_sanctions():
     """Register all OFAC SDN entries as entities."""
-    from entity_registry import register, search
+    from entity_registry import register
     from osiris_intel import ensure_sanctions_index, search_sanctions
 
     logger.info("[BACKFILL] Loading sanctions index...")
@@ -41,7 +40,7 @@ def backfill_from_sanctions():
             seen.add(name.lower())
 
             try:
-                eid = register(
+                register(
                     canonical_name=name,
                     entity_type=_classify_sanctions_type(hit),
                     source="ofac",
@@ -67,11 +66,11 @@ def backfill_from_sanctions():
 
 def backfill_from_historical_store():
     """Extract entity names from historical entries and register unknown ones."""
+    import re
+    from datetime import timedelta
+
     from entity_registry import register, search
     from historical_store import get_stats, query_range
-    from datetime import datetime, timedelta
-
-    import re
 
     logger.info("[BACKFILL] Scanning historical entries for named entities...")
     stats = get_stats()
@@ -108,7 +107,7 @@ def backfill_from_historical_store():
                 continue
 
             try:
-                eid = register(
+                register(
                     canonical_name=name,
                     entity_type="unknown",
                     source="historical",

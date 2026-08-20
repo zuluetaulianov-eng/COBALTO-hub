@@ -104,11 +104,20 @@ RSS_FEEDS = {
 
 # ── Fuentes Telegram (NO son RSS - requieren scraper especial) ──
 TELEGRAM_SOURCES = {
-    "Venevisión": "https://t.me/s/noticierovenevision",
+    # Venezuela
+    "Venevisión Oficial": "https://t.me/s/noticierovenevision",
+    "El Pitazo Venezuela": "https://t.me/s/elpitazove",
+    "La Patilla Canal": "https://t.me/s/lapatillaoficial",
+    "Efecto Cocuyo": "https://t.me/s/efectococuyo",
+    "AlbertoRodNews (Venezuela)": "https://t.me/s/AlbertoRodNews",
+    "RunRunes": "https://t.me/s/runrunesweb",
+    # Colombia
     "Noticias Caracol": "https://t.me/s/NoticiasCaracol",
     "El Tiempo Colombia": "https://t.me/s/ElTiempoColombia",
     "Revista Semana": "https://t.me/s/RevistaSemana",
     "Noticias RCN": "https://t.me/s/NoticiasRCN",
+    "El Espectador": "https://t.me/s/elespectadorcom",
+    "Blu Radio Colombia": "https://t.me/s/bluradioco",
 }
 
 # ── Fuentes Prioritarias (para carga rápida inicial) ──

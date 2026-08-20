@@ -1,21 +1,23 @@
-# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v13.0
+# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v14.0
 
 > **Sistema de Mando y Control de Inteligencia (C4I)** en tiempo real con **Arquitectura Multipaís (Multi-Theater OSINT)**,  
-> **potenciado por OSIRIS Engine** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
-> Consolida fuentes RSS, redes sociales, ciberseguridad, rastreo de aeronaves/buques, telemetría de campo en vivo y análisis geopolítico multiagente con IA.  
-> **v13.0** — Soporte para múltiples teatros regionales (Colombia, Venezuela, Internacional) con auto-etiquetado inteligente,  
-> Selector Táctico de Teatros en la barra lateral con flyTo dinámico en el mapa Leaflet, endpoint REST `/api/theaters` y 132/132 Tests Aprobados.
+> **Target Dossier Engine (360° Risk Score)**, **Pipeline de Ingestión Autónoma y Cosecha de Keywords** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
+> Consolida fuentes RSS, canales de Telegram, redes sociales, ciberseguridad, rastreo de aeronaves/buques, telemetría de campo en vivo y análisis geopolítico multiagente con IA.  
+> **v14.0** — Pipeline de Inteligencia Autónoma (Auto-Tracker & Keyword Harvester), Expedientes 360° de Actores (Dossier Engine),  
+> Cobertura completa Bilateral para Teatros operacionales (Colombia, Venezuela, Internacional), Panel de Configuración Táctico (12 Canales Telegram, 55 Feeds RSS, 20 Targets, 116 Keywords) y 136/136 Tests Aprobados.
 
 ---
 
-## 🔄 Últimas Actualizaciones (Agosto 2026 — Arquitectura Multipaís & Multi-Theater Engine v13.0)
+## 🔄 Últimas Actualizaciones (Agosto 2026 — Pipeline de Inteligencia Autónoma & Multi-Theater v14.0)
 
+- **👤 Target Dossier Engine (`dossier_engine.py`):** Motor de inteligencia 360° para personas e instituciones de interés táctico. Modela expedientes integrados con cálculo de *Risk Score* (0.0 - 10.0), *Presión Mediática*, vinculación a listas OFAC SDN, historial de eventos y botón de acceso directo en la UI (`Actores/Búsqueda`).
+- **🌱 Cosechador de Palabras Clave Emergiendo (`keyword_harvester.py`):** Sistema automático de minería de tendencias que extrae hashtags, palabras clave compuestas y términos emergentes en tiempo real a partir del flujo de noticias.
+- **🔄 Auto-Tracker e Ingestión Autónoma (`auto_tracker.py`):** Motor proactivo que auto-registra nuevos objetivos y entidades descubiertas en reportes de alta severidad (HUMINT/FININT) retroalimentando los filtros de extracción de `extractor.py` sin intervención humana.
+- **🇨🇴🇻🇪 Configuración Bilateral y Cobertura Total (Colombia & Venezuela):** Integración total en el Panel de Configuración (`config_manager.js` y `_tab_config.html`) con 12 canales públicos de Telegram (6 🇻🇪 + 6 🇨🇴), 55 feeds RSS verified, 20 usuarios target de alto perfil y 116 palabras clave estratégicas.
 - **🌐 Arquitectura Multipaís (Multi-Theater Engine):** Escalado modular de la plataforma mediante perfiles regionales JSON bajo `data/theaters/` (`colombia.json`, `venezuela.json`, `global.json`). Registro centralizado en `theaters_config.py` para la carga dinámica de vectores de seguimiento y términos clave.
 - **🏷️ Auto-Etiquetado Inteligente (`country_tags`):** Integración de lógica en `extractor.py` que detecta y clasifica automáticamente las noticias y fuentes por país (`COL`, `VEN`, `GLOBAL`) en tiempo real según dominios, fuentes y contenido.
 - **🗺️ Selector Táctico de Teatros & Nav FlyTo (`window.switchTheater`):** Componente selector integrado en la barra lateral (`_sidebar.html`). Al alternar de teatro, el mapa Leaflet realiza una transición suave (`flyTo`) al centro operacional del país (ej: Colombia `[6.5, -70.0]`) y filtra dinámicamente las tarjetas de noticias en pantalla.
-- **🛰️ Sensor Sísmico & Desastres Multi-Geocerca (`seismic_monitor.py`):** Evaluación síncrona de geocercas en todos los teatros regionales activos.
-- **📡 Endpoint REST de Teatros (`GET /api/theaters`):** Expone la lista completa de teatros activos y metadatos regionales para consumo por clientes web y móviles.
-- **🧪 Suite de Testing & Ruff (132/132 Pass & Code Clean):** Verificación al 100% de la suite de pruebas `pytest` y cumplimiento estricto del estándar de código Ruff.
+- **🧪 Suite de Testing & Calidad (136/136 Pass & Ruff Clean):** Verificación al 100% de la suite de pruebas `pytest` y cumplimiento del estándar de código Ruff.
 
 ---
 

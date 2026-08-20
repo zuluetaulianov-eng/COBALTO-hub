@@ -19,7 +19,7 @@ from telegram import Update
 from telegram.error import RetryAfter, TelegramError
 from telegram.ext import Application, CommandHandler, ContextTypes
 
-from config import KEYWORDS, RSS_FEEDS
+from config import RSS_FEEDS
 from database import clean_old_sent_news, is_news_sent, mark_news_sent
 
 # =========================================

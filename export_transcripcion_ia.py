@@ -9,17 +9,28 @@ import os
 from dataclasses import dataclass, field
 
 from docx import Document
-from docx.shared import Pt, RGBColor, Inches
+from docx.oxml.ns import qn
+from docx.shared import Inches, Pt, RGBColor
 
 from export_informe_osint import (
-    BG_PAGE, BG_PANEL, BG_INPUT, BORDER,
-    ACCENT, VERDE, ROJO, TXT, TXT_DIM, TXT_TITLE,
-    FONT_MONO, FONT_UI,
-    _set_cell_bg, _set_cell_border, _estilizar_celda, _no_partir_fila,
-    _run, _tabla_fija, _fondo_pagina_visible, _pie_pagina,
+    ACCENT,
+    BG_INPUT,
+    FONT_MONO,
+    FONT_UI,
+    ROJO,
+    TXT,
+    TXT_DIM,
+    TXT_TITLE,
+    VERDE,
+    _estilizar_celda,
+    _fondo_pagina_visible,
+    _no_partir_fila,
+    _pie_pagina,
+    _run,
+    _set_cell_bg,
+    _set_cell_border,
+    _tabla_fija,
 )
-
-from docx.oxml.ns import qn
 
 
 @dataclass

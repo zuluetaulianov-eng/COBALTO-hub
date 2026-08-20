@@ -4,10 +4,10 @@ Uses PyQt6 + QWebEngineView + System Tray for maximum robustness.
 Closing the window minimizes to tray; service keeps running silently.
 """
 
+import io
 import multiprocessing
 import os
 import sys
-import io
 
 if sys.platform == 'win32':
     multiprocessing.freeze_support()
@@ -117,23 +117,41 @@ def is_server_ready(host=HOST, port=PORT):
 
 
 def clean_occupied_port(port=PORT):
+    """Libera el puerto solo si el proceso que lo ocupa es una instancia COBALTO obsoleta.
+    Un proceso ajeno (otro servidor, otra app) nunca se toca."""
     try:
         import psutil
-        for proc in psutil.process_iter(['pid']):
-            try:
-                conns = proc.net_connections(kind='inet') if hasattr(proc, 'net_connections') else proc.connections(kind='inet')
-                for conn in conns:
-                    if conn.laddr.port == port and proc.pid != os.getpid():
+    except Exception:
+        return
+
+    # Si el puerto ya responde como COBALTO sano, no hay nada que limpiar.
+    if is_server_ready(port=port):
+        return
+
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            conns = proc.net_connections(kind='inet') if hasattr(proc, 'net_connections') else proc.connections(kind='inet')
+            for conn in conns:
+                if conn.laddr.port == port and proc.pid != os.getpid():
+                    try:
+                        cmdline = " ".join(proc.cmdline() or []).lower()
+                        exe = (proc.name() or "").lower()
+                    except Exception:
+                        cmdline = ""
+                        exe = ""
+                    if "cobalto" in cmdline or "cobalto" in exe:
                         proc.kill()
                         time.sleep(0.3)
-            except (psutil.AccessDenied, psutil.NoSuchProcess, AttributeError):
-                pass
-    except Exception:
-        pass
+                    else:
+                        print(f"[!] Puerto {port} ocupado por un proceso ajeno ({proc.name()}). No se detiene.")
+                    break
+        except (psutil.AccessDenied, psutil.NoSuchProcess, AttributeError):
+            pass
 
 
 def run_backend(dev_mode=False):
     import uvicorn
+
     from app import app
     log_level = "debug" if dev_mode else "warning"
     config = uvicorn.Config(app=app, host=HOST, port=PORT, log_level=log_level, loop="asyncio")
@@ -144,6 +162,7 @@ def run_backend(dev_mode=False):
 
 def run_worker():
     import asyncio
+
     import cobalto_worker
     try:
         asyncio.run(cobalto_worker.worker_loop())
@@ -293,11 +312,11 @@ def _launch_qt_window(url: str):
     Closing the window minimizes to tray — backend services keep running.
     """
     try:
-        from PyQt6.QtWidgets import QApplication, QMainWindow, QSystemTrayIcon, QMenu
+        from PyQt6.QtCore import QUrl
+        from PyQt6.QtGui import QAction, QCloseEvent, QIcon
+        from PyQt6.QtWebEngineCore import QWebEnginePage, QWebEngineProfile
         from PyQt6.QtWebEngineWidgets import QWebEngineView
-        from PyQt6.QtWebEngineCore import QWebEngineProfile, QWebEnginePage
-        from PyQt6.QtCore import Qt, QUrl
-        from PyQt6.QtGui import QIcon, QAction, QCloseEvent
+        from PyQt6.QtWidgets import QApplication, QMainWindow, QMenu, QSystemTrayIcon
 
         if QApplication.instance() is None:
             app = QApplication(sys.argv)

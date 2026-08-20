@@ -159,10 +159,10 @@ async def update_heavy_track(mode="full"):
 
         # FASE 3: Predictive scoring cycle
         try:
-            from predictive_scorer import compute_entity_threat
             from early_warning import early_warning
             from entity_registry import list_all as list_entities
             from event_bus import bus
+            from predictive_scorer import compute_entity_threat
 
             all_entries = state.last_entries_cache or []
             composite_events = state.heavy_track_cache.get("composite_events", [])

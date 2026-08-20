@@ -6,7 +6,6 @@ y exportar los resultados a informes profesionales en formatos DOCX (Word) y PDF
 """
 
 import io
-import json
 import logging
 import os
 import tempfile
@@ -14,13 +13,13 @@ import time
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
-import aiohttp
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 from fpdf import FPDF
+from fpdf.enums import XPos, YPos
 from PIL import Image, ImageDraw
 
 from ollama_provider import ollama_chat, ollama_settings
@@ -219,7 +218,6 @@ async def ejecutar_investigacion_local(
     entries_pool: Optional[List[Dict]] = None,
 ) -> InformeIntelData:
     """Ejecuta una investigacion mediante RAG local + Ollama y devuelve un InformeIntelData."""
-    t_start = time.time()
     code_id = f"INT-OSINT-{time.strftime('%Y')}-{int(time.time()) % 10000:04d}"
     fecha_str = time.strftime("%d/%m/%Y %H:%M")
 
@@ -478,10 +476,10 @@ class PDFInformeIntel(FPDF):
         self.rect(0, 0, 210, 297, "F")
         self.set_font("Helvetica", "B", 14)
         self.set_text_color(2, 132, 199)
-        self.cell(0, 8, "EL OJO DEL COPORO - INFORME DE INTELIGENCIA C4I", 0, 1, "C")
+        self.cell(0, 8, "EL OJO DEL COPORO - INFORME DE INTELIGENCIA C4I", align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         self.set_font("Helvetica", "I", 9)
         self.set_text_color(220, 38, 38)
-        self.cell(0, 5, "[CONFIDENCIAL / USO TÁCTICO EXCLUSIVO]", 0, 1, "C")
+        self.cell(0, 5, "[CONFIDENCIAL / USO TÁCTICO EXCLUSIVO]", align="C", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         self.set_draw_color(203, 213, 225)
         self.line(10, 22, 200, 22)
         self.ln(5)
@@ -490,7 +488,7 @@ class PDFInformeIntel(FPDF):
         self.set_y(-15)
         self.set_font("Courier", "I", 8)
         self.set_text_color(71, 85, 105)
-        self.cell(0, 10, f"COBALTO HUB OSINT | Pagina {self.page_no()}", 0, 0, "C")
+        self.cell(0, 10, f"COBALTO HUB OSINT | Pagina {self.page_no()}", align="C", new_x=XPos.RIGHT, new_y=YPos.TOP)
 
 
 def generar_pdf_informe(datos: InformeIntelData) -> bytes:
@@ -507,23 +505,23 @@ def generar_pdf_informe(datos: InformeIntelData) -> bytes:
     pdf.set_xy(12, 27)
     pdf.set_font("Courier", "B", 9)
     pdf.set_text_color(2, 132, 199)
-    pdf.cell(90, 5, f"CODIGO: {datos.codigo}", 0, 0)
-    pdf.cell(90, 5, f"FECHA: {datos.fecha_creacion}", 0, 1)
+    pdf.cell(90, 5, f"CODIGO: {datos.codigo}")
+    pdf.cell(90, 5, f"FECHA: {datos.fecha_creacion}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.set_x(12)
-    pdf.cell(90, 5, f"AUTOR: {datos.autor}", 0, 0)
-    pdf.cell(90, 5, f"ALERTA: {datos.nivel_alerta}", 0, 1)
+    pdf.cell(90, 5, f"AUTOR: {datos.autor}")
+    pdf.cell(90, 5, f"ALERTA: {datos.nivel_alerta}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.set_x(12)
     pdf.set_text_color(15, 23, 42)
-    pdf.cell(180, 5, f"TEMA: {datos.tema_investigacion[:65]}", 0, 1)
+    pdf.cell(180, 5, f"TEMA: {datos.tema_investigacion[:65]}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.ln(8)
 
     # Analisis completo
     pdf.set_font("Courier", "B", 11)
     pdf.set_text_color(2, 132, 199)
-    pdf.cell(0, 8, "1. ANÁLISIS DE INTELIGENCIA PROCESADO POR IA LOCAL", 0, 1)
+    pdf.cell(0, 8, "1. ANÁLISIS DE INTELIGENCIA PROCESADO POR IA LOCAL", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.set_font("Helvetica", "", 9.5)
     pdf.set_text_color(30, 41, 59)
@@ -538,7 +536,7 @@ def generar_pdf_informe(datos: InformeIntelData) -> bytes:
     if datos.documentos:
         pdf.set_font("Courier", "B", 11)
         pdf.set_text_color(2, 132, 199)
-        pdf.cell(0, 8, f"2. FUENTES Y DOCUMENTOS CONSULTADOS ({len(datos.documentos)})", 0, 1)
+        pdf.cell(0, 8, f"2. FUENTES Y DOCUMENTOS CONSULTADOS ({len(datos.documentos)})", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
         pdf.set_font("Helvetica", "", 8.5)
         for doc_item in datos.documentos[:6]:
@@ -550,10 +548,10 @@ def generar_pdf_informe(datos: InformeIntelData) -> bytes:
             pdf.rect(10, y_curr, 190, 14, "DF")
             pdf.set_x(12)
             pdf.set_text_color(3, 105, 161)
-            pdf.cell(0, 5, f"[DOC {doc_item.doc_num}] {doc_item.titulo[:80]}", 0, 1)
+            pdf.cell(0, 5, f"[DOC {doc_item.doc_num}] {doc_item.titulo[:80]}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
             pdf.set_x(12)
             pdf.set_text_color(71, 85, 105)
-            pdf.cell(0, 5, f"Fuente: {doc_item.fuente} | {doc_item.url[:60]}", 0, 1)
+            pdf.cell(0, 5, f"Fuente: {doc_item.fuente} | {doc_item.url[:60]}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
             pdf.ln(3)
 
     return bytes(pdf.output())

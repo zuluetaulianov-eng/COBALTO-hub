@@ -5,6 +5,7 @@ logger = logging.getLogger(__name__)
 
 try:
     from fpdf import FPDF
+    from fpdf.enums import XPos, YPos
 
     HAS_FPDF = True
 except ImportError:
@@ -56,7 +57,7 @@ class SitrepPDF(FPDF):
         self.set_draw_color(*color)
         x = self.get_x()
         self.set_fill_color(240, 242, 247)
-        self.cell(0, 8, f"  {title}", fill=True, ln=True)
+        self.cell(0, 8, f"  {title}", fill=True, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         self.line(x, self.get_y(), x + 190, self.get_y())
         self.ln(3)
 
@@ -90,7 +91,6 @@ class SitrepPDF(FPDF):
                 self.set_fill_color(*_COLORS["light_bg"])
             else:
                 self.set_fill_color(255, 255, 255)
-            max_h = 6
             for i, cell in enumerate(row):
                 self.set_text_color(0, 0, 0)
                 if isinstance(cell, tuple):
@@ -117,7 +117,7 @@ class SitrepPDF(FPDF):
         self.set_x(x + 5)
         self.set_font("Helvetica", "B", 9)
         self.set_text_color(*color)
-        self.cell(0, 5, title, ln=True)
+        self.cell(0, 5, title, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
         self.set_x(x + 5)
         self.set_font("Helvetica", "", 8)
         self.set_text_color(45, 55, 72)
@@ -148,7 +148,6 @@ def generate_sitrep_pdf(ctx: dict) -> bytes:
     total_alerts = len(alerts)
     total_entries = len(entries)
     cb_count = ctx.get("cb_count", 0)
-    total_sources = ctx.get("total_sources", 0)
     cycle_id = str(ctx.get("cycle_id", "N/A"))
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S UTC")
     groq_avail = "DISPONIBLE" if _check_ai() else "NO DISPONIBLE"
@@ -178,16 +177,16 @@ def generate_sitrep_pdf(ctx: dict) -> bytes:
     pdf.set_xy(15, 12)
     pdf.set_font("Helvetica", "B", 16)
     pdf.set_text_color(255, 255, 255)
-    pdf.cell(0, 7, "SITREP COBALTO", ln=True)
+    pdf.cell(0, 7, "SITREP COBALTO", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.set_x(15)
     pdf.set_font("Helvetica", "", 8)
     pdf.set_text_color(*_COLORS["cyan"])
-    pdf.cell(0, 5, "Sistema de Inteligencia OSINT C4I - Reporte de Situacion", ln=True)
+    pdf.cell(0, 5, "Sistema de Inteligencia OSINT C4I - Reporte de Situacion", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.set_x(15)
     pdf.set_font("Helvetica", "B", 8)
     pdf.set_text_color(255, 255, 255)
     pdf.set_fill_color(*alert_color)
-    pdf.cell(30, 5, f"CRITICIDAD: {criticidad}", fill=True, ln=True)
+    pdf.cell(30, 5, f"CRITICIDAD: {criticidad}", fill=True, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.ln(8)
 
     # ── Meta table ──
@@ -202,7 +201,7 @@ def generate_sitrep_pdf(ctx: dict) -> bytes:
     pdf.cell(35, 5, "Generado:", border=1)
     pdf.set_font("Helvetica", "", 8)
     pdf.set_text_color(0, 0, 0)
-    pdf.cell(75, 5, now, border=1, ln=True)
+    pdf.cell(75, 5, now, border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.set_font("Helvetica", "B", 8)
     pdf.set_text_color(*_COLORS["muted"])
@@ -215,7 +214,7 @@ def generate_sitrep_pdf(ctx: dict) -> bytes:
     pdf.cell(35, 5, "Groq IA:", border=1)
     pdf.set_font("Helvetica", "", 8)
     pdf.set_text_color(*_COLORS["stable"])
-    pdf.cell(75, 5, groq_avail, border=1, ln=True)
+    pdf.cell(75, 5, groq_avail, border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.set_font("Helvetica", "B", 8)
     pdf.set_text_color(*_COLORS["muted"])
@@ -228,7 +227,7 @@ def generate_sitrep_pdf(ctx: dict) -> bytes:
     pdf.cell(35, 5, "Total Alertas:", border=1)
     pdf.set_font("Helvetica", "B", 8)
     pdf.set_text_color(*alert_color)
-    pdf.cell(75, 5, str(total_alerts), border=1, ln=True)
+    pdf.cell(75, 5, str(total_alerts), border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.set_font("Helvetica", "B", 8)
     pdf.set_text_color(*_COLORS["muted"])
@@ -241,7 +240,7 @@ def generate_sitrep_pdf(ctx: dict) -> bytes:
     pdf.cell(35, 5, "Stress Level:", border=1)
     pdf.set_font("Helvetica", "", 8)
     pdf.set_text_color(0, 0, 0)
-    pdf.cell(75, 5, stress_lvl, border=1, ln=True)
+    pdf.cell(75, 5, stress_lvl, border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
     pdf.ln(5)
 
     # ── Alertas ──

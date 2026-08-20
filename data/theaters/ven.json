@@ -4,7 +4,10 @@
   "flag": "🇻🇪",
   "enabled": true,
   "description": "Vigilancia de seguridad, infraestructura, cibernética y dinámicas político-militares en Venezuela",
-  "geo_center": [7.5, -66.5],
+  "geo_center": [
+    7.5,
+    -66.5
+  ],
   "default_zoom": 6,
   "domains": [
     "elpitazo.net",
@@ -16,23 +19,26 @@
     "vencert.gob.ve",
     "mpprijp.gob.ve"
   ],
+  "keywords": [
+    "venezuela",
+    "caracas",
+    "maracaibo",
+    "valencia",
+    "barquisimeto",
+    "zulia",
+    "tachira",
+    "fanb",
+    "padrino lópez",
+    "maduro",
+    "diosdado",
+    "cantv",
+    "sebin"
+  ],
   "target_users": [
     "PresidencialVen",
     "PrensaFANB",
     "REDI_Capital",
-    "DouglasRicoVzla",
-    "VenteVenezuela",
-    "padrinovladimir",
-    "Noticias_Libre",
-    "ConflictsW",
-    "The_Gordon_F",
-    "TeamHDP",
-    "AnonymousVene",
-    "CyberHuntersVen"
-  ],
-  "keywords": [
-    "venezuela", "caracas", "maracaibo", "valencia", "barquisimeto", "zulia",
-    "tachira", "fanb", "padrino lópez", "maduro", "diosdado", "cantv", "sebin", "ceofanb"
+    "DouglasRicoVzla"
   ],
   "seismic_geofence": {
     "lat": 10.4806,

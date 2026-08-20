@@ -22,7 +22,7 @@ def test_osiris_bridge_imports():
 
 def test_osiris_bridge_rate_limiter():
     """El rate limiter debe aceptar IPs nuevas y rechazar IPs que superan el límite."""
-    from osiris_bridge import _check_rate_limit, _rate_limit_map, _RATE_MAX
+    from osiris_bridge import _RATE_MAX, _check_rate_limit, _rate_limit_map
 
     test_ip = "10.0.0.254"  # IP de test que no se usará en producción
     # Limpiar estado previo si existe
@@ -97,11 +97,12 @@ def _make_osiris_client():
     """Crea un AsyncClient con el router OSIRIS montado en una mini-app test."""
     import httpx
     from fastapi import FastAPI
+
     import osiris_bridge
 
     test_app = FastAPI()
     test_app.include_router(osiris_bridge.router)
-    return httpx.AsyncClient(app=test_app, base_url="http://test")
+    return httpx.AsyncClient(transport=httpx.ASGITransport(app=test_app), base_url="http://test")
 
 
 @pytest.mark.asyncio
@@ -145,7 +146,8 @@ async def test_osiris_sanctions_short_query():
 async def test_osiris_rate_limit_enforcement():
     """El rate limiter debe retornar 429 tras superar el límite."""
     import time
-    from osiris_bridge import _rate_limit_map, _RATE_MAX
+
+    from osiris_bridge import _RATE_MAX, _rate_limit_map
 
     fake_ip = "192.0.2.99"  # TEST-NET-1, no enrutado en internet real
     now = time.time()

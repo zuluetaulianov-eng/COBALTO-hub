@@ -5,8 +5,9 @@ Usa PyQt6 + QWebEngineView (mismo stack que CobaltoIA) para maxima robustez.
 """
 
 import os
-import sys
 import subprocess
+import sys
+
 import tls_client
 
 if sys.platform == 'win32':
@@ -53,7 +54,7 @@ def build():
         "cobalto_desktop.py"
     ]
 
-    print(f" [*] Ejecutando PyInstaller...")
+    print(" [*] Ejecutando PyInstaller...")
     result = subprocess.run(cmd, cwd=base_dir)
 
     if result.returncode == 0:

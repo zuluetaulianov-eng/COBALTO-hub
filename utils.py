@@ -7,6 +7,7 @@ import json
 import logging
 from datetime import datetime
 from pathlib import Path
+from typing import Optional
 from urllib.parse import urlparse
 
 import requests
@@ -193,7 +194,7 @@ def safe_async_run(coro, timeout=None):
         return asyncio.run(coro)
 
 
-def parse_datetime(date_val) -> datetime:
+def parse_datetime(date_val) -> Optional[datetime]:
     """
     Parsea cualquier representación de fecha (datetime, struct_time, string)
     a un objeto datetime con zona horaria UTC.
