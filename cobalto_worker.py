@@ -257,12 +257,15 @@ async def _run_full_cycle() -> bool:
             get_dashboard_data(priority_only=False), timeout=1200
         )
         if ctx:
-            # Cosechar términos emergentes para auto-alimentación continua
+            # Cosechar términos emergentes y ejecutar auto-ingestión de temas/objetivos
             try:
+                import auto_tracker
                 import keyword_harvester
                 ctx["emerging_keywords"] = keyword_harvester.get_emerging_summary_by_theater()
+                at_stats = auto_tracker.process_auto_ingestion()
+                logger.info(f"[AUTO_TRACKER] Auto-ingestión completada: {at_stats}")
             except Exception as kh_err:
-                logger.debug(f"[HARVESTER] Error cosechando términos: {kh_err}")
+                logger.debug(f"[HARVESTER] Error en auto-ingestión: {kh_err}")
 
             await _save_cache(ctx)
             count = len(ctx.get('all_entries', []))

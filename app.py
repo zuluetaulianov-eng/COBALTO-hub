@@ -2221,6 +2221,14 @@ async def get_emerging_keywords_api(theater: Optional[str] = "ALL"):
     return JSONResponse({"theater": theater, "keywords": keywords})
 
 
+@app.get("/api/analytics/auto-tracked-keywords")
+async def get_auto_tracked_keywords_api():
+    """Retorna los temas e individuos auto-ingresados bajo seguimiento activo."""
+    import auto_tracker
+    return JSONResponse(auto_tracker.load_auto_tracked_keywords())
+
+
+
 
 
 @app.post("/api/extractor/run")

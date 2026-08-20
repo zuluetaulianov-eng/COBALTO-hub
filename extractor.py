@@ -442,9 +442,15 @@ async def parse_single_feed_async(session, source, url, retry_count=0, problem_i
 
             summary = await asyncio.to_thread(_clean_and_extract_summary, summary_raw)
 
-            # Filtrado por keywords
+            # Filtrado por keywords (incluyendo auto-trackers cosechados por el sistema)
             text = (title + " " + summary).lower()
-            matches_keyword = any(kw.lower() in text for kw in KEYWORDS)
+            active_keywords = set(k.lower() for k in KEYWORDS)
+            try:
+                import auto_tracker
+                active_keywords.update(auto_tracker.get_active_auto_keywords_set())
+            except Exception:
+                pass
+            matches_keyword = any(kw in text for kw in active_keywords)
 
             if matches_keyword or is_priority:
                 # Offload de parsing de imágenes (BeautifulSoup) a hilo separado
