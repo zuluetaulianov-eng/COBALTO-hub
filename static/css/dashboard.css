@@ -3899,3 +3899,268 @@ body.ai-collapsed .telemetry-drawer {
     border-color: rgba(36, 161, 222, 0.4);
 }
 
+/* ── SITREP MODERN TACTICAL UI (MÓDULO 1) ────────────────────────────────── */
+.sitrep-header-banner {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(10, 11, 16, 0.95) 100%);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 0 15px rgba(0, 229, 255, 0.05);
+}
+
+.radar-pulse-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(0, 229, 255, 0.1);
+    border: 1px solid rgba(0, 229, 255, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    box-shadow: 0 0 15px rgba(0, 229, 255, 0.2);
+    animation: radarGlow 3s infinite ease-in-out;
+}
+
+@keyframes radarGlow {
+    0%, 100% { box-shadow: 0 0 10px rgba(0, 229, 255, 0.2); transform: scale(1); }
+    50% { box-shadow: 0 0 22px rgba(0, 229, 255, 0.5); transform: scale(1.04); }
+}
+
+.badge-live-pulse {
+    background: rgba(255, 45, 85, 0.15);
+    color: #FF2D55;
+    border: 1px solid #FF2D55;
+    font-size: 0.65rem;
+    font-family: 'Roboto Mono', monospace;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 4px;
+    letter-spacing: 1px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.badge-live-pulse::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #FF2D55;
+    box-shadow: 0 0 8px #FF2D55;
+    animation: pulse 1s infinite;
+}
+
+.sitrep-defcon-card {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 6px 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 175px;
+    transition: all 0.3s ease;
+}
+.sitrep-defcon-card:hover {
+    border-color: rgba(0, 229, 255, 0.4);
+    transform: translateY(-2px);
+}
+.defcon-flag { font-size: 1.2rem; }
+.defcon-details { display: flex; flex-direction: column; }
+.defcon-sub { font-size: 0.65rem; color: var(--text-muted); font-family: 'Roboto Mono', monospace; letter-spacing: 0.5px; }
+.defcon-status { font-size: 0.78rem; font-family: 'Roboto Mono', monospace; font-weight: bold; letter-spacing: 0.5px; }
+
+.sitrep-kpi-bar {
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.kpi-chip {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-family: 'Roboto Mono', monospace;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.kpi-label { color: var(--text-muted); }
+.kpi-val { font-weight: bold; }
+
+.pulse-dot-green {
+    color: #3fb950;
+    font-size: 0.7rem;
+    animation: pulse 1.5s infinite;
+}
+
+.sitrep-control-bar {
+    background: rgba(10, 11, 16, 0.85);
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    border-radius: 12px;
+}
+
+.sitrep-pill {
+    background: rgba(20, 22, 32, 0.6);
+    border: 1px solid rgba(60, 65, 85, 0.4);
+    color: var(--text-muted);
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-family: 'Roboto Mono', monospace;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    outline: none;
+}
+.sitrep-pill:hover {
+    background: rgba(0, 229, 255, 0.1);
+    color: #fff;
+    border-color: rgba(0, 229, 255, 0.4);
+}
+.sitrep-pill.active {
+    background: linear-gradient(135deg, rgba(0, 229, 255, 0.2) 0%, rgba(0, 229, 255, 0.05) 100%);
+    border: 1px solid var(--primary);
+    color: var(--primary);
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+}
+
+.sitrep-select {
+    background: #0A0B10;
+    color: var(--text-main);
+    border: 1px solid rgba(0, 229, 255, 0.25);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 0.75rem;
+    font-family: 'Roboto Mono', monospace;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.3s;
+}
+.sitrep-select:focus, .sitrep-select:hover {
+    border-color: var(--primary);
+}
+
+.sitrep-search-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.sitrep-search-input {
+    width: 260px !important;
+    padding-right: 28px !important;
+}
+.btn-clear-search {
+    position: absolute;
+    right: 8px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    cursor: pointer;
+}
+.btn-clear-search:hover { color: var(--primary); }
+
+.news-card {
+    background: rgba(15, 18, 28, 0.75);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+.news-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 3px; height: 100%;
+    background: var(--primary);
+    opacity: 0.6;
+    transition: opacity 0.3s;
+}
+.news-card[data-country*="COL"]::before { background: #00E5FF; }
+.news-card[data-country*="VEN"]::before { background: #B388FF; }
+.news-card[data-severity="CRITICAL"]::before { background: #FF2D55; opacity: 1; }
+.news-card[data-severity="HIGH"]::before { background: #FF9500; opacity: 0.9; }
+
+.news-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(0, 229, 255, 0.4);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 229, 255, 0.1);
+}
+
+.news-country-tag {
+    font-size: 0.65rem;
+    font-family: 'Roboto Mono', monospace;
+    font-weight: bold;
+    padding: 1px 6px;
+    border-radius: 4px;
+    letter-spacing: 0.5px;
+}
+.news-country-tag.col { background: rgba(0, 229, 255, 0.15); color: #00E5FF; border: 1px solid rgba(0, 229, 255, 0.3); }
+.news-country-tag.ven { background: rgba(179, 136, 255, 0.15); color: #B388FF; border: 1px solid rgba(179, 136, 255, 0.3); }
+.news-country-tag.global { background: rgba(255, 255, 255, 0.08); color: #A9B7C6; border: 1px solid rgba(255, 255, 255, 0.15); }
+
+.news-severity-tag {
+    font-size: 0.65rem;
+    font-family: 'Roboto Mono', monospace;
+    font-weight: bold;
+    padding: 1px 6px;
+    border-radius: 4px;
+}
+.news-severity-tag.critical { background: rgba(255, 45, 85, 0.2); color: #FF2D55; border: 1px solid #FF2D55; }
+.news-severity-tag.high { background: rgba(255, 149, 0, 0.2); color: #FF9500; border: 1px solid #FF9500; }
+.news-severity-tag.medium { background: rgba(255, 214, 10, 0.2); color: #FFD60A; border: 1px solid #FFD60A; }
+.news-severity-tag.info { background: rgba(0, 229, 255, 0.1); color: #00E5FF; border: 1px solid rgba(0, 229, 255, 0.2); }
+
+.news-card-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 0.8rem;
+    padding-top: 0.6rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+.news-action-btn {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-muted);
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-family: 'Roboto Mono', monospace;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+.news-action-btn:hover {
+    background: rgba(0, 229, 255, 0.12);
+    border-color: var(--primary);
+    color: #fff;
+}
+
+.news-grid.news-stream-mode {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+.news-grid.news-stream-mode .news-card {
+    padding: 0.7rem 1rem;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+}
+.news-grid.news-stream-mode .card-image {
+    display: none;
+}
+.news-grid.news-stream-mode .news-summary {
+    display: none;
+}
+
+

@@ -1,34 +1,200 @@
-            <!-- TAB: NEWS -->
+            <!-- TAB: SITREP (REPORTE DE SITUACIÓN EN TIEMPO REAL) -->
             <div id="tab-news" class="tab-content active">
-                {% if all_entries %}
-                <div class="news-grid" id="news-grid">
-                    {% for item in all_entries[:30] %}
-                    <div class="news-card" data-title="{{ item.title|lower }}" data-summary="{{ item.summary|lower }}" data-country="{% if item.country_tags %}{{ item.country_tags|join(' ') }}{% else %}GLOBAL{% endif %}">
-                        <div class="news-header">
-                            <span class="news-source">{{ item.source }}</span>
-                            <span class="news-time">{{ item.published }}</span>
+                <!-- BANNER SUPERIOR TÁCTICO & ESTADO DEFCON DUAL -->
+                <div class="sitrep-header-banner panel-glass p-2 mb-2">
+                    <div class="flex-between flex-wrap gap-1">
+                        <!-- Título Táctico y Reloj -->
+                        <div class="flex items-center gap-1">
+                            <div class="radar-pulse-icon">📡</div>
+                            <div>
+                                <div class="flex items-center gap-05">
+                                    <h2 class="text-primary font-mono ls-1 font-bold text-lg m-0">SITREP OPERACIONAL EN TIEMPO REAL</h2>
+                                    <span class="badge-live-pulse" title="Feed de Inteligencia Operativo">LIVE STREAM</span>
+                                </div>
+                                <p class="text-muted text-xs m-0 mt-1">Monitoreo continuo de fuentes abiertas (OSINT), prensa regional y nodos de inteligencia de campo.</p>
+                            </div>
                         </div>
-                        {% if item.image %}
-                        <img src="{{ item.image }}" class="card-image" style="margin-bottom: 0.8rem; border-radius: 8px;" alt="" loading="lazy">
-                        {% endif %}
-                        <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer" class="news-title">{{ item.title }}</a>
-                        <p class="news-summary">{{ item.summary }}</p>
+
+                        <!-- Indicadores DEFCON Duales por Teatro -->
+                        <div class="sitrep-defcon-container flex gap-1 items-center">
+                            <div class="sitrep-defcon-card defcon-col" title="Nivel de Amenaza Operacional - Colombia">
+                                <span class="defcon-flag">🇨🇴</span>
+                                <div class="defcon-details">
+                                    <span class="defcon-sub">TEATRO COLOMBIA</span>
+                                    <span class="defcon-status text-primary" id="sitrep-defcon-col">DEFCON 3 · ELEVADO</span>
+                                </div>
+                            </div>
+                            <div class="sitrep-defcon-card defcon-ven" title="Nivel de Amenaza Operacional - Venezuela">
+                                <span class="defcon-flag">🇻🇪</span>
+                                <div class="defcon-details">
+                                    <span class="defcon-sub">TEATRO VENEZUELA</span>
+                                    <span class="defcon-status text-threat" id="sitrep-defcon-ven">DEFCON 2 · ALERTA SEVERA</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KPIs y Métricas de Ingesta Flash -->
+                    <div class="sitrep-kpi-bar mt-2 pt-2 flex-between flex-wrap gap-1">
+                        <div class="flex gap-1 flex-wrap items-center">
+                            <div class="kpi-chip">
+                                <span class="kpi-label">TOTAL EVENTOS:</span>
+                                <span class="kpi-val text-primary" id="sitrep-kpi-total">0</span>
+                            </div>
+                            <div class="kpi-chip">
+                                <span class="kpi-label">🇨🇴 COL:</span>
+                                <span class="kpi-val" id="sitrep-kpi-col" style="color: #00E5FF;">0</span>
+                            </div>
+                            <div class="kpi-chip">
+                                <span class="kpi-label">🇻🇪 VEN:</span>
+                                <span class="kpi-val" id="sitrep-kpi-ven" style="color: #B388FF;">0</span>
+                            </div>
+                            <div class="kpi-chip">
+                                <span class="kpi-label">🌐 INTL:</span>
+                                <span class="kpi-val text-muted" id="sitrep-kpi-global">0</span>
+                            </div>
+                        </div>
+                        <div class="clock-chip font-mono text-xs flex items-center gap-05">
+                            <span class="pulse-dot-green">●</span>
+                            <span id="sitrep-utc-clock">00:00:00 UTC</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- BARRA DE CONTROL Y FILTROS DE SITREP -->
+                <div class="sitrep-control-bar panel-glass p-2 mb-2">
+                    <div class="flex-between flex-wrap gap-1 items-center">
+                        
+                        <!-- Quick Pills de Teatro Táctico -->
+                        <div class="flex items-center gap-05 flex-wrap">
+                            <span class="text-muted text-xs font-mono">TEATRO:</span>
+                            <button type="button" class="sitrep-pill active" data-theater="ALL" onclick="window.setSitrepTheater('ALL', this)">🌐 Todos</button>
+                            <button type="button" class="sitrep-pill" data-theater="COL" onclick="window.setSitrepTheater('COL', this)">🇨🇴 Colombia</button>
+                            <button type="button" class="sitrep-pill" data-theater="VEN" onclick="window.setSitrepTheater('VEN', this)">🇻🇪 Venezuela</button>
+                            <button type="button" class="sitrep-pill" data-theater="GLOBAL" onclick="window.setSitrepTheater('GLOBAL', this)">🌐 Internacional</button>
+                        </div>
+
+                        <!-- Filtros por Categoría y Severidad -->
+                        <div class="flex items-center gap-05 flex-wrap">
+                            <select id="sitrep-category-select" onchange="CobaltoCore.filterNews()" class="sitrep-select">
+                                <option value="ALL">🔍 Todas las Categorías</option>
+                                <option value="MILITARY">⚔️ Defensa & FANB/FFMM</option>
+                                <option value="SECURITY">🚨 Orden Público & Protestas</option>
+                                <option value="INFRASTRUCTURE">⚡ Infraestructura & Redes</option>
+                                <option value="CRIME">🛡️ Crimen Transnacional</option>
+                                <option value="POLITICS">🏛️ Política & Estado</option>
+                                <option value="ECONOMY">💰 Economía & Sanciones</option>
+                            </select>
+
+                            <select id="sitrep-severity-select" onchange="CobaltoCore.filterNews()" class="sitrep-select">
+                                <option value="ALL">⚠️ Cualquier Severidad</option>
+                                <option value="CRITICAL">🔴 Crítico</option>
+                                <option value="HIGH">🟠 Alto</option>
+                                <option value="MEDIUM">🟡 Medio</option>
+                                <option value="INFO">🔵 Informativo</option>
+                            </select>
+
+                            <!-- Buscador Fáctico con Shortcut -->
+                            <div class="sitrep-search-wrapper">
+                                <input type="text" id="search-input" class="search-box sitrep-search-input" placeholder="Buscar evento, actor o lugar (Ctrl+K)..." autocomplete="off">
+                                <button class="btn-clear-search" onclick="document.getElementById('search-input').value=''; CobaltoCore.filterNews();" title="Limpiar búsqueda">✕</button>
+                            </div>
+                        </div>
+
+                        <!-- Acciones Especiales y Vistas -->
+                        <div class="flex items-center gap-05">
+                            <button type="button" onclick="CobaltoCore.loadExpressBriefing(); document.getElementById('sitrep-ai-briefing-wrapper').style.display='block';" class="btn-tactical" style="background: linear-gradient(135deg, rgba(0, 229, 255, 0.2) 0%, rgba(179, 136, 255, 0.2) 100%); border-color: var(--primary); color: #fff; font-weight: bold;">
+                                ⚡ SITREP IA
+                            </button>
+                            <button type="button" id="btn-toggle-sitrep-view" onclick="window.toggleSitrepView()" class="btn-tactical" title="Cambiar Cuadrícula / Stream">
+                                <span id="sitrep-view-icon">🔀</span> <span id="sitrep-view-label" class="text-xs">Stream</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CONTENEDOR DE SÍNTESIS IA FLOTANTE/DESPLEGABLE -->
+                <div id="sitrep-ai-briefing-wrapper" style="display: none;" class="mb-2">
+                    <div class="panel-tactical p-2 border-primary" style="background: rgba(10, 11, 16, 0.95); position: relative;">
+                        <div class="flex-between mb-1 pb-1 border-bottom-subtle" style="border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.5rem; margin-bottom: 0.8rem;">
+                            <h3 class="text-primary font-mono text-sm m-0">⚡ SÍNTESIS EJECUTIVA SINTETIZADA DE ULTIMA HORA (ARES / MINERVA)</h3>
+                            <button class="btn-icon text-xs text-muted" onclick="document.getElementById('sitrep-ai-briefing-wrapper').style.display='none'">✕ Cerrar</button>
+                        </div>
+                        <div id="main-briefing"></div>
+                    </div>
+                </div>
+
+                <!-- GRID/STREAM DE TARJETAS SITREP -->
+                <div class="news-grid" id="news-grid">
+                    {% if all_entries %}
+                    {% for item in all_entries[:30] %}
+                    {% set country_tag = item.country_tags[0] if item.country_tags else 'GLOBAL' %}
+                    <div class="news-card" data-title="{{ item.title|lower }}" data-summary="{{ item.summary|lower }}" data-country="{% if item.country_tags %}{{ item.country_tags|join(' ') }}{% else %}GLOBAL{% endif %}" data-category="ALL" data-severity="INFO">
+                        <div>
+                            <div class="news-header">
+                                <div class="flex items-center gap-05">
+                                    <span class="news-source">{{ item.source }}</span>
+                                    <span class="news-country-tag {{ country_tag|lower }}">{% if country_tag == 'COL' %}🇨🇴 COL{% elif country_tag == 'VEN' %}🇻🇪 VEN{% else %}🌐 INTL{% endif %}</span>
+                                </div>
+                                <span class="news-time">{{ item.published }}</span>
+                            </div>
+                            {% if item.image %}
+                            <img src="{{ item.image }}" class="card-image" style="margin-bottom: 0.8rem; border-radius: 8px;" alt="" loading="lazy">
+                            {% endif %}
+                            <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer" class="news-title">{{ item.title }}</a>
+                            <p class="news-summary">{{ item.summary }}</p>
+                        </div>
+                        <div class="news-card-actions">
+                            <div class="flex gap-05">
+                                <button type="button" class="news-action-btn" onclick="window.sitrepFocusMap('{{ country_tag }}', '{{ item.title|replace('\'', '\\\'') }}')" title="Ver ubicación en Mapa Táctico">📍 Mapa</button>
+                                <button type="button" class="news-action-btn" onclick="window.sitrepInvestigateRAG('{{ item.title|replace('\'', '\\\'') }}')" title="Investigar hipótesis con IA RAG Local">🎯 Intel RAG</button>
+                                <button type="button" class="news-action-btn" onclick="if(window.CobaltoNotes)window.CobaltoNotes._toggleNote(this.closest('.news-card'))" title="Añadir Nota Táctica Operativa">📝 Nota</button>
+                            </div>
+                            <button type="button" class="news-action-btn" onclick="window.sitrepCopyLink('{{ item.link }}')" title="Copiar enlace canónico">🔗 Copiar</button>
+                        </div>
                     </div>
                     {% endfor %}
+                    {% endif %}
                 </div>
-                <div id="news-loader" style="text-align:center; padding:1.5rem; color:var(--text-muted); font-size:0.8rem;">⬇ Desplázate para más noticias</div>
-                {% else %}
-                <div class="empty-state">
-                    <div class="empty-icon">📡</div>
-                    <p>Sincronizando datos tácticos...</p>
-                    <p style="font-size:0.8rem;">Los sensores están desplegándose. Los datos aparecerán automáticamente en segundos.</p>
-                </div>
-                {% endif %}
+                <div id="news-loader" style="text-align:center; padding:1.5rem; color:var(--text-muted); font-size:0.8rem; font-family:'Roboto Mono', monospace;">⬇ Desplázate para más noticias</div>
             </div>
-            
+
             <script>
 window._allNews = null;
 window._newsPage = 1;
 window._newsPerPage = 30;
-</script>
+window._sitrepViewMode = 'grid';
 
+window.setSitrepTheater = function(code, btn) {
+    document.querySelectorAll('.sitrep-pill').forEach(function(b) { b.classList.remove('active'); });
+    if (btn) btn.classList.add('active');
+    window.switchTheater(code);
+};
+
+window.toggleSitrepView = function() {
+    var grid = document.getElementById('news-grid');
+    var label = document.getElementById('sitrep-view-label');
+    var icon = document.getElementById('sitrep-view-icon');
+    if (!grid) return;
+    
+    if (window._sitrepViewMode === 'grid') {
+        window._sitrepViewMode = 'stream';
+        grid.classList.add('news-stream-mode');
+        if (label) label.textContent = 'Cuadrícula';
+        if (icon) icon.textContent = '🔲';
+    } else {
+        window._sitrepViewMode = 'grid';
+        grid.classList.remove('news-stream-mode');
+        if (label) label.textContent = 'Stream';
+        if (icon) icon.textContent = '🔀';
+    }
+};
+
+setInterval(function() {
+    var clockEl = document.getElementById('sitrep-utc-clock');
+    if (clockEl) {
+        var now = new Date();
+        clockEl.textContent = now.toUTCString().slice(17, 25) + ' UTC';
+    }
+}, 1000);
+</script>

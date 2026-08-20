@@ -700,16 +700,59 @@ window.CobaltoCore = {
         const html = items.map(item => {
             var t = (item.title || '').toLowerCase();
             var s = (item.summary || '').toLowerCase();
+            var countryTag = (item.country_tags && item.country_tags[0]) ? item.country_tags[0] : (t.includes('colombia') || s.includes('bogotá') || s.includes('eln') ? 'COL' : (t.includes('venezuela') || s.includes('caracas') || s.includes('fanb') ? 'VEN' : 'GLOBAL'));
+            
+            var countryFlag = countryTag === 'COL' ? '🇨🇴 COL' : (countryTag === 'VEN' ? '🇻🇪 VEN' : '🌐 INTL');
+            var countryClass = countryTag.toLowerCase();
+            
+            var severity = 'INFO';
+            var textCombined = t + ' ' + s;
+            if (/ataque|muerto|explosión|bomba|atentado|combate|masacre|crisis/i.test(textCombined)) {
+                severity = 'CRITICAL';
+            } else if (/fanb|eln|emc|fuerzas armadas|ejército|dron|captura|apagón|blackout/i.test(textCombined)) {
+                severity = 'HIGH';
+            } else if (/protesta|sanción|tensión|frontera|cierre|investigación/i.test(textCombined)) {
+                severity = 'MEDIUM';
+            }
+            
+            var severityLabel = severity === 'CRITICAL' ? '🔴 CRÍTICO' : (severity === 'HIGH' ? '🟠 ALTO' : (severity === 'MEDIUM' ? '🟡 MEDIO' : '🔵 INFO'));
+            var severityClass = severity.toLowerCase();
+            
+            var category = 'GENERAL';
+            if (/fanb|ejército|militar|combate|defensa|armadas/i.test(textCombined)) category = 'MILITARY';
+            else if (/protesta|orden público|policía|manifestación|disturbio/i.test(textCombined)) category = 'SECURITY';
+            else if (/apagón|blackout|redes|servicios|electricidad|infraestructura/i.test(textCombined)) category = 'INFRASTRUCTURE';
+            else if (/clan del golfo|eln|emc|droga|narcotráfico|capturado|sicariato/i.test(textCombined)) category = 'CRIME';
+            else if (/gobierno|presidente|cancillería|congreso|asamblea|política/i.test(textCombined)) category = 'POLITICS';
+            else if (/dólar|sanción|economía|petróleo|inflación|banca/i.test(textCombined)) category = 'ECONOMY';
+            
             var imgHtml = item.image ? `<img src="${this.utils.escapeHTML(item.image)}" class="card-image" style="margin-bottom: 0.8rem; border-radius: 8px;" alt="" loading="lazy">` : '';
+            var titleClean = (item.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            var linkEsc = this.utils.escapeHTML(item.link || '#');
+
             return `
-                <div class="news-card" data-title="${this.utils.escapeHTML(t)}" data-summary="${this.utils.escapeHTML(s)}">
-                    <div class="news-header">
-                        <span class="news-source">${this.utils.escapeHTML(item.source || '')}</span>
-                        <span class="news-time">${this.utils.escapeHTML(item.published || '')}</span>
+                <div class="news-card" data-title="${this.utils.escapeHTML(t)}" data-summary="${this.utils.escapeHTML(s)}" data-country="${countryTag}" data-category="${category}" data-severity="${severity}">
+                    <div>
+                        <div class="news-header">
+                            <div class="flex items-center gap-05">
+                                <span class="news-source">${this.utils.escapeHTML(item.source || '')}</span>
+                                <span class="news-country-tag ${countryClass}">${countryFlag}</span>
+                                <span class="news-severity-tag ${severityClass}">${severityLabel}</span>
+                            </div>
+                            <span class="news-time">${this.utils.escapeHTML(item.published || '')}</span>
+                        </div>
+                        ${imgHtml}
+                        <a href="${linkEsc}" target="_blank" rel="noopener noreferrer" class="news-title">${this.utils.escapeHTML(item.title || '')}</a>
+                        <p class="news-summary">${this.utils.escapeHTML(item.summary || '')}</p>
                     </div>
-                    ${imgHtml}
-                    <a href="${this.utils.escapeHTML(item.link || '#')}" target="_blank" class="news-title">${this.utils.escapeHTML(item.title || '')}</a>
-                    <p class="news-summary">${this.utils.escapeHTML(item.summary || '')}</p>
+                    <div class="news-card-actions">
+                        <div class="flex gap-05">
+                            <button type="button" class="news-action-btn" onclick="window.sitrepFocusMap('${countryTag}', '${titleClean}')" title="Ver ubicación en Mapa Táctico">📍 Mapa</button>
+                            <button type="button" class="news-action-btn" onclick="window.sitrepInvestigateRAG('${titleClean}')" title="Investigar hipótesis con IA RAG Local">🎯 Intel RAG</button>
+                            <button type="button" class="news-action-btn" onclick="if(window.CobaltoNotes)window.CobaltoNotes._toggleNote(this.closest('.news-card'))" title="Añadir Nota Táctica Operativa">📝 Nota</button>
+                        </div>
+                        <button type="button" class="news-action-btn" onclick="window.sitrepCopyLink('${linkEsc}')" title="Copiar enlace canónico">🔗 Copiar</button>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -717,7 +760,49 @@ window.CobaltoCore = {
         grid.insertAdjacentHTML('beforeend', html);
         this.state.newsPage = page;
         this.updateNewsLoader();
+        this.updateSitrepKPIs();
         this.filterNews();
+    },
+
+    updateSitrepKPIs: function() {
+        if (!this.state.allNews) return;
+        var total = this.state.allNews.length;
+        var col = 0, ven = 0, global = 0, highSevCol = 0, highSevVen = 0;
+        
+        this.state.allNews.forEach(function(item) {
+            var tags = (item.country_tags || []).join(' ');
+            var text = ((item.title || '') + ' ' + (item.summary || '')).toLowerCase();
+            var isCol = tags.includes('COL') || text.includes('colombia') || text.includes('bogotá') || text.includes('eln');
+            var isVen = tags.includes('VEN') || text.includes('venezuela') || text.includes('caracas') || text.includes('fanb');
+            
+            if (isCol) {
+                col++;
+                if (/ataque|muerto|combate|explosión|alerta/i.test(text)) highSevCol++;
+            } else if (isVen) {
+                ven++;
+                if (/ataque|sanción|apagón|alerta|fanb/i.test(text)) highSevVen++;
+            } else {
+                global++;
+            }
+        });
+        
+        var totalEl = document.getElementById('sitrep-kpi-total');
+        if (totalEl) totalEl.textContent = total;
+        var colEl = document.getElementById('sitrep-kpi-col');
+        if (colEl) colEl.textContent = col;
+        var venEl = document.getElementById('sitrep-kpi-ven');
+        if (venEl) venEl.textContent = ven;
+        var globalEl = document.getElementById('sitrep-kpi-global');
+        if (globalEl) globalEl.textContent = global;
+
+        var defconColEl = document.getElementById('sitrep-defcon-col');
+        if (defconColEl) {
+            defconColEl.textContent = highSevCol > 3 ? 'DEFCON 2 · ALERTA ALTA' : 'DEFCON 3 · ELEVADO';
+        }
+        var defconVenEl = document.getElementById('sitrep-defcon-ven');
+        if (defconVenEl) {
+            defconVenEl.textContent = highSevVen > 3 ? 'DEFCON 2 · ALERTA SEVERA' : 'DEFCON 3 · ELEVADO';
+        }
     },
 
     updateNewsLoader: function() {
@@ -1546,16 +1631,30 @@ window.CobaltoCore = {
     filterNews: function() {
         const searchEl = document.getElementById('search-input');
         const term = searchEl ? searchEl.value.toLowerCase() : '';
+        const catSelect = document.getElementById('sitrep-category-select');
+        const catFilter = catSelect ? catSelect.value : 'ALL';
+        const sevSelect = document.getElementById('sitrep-severity-select');
+        const sevFilter = sevSelect ? sevSelect.value : 'ALL';
+        const currentTheater = window.currentTheater || 'ALL';
+
         document.querySelectorAll('.news-card').forEach(card => {
             const title = (card.getAttribute('data-title') || '').toLowerCase();
             const summary = (card.getAttribute('data-summary') || '').toLowerCase();
-            card.style.display = (title.includes(term) || summary.includes(term)) ? 'flex' : 'none';
+            const country = (card.getAttribute('data-country') || '').toUpperCase();
+            const category = (card.getAttribute('data-category') || 'ALL').toUpperCase();
+            const severity = (card.getAttribute('data-severity') || 'ALL').toUpperCase();
+
+            const matchSearch = !term || title.includes(term) || summary.includes(term);
+            const matchTheater = currentTheater === 'ALL' || country.includes(currentTheater) || country.includes('GLOBAL');
+            const matchCat = catFilter === 'ALL' || category === catFilter;
+            const matchSev = sevFilter === 'ALL' || severity === sevFilter;
+
+            card.style.display = (matchSearch && matchTheater && matchCat && matchSev) ? 'flex' : 'none';
         });
     },
 
     preloadLazyTabs: function() {
-        // DESACTIVADO: La precarga automática de tabs en segundo plano ha sido eliminada.
-        // Cada pestaña carga sus datos únicamente cuando el usuario la abre manualmente.
+        // DESACTIVADO
     },
 
     loadScript: function(src) {
@@ -2536,3 +2635,47 @@ window.addEventListener('resize', () => {
 if (typeof window._startCobaltoApp === 'function') {
     window._startCobaltoApp();
 }
+
+/* ── SITREP GLOBAL ACTION HELPERS ────────────────────────────────────────── */
+window.sitrepFocusMap = function(countryTag, title) {
+    if (window.CobaltoCore) window.CobaltoCore.switchTab('tab-map');
+    if (window.UnifiedMap && window.UnifiedMap.state && window.UnifiedMap.state.map) {
+        if (countryTag === 'COL') {
+            window.UnifiedMap.state.map.flyTo([6.5, -70.0], 6);
+        } else if (countryTag === 'VEN') {
+            window.UnifiedMap.state.map.flyTo([7.5, -66.5], 6.5);
+        } else {
+            window.UnifiedMap.state.map.flyTo([7.0, -68.0], 5);
+        }
+    }
+    if (typeof window.showTacticalToast === 'function') {
+        window.showTacticalToast('📍 Enfocando mapa táctico en vector ' + countryTag, 'info');
+    }
+};
+
+window.sitrepInvestigateRAG = function(title) {
+    if (window.CobaltoCore) window.CobaltoCore.switchTab('tab-intel');
+    var input = document.getElementById('intel-query-input');
+    if (input) {
+        input.value = 'Investigar evento táctico: ' + title;
+        input.focus();
+    }
+    if (typeof window.showTacticalToast === 'function') {
+        window.showTacticalToast('🎯 Hipótesis transferida al Centro de Investigación IA', 'info');
+    }
+};
+
+window.sitrepCopyLink = function(url) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(function() {
+            if (typeof window.showTacticalToast === 'function') {
+                window.showTacticalToast('🔗 Enlace copiado al portapapeles', 'info');
+            }
+        });
+    } else {
+        if (typeof window.showTacticalToast === 'function') {
+            window.showTacticalToast('🔗 Enlace: ' + url, 'info');
+        }
+    }
+};
+
