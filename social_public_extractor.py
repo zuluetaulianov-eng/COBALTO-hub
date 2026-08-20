@@ -1,8 +1,10 @@
 # social_public_extractor.py - Extrae de fuentes públicas SIN credenciales
 # Versión 1.1 - Más fuentes públicas añadidas
 
+import html
 import logging
 import os
+import re
 import time
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -16,6 +18,21 @@ from config import REDLIB_INSTANCES, RESIDENTIAL_PROXY_URL
 from osint_tls_backend import tls_manager
 
 urllib3.disable_warnings()
+
+
+def clean_text_summary(text: str, max_length: int = 280) -> str:
+    """Limpia etiquetas HTML, unescape entidades y normaliza espacios en resúmenes RSS/OSINT."""
+    if not text:
+        return ""
+    try:
+        text = html.unescape(str(text))
+        text = re.sub(r'<(br|p|div|/p|/div)[^>]*>', ' ', text, flags=re.IGNORECASE)
+        text = re.sub(r'<[^>]+>', '', text)
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text[:max_length]
+    except Exception:
+        return str(text)[:max_length]
+
 
 # Proxies de TOR (socks5h = DNS tambien resuelto via Tor)
 TOR_PROXIES = {"http": "socks5h://127.0.0.1:9150", "https": "socks5h://127.0.0.1:9150"}
@@ -132,27 +149,30 @@ TELEGRAM_RSS_CHANNELS = {
     "vzlanoticias": "https://t.me/s/vzlanoticias",
     "infoVzla": "https://t.me/s/infoVzla",
     "noticiasvenezuela24": "https://t.me/s/noticiasvenezuela24",
-    # Nuevos - Canales de noticias principales
+    # Canales de noticias principales
     "lapatilla": "https://t.me/s/lapatilla",
     "efectococuyo": "https://t.me/s/efectococuyo",
     "runrunes": "https://t.me/s/runrunes",
     "elnacionalweb": "https://t.me/s/elnacionalweb",
     "ultimasnoticias": "https://t.me/s/ultimasnoticias",
-    # Nuevos - Canales de política y análisis
+    # Canales Colombia OSINT
+    "NoticiasCaracol": "https://t.me/s/NoticiasCaracol",
+    "ElTiempo_co": "https://t.me/s/eltiempo_co",
+    "RevistaSemana": "https://t.me/s/RevistaSemana",
+    # Canales de política y análisis
     "venezuelalive": "https://t.me/s/venezuelalive",
     "venezuelaalerta": "https://t.me/s/venezuelaalerta",
     "venezuelanews": "https://t.me/s/venezuelanews",
     "venezuelaactualidad": "https://t.me/s/venezuelaactualidad",
-    # Nuevos - Canales de economía
+    # Canales de economía
     "dolartoday": "https://t.me/s/dolartoday",
     "monitorvenezuela": "https://t.me/s/monitorvenezuela",
     "economia_venezuela": "https://t.me/s/economia_venezuela",
-    # Nuevos - Canales de seguridad y emergencias
+    # Canales de seguridad y emergencias
     "venezuelaseguridad": "https://t.me/s/venezuelaseguridad",
     "alertas_venezuela": "https://t.me/s/alertas_venezuela",
     "emergencias_venezuela": "https://t.me/s/emergencias_venezuela",
     "noticierovenevision": "https://t.me/s/noticierovenevision",
-    "NoticiasCaracol": "https://t.me/s/NoticiasCaracol",
 }
 
 # ==========================================
@@ -176,7 +196,7 @@ MASTODON_INSTANCES = {
 # ==========================================
 # REDDIT - Subreddits públicos
 # ==========================================
-REDDIT_PUBLIC_SUBREDDITS = ["vzla", "venezuela", "LatinAmerica", "worldnews"]
+REDDIT_PUBLIC_SUBREDDITS = ["vzla", "venezuela", "Colombia", "bogota", "medellin", "OSINT", "Geopolitics", "LatinAmerica", "worldnews"]
 
 
 def get_telegram_rss() -> List[Dict[str, Any]]:
@@ -189,8 +209,8 @@ def get_telegram_rss() -> List[Dict[str, Any]]:
             for entry in feed.entries[:5]:
                 results.append(
                     {
-                        "title": entry.get("title", "Sin título")[:140],
-                        "summary": entry.get("summary", "")[:280],
+                        "title": clean_text_summary(entry.get("title", "Sin título"), 140),
+                        "summary": clean_text_summary(entry.get("summary", "") or entry.get("description", ""), 280),
                         "link": entry.get("link", "#"),
                         "published": entry.get("published", ""),
                         "source": f"Telegram: @{name}",
@@ -215,8 +235,8 @@ def get_youtube_rss() -> List[Dict[str, Any]]:
                     thumbnail = entry.media_thumbnails[0].get("url", "")
                 results.append(
                     {
-                        "title": entry.get("title", "Sin título")[:140],
-                        "summary": entry.get("summary", "")[:280],
+                        "title": clean_text_summary(entry.get("title", "Sin título"), 140),
+                        "summary": clean_text_summary(entry.get("summary", "") or entry.get("description", ""), 280),
                         "link": entry.get("link", "#"),
                         "published": entry.get("published", ""),
                         "image": thumbnail,
@@ -238,10 +258,11 @@ def get_mastodon_public() -> List[Dict[str, Any]]:
             if resp.status_code == 200:
                 data = resp.json()
                 for post in data[:5]:
+                    raw_content = post.get("content", "")
                     results.append(
                         {
-                            "title": (post.get("content", "")[:140]).replace("<p>", "").replace("</p>", ""),
-                            "summary": post.get("content", "")[:280],
+                            "title": clean_text_summary(raw_content, 140),
+                            "summary": clean_text_summary(raw_content, 280),
                             "link": post.get("url", "#"),
                             "published": post.get("created_at", ""),
                             "source": f"Mastodon: {instance}",
@@ -274,8 +295,8 @@ def get_reddit_public() -> List[Dict[str, Any]]:
                     canonical_link = raw_link.replace(netloc, "reddit.com").replace("http://", "https://")
                     results.append(
                         {
-                            "title": entry.get("title", "Sin título")[:140],
-                            "summary": entry.get("summary", "")[:280],
+                            "title": clean_text_summary(entry.get("title", "Sin título"), 140),
+                            "summary": clean_text_summary(entry.get("summary", "") or entry.get("description", ""), 280),
                             "link": canonical_link,
                             "published": entry.get("published", ""),
                             "source": f"Reddit: r/{sub}",
@@ -318,8 +339,8 @@ def get_news_international() -> List[Dict[str, Any]]:
             for entry in feed.entries[:3]:
                 results.append(
                     {
-                        "title": entry.get("title", "Sin título")[:140],
-                        "summary": entry.get("summary", "")[:280],
+                        "title": clean_text_summary(entry.get("title", "Sin título"), 140),
+                        "summary": clean_text_summary(entry.get("summary", "") or entry.get("description", ""), 280),
                         "link": entry.get("link", "#"),
                         "published": entry.get("published", ""),
                         "source": name,
@@ -354,8 +375,8 @@ def get_news_aggregators() -> List[Dict[str, Any]]:
             for entry in feed.entries[:4]:
                 results.append(
                     {
-                        "title": entry.get("title", "Sin título")[:140],
-                        "summary": entry.get("summary", "")[:280],
+                        "title": clean_text_summary(entry.get("title", "Sin título"), 140),
+                        "summary": clean_text_summary(entry.get("summary", "") or entry.get("description", ""), 280),
                         "link": entry.get("link", "#"),
                         "published": entry.get("published", ""),
                         "source": name,
@@ -389,8 +410,8 @@ def get_latam_news() -> List[Dict[str, Any]]:
             for entry in feed.entries[:3]:
                 results.append(
                     {
-                        "title": entry.get("title", "Sin título")[:140],
-                        "summary": entry.get("summary", "")[:280],
+                        "title": clean_text_summary(entry.get("title", "Sin título"), 140),
+                        "summary": clean_text_summary(entry.get("summary", "") or entry.get("description", ""), 280),
                         "link": entry.get("link", "#"),
                         "published": entry.get("published", ""),
                         "source": name,

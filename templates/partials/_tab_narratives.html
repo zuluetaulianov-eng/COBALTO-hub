@@ -1,31 +1,94 @@
-﻿            <!-- TAB: NARRATIVAS -->
+            <!-- TAB: NARRATIVAS Y ANÁLISIS DE DESINFORMACIÓN -->
             <div id="tab-narrative" class="tab-content">
-                <div class="flex gap-1 flex-wrap items-center" style="margin-bottom: 1.5rem;">
-                    <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="narrative-search" class="search-box" style="flex:1; min-width:200px;" placeholder="Filtrar narrativas...">
+                <!-- Tactical KPI Header -->
+                <div class="panel-glass" style="margin-bottom:1.5rem; padding:1.2rem; border-left:4px solid var(--primary);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1rem;">
+                        <div>
+                            <h3 style="margin:0; font-size:1.1rem; color:var(--primary); font-weight:700; letter-spacing:0.5px; display:flex; align-items:center; gap:0.5rem;">
+                                📊 ANÁLISIS DE NARRATIVAS Y CAMPAÑAS DE INFLUENCIA
+                            </h3>
+                            <p style="margin:0.2rem 0 0 0; font-size:0.8rem; color:var(--text-muted);">
+                                Agrupamiento semántico automatizado, detección de tópicos de opinión y trazabilidad de difusión en redes y medios.
+                            </p>
+                        </div>
+                        <span class="config-chip" style="background:rgba(0,229,255,0.1); border:1px solid var(--primary); color:var(--primary); font-size:0.75rem;">
+                            🟢 NARRATIVAS ACTIVAS: EN TIEMPO REAL
+                        </span>
+                    </div>
+
+                    <!-- Metrics Grid -->
+                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:0.8rem;">
+                        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:6px; padding:0.7rem 1rem;">
+                            <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Ejes de Opinión</span>
+                            <div id="narrative-kpi-count" style="font-size:1.4rem; font-weight:700; color:var(--primary); margin-top:0.2rem;">--</div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:6px; padding:0.7rem 1rem;">
+                            <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Tema Dominante</span>
+                            <div id="narrative-kpi-top" style="font-size:0.95rem; font-weight:700; color:#FFD60A; margin-top:0.3rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">--</div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:6px; padding:0.7rem 1rem;">
+                            <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Fuentes Analizadas</span>
+                            <div id="narrative-kpi-sources" style="font-size:1.4rem; font-weight:700; color:#B388FF; margin-top:0.2rem;">--</div>
+                        </div>
+                        <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); border-radius:6px; padding:0.7rem 1rem;">
+                            <span style="font-size:0.75rem; color:var(--text-muted); text-transform:uppercase;">Menciones Totales</span>
+                            <div id="narrative-kpi-mentions" style="font-size:1.4rem; font-weight:700; color:#4CD964; margin-top:0.2rem;">--</div>
+                        </div>
+                    </div>
                 </div>
+
+                <!-- Search and Filters Bar -->
+                <div class="flex gap-1 flex-wrap items-center" style="margin-bottom: 1.2rem;">
+                    <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="narrative-search" class="search-box" style="flex:1; min-width:240px;" placeholder="🔎 Buscar por tema, narrativa o palabras clave..." oninput="CobaltoCore.filterNarratives();">
+                    <div style="display:flex; gap:0.4rem; flex-wrap:wrap;">
+                        <button class="btn-tactical active" style="font-size:0.75rem; padding:0.3rem 0.7rem;" onclick="CobaltoCore.filterNarrativeCategory('all', this);">Todas</button>
+                        <button class="btn-tactical" style="font-size:0.75rem; padding:0.3rem 0.7rem;" onclick="CobaltoCore.filterNarrativeCategory('💰', this);">💰 Economía</button>
+                        <button class="btn-tactical" style="font-size:0.75rem; padding:0.3rem 0.7rem;" onclick="CobaltoCore.filterNarrativeCategory('🔒', this);">🔒 Seguridad</button>
+                        <button class="btn-tactical" style="font-size:0.75rem; padding:0.3rem 0.7rem;" onclick="CobaltoCore.filterNarrativeCategory('⚡', this);">⚡ Energía</button>
+                        <button class="btn-tactical" style="font-size:0.75rem; padding:0.3rem 0.7rem;" onclick="CobaltoCore.filterNarrativeCategory('🛢️', this);">🛢️ Petróleo</button>
+                        <button class="btn-tactical" style="font-size:0.75rem; padding:0.3rem 0.7rem;" onclick="CobaltoCore.filterNarrativeCategory('🏛️', this);">🏛️ Política</button>
+                    </div>
+                </div>
+
+                <!-- Narrative List Container -->
                 <div id="narrative-list" style="display:flex; flex-direction:column; gap:1rem;">
                     {% if narrative_analysis and narrative_analysis.narratives %}
                     {% for narrative in narrative_analysis.narratives %}
-                    <div class="news-card" style="border-left:3px solid {{ narrative.color or 'var(--primary)' }};" data-search="{{ (narrative.name + ' ' + narrative.description)|lower }}">
+                    <div class="news-card narrative-card" style="border-left:3px solid {{ narrative.color or 'var(--primary)' }};" data-search="{{ (narrative.name + ' ' + narrative.description)|lower }}">
                         <div class="news-header">
                             <span class="news-source">{{ narrative.name }}</span>
-                            <span class="news-time">{{ narrative.count }} menciones</span>
+                            <span class="news-time" style="background:rgba(0,229,255,0.1); padding:0.2rem 0.5rem; border-radius:4px; font-weight:600;">{{ narrative.count }} menciones</span>
                         </div>
                         <div style="margin-top:0.5rem;">
-                            <p style="color:var(--text-muted); font-size:0.85rem;">{{ narrative.description }}</p>
+                            <p style="color:var(--text-muted); font-size:0.85rem; margin:0 0 0.5rem 0;">{{ narrative.description }}</p>
+                            {% if narrative.sources %}
+                            <div style="display:flex; gap:0.3rem; flex-wrap:wrap; margin-top:0.4rem;">
+                                {% for src in narrative.sources %}
+                                <span style="font-size:0.7rem; background:rgba(255,255,255,0.05); color:var(--text-muted); border:1px solid var(--border-color); padding:0.1rem 0.4rem; border-radius:3px;">{{ src }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
                         </div>
                         {% if narrative.articles %}
                         <div style="margin-top:0.8rem; padding-top:0.8rem; border-top:1px solid var(--border-color);">
                             {% for article in narrative.articles[:5] %}
-                            <a href="{{ article.link }}" target="_blank" rel="noopener noreferrer" style="display:block; color:var(--primary); font-size:0.8rem; margin-bottom:0.3rem; text-decoration:none;">{{ article.title }}</a>
+                            <div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem; margin-bottom:0.4rem;">
+                                <a href="{{ article.link }}" target="_blank" rel="noopener noreferrer" style="color:var(--primary); font-size:0.8rem; text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ article.title }}</a>
+                                <span style="font-size:0.7rem; color:var(--text-muted); white-space:nowrap;">{{ article.source }}</span>
+                            </div>
                             {% endfor %}
                         </div>
                         {% endif %}
+                        <div style="margin-top:0.8rem; padding-top:0.6rem; border-top:1px dashed var(--border-color); display:flex; justify-content:flex-end;">
+                            <button class="btn-tactical" style="font-size:0.72rem; padding:0.25rem 0.6rem;" onclick="if(window.openRagModal){window.openRagModal('Analizar campaña narrativa: ' + {{ narrative.name|tojson }});}">🎯 RAG IA</button>
+                        </div>
                     </div>
                     {% endfor %}
                     {% else %}
-                    <div style="text-align:center; padding:3rem; color:var(--text-muted);">
-                        <p>No hay datos de narrativas disponibles. Los datos se generan durante el ciclo de análisis completo.</p>
+                    <div class="empty-state" style="padding:3rem;">
+                        <div class="empty-icon">📊</div>
+                        <p style="color:var(--primary);">CARGANDO NARRATIVAS EN TIEMPO REAL</p>
+                        <p style="font-size:0.8rem; color:var(--text-muted);">Iniciando el agrupamiento semántico de publicaciones y medios de comunicación...</p>
                     </div>
                     {% endif %}
                 </div>

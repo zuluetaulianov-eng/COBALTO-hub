@@ -5,6 +5,7 @@
             <div class="flex" style="gap:0.5rem; align-items:center;">
                 <span id="entity-total-display" class="text-muted font-mono" style="font-size: 0.85rem;">0 entidades</span>
                 <button class="btn-tactical btn-sm" onclick="EntityExplorer.runBackfill()">⚡ Poblar</button>
+                <button class="btn-tactical btn-sm" onclick="EntityExplorer.exportEntitiesReport()" style="background: rgba(255, 45, 85, 0.15); border-color: #FF2D55; color: #FF2D55;">📄 Exportar SITREP</button>
             </div>
         </div>
         <div class="flex flex-wrap gap-1" style="margin-bottom: 1rem;">
@@ -17,6 +18,7 @@
                 <option value="infrastructure">Infraestructura</option>
                 <option value="vessel">Buques</option>
                 <option value="aircraft">Aeronaves</option>
+                <option value="crypto_wallet">🪙 Billeteras Cripto</option>
                 <option value="event">Eventos</option>
             </select>
             <select id="entity-source-filter" class="config-select" onchange="EntityExplorer.filterSource()">
@@ -30,6 +32,10 @@
             <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
                 <input type="checkbox" id="entity-ofac-only" onchange="EntityExplorer.search()">
                 <span>🔴 Solo OFAC</span>
+            </label>
+            <label class="checkbox-label" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem;">
+                <input type="checkbox" id="entity-crypto-only" onchange="EntityExplorer.search()">
+                <span>🪙 Solo Cripto</span>
             </label>
         </div>
     </div>

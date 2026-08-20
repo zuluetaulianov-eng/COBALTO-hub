@@ -1,4 +1,4 @@
-﻿            <!-- TAB: ANÁLISIS DE SENTIMIENTOS -->
+            <!-- TAB: ANÁLISIS DE SENTIMIENTOS -->
             <div id="tab-sentiment" class="tab-content">
                 <!-- Pipeline Visual -->
                 <div id="sentiment-pipeline" style="display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:2rem;flex-wrap:wrap;">
@@ -11,6 +11,35 @@
                     <div class="sent-pipe-step" data-step="3">🧠 Análisis NLP</div>
                     <div class="sent-pipe-arrow">▶</div>
                     <div class="sent-pipe-step active" data-step="4">📊 Visualización</div>
+                </div>
+
+                <!-- BARRA DE CONTROLES TÁCTICOS (Teatro + Búsqueda por Objetivo + Exportar SITREP) -->
+                <div class="news-card" style="margin-bottom:1.5rem; padding: 1rem 1.2rem; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; border-color: rgba(0, 229, 255, 0.3);">
+                    <div style="display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; flex: 1;">
+                        <div style="display: flex; align-items: center; gap: 0.4rem;">
+                            <span style="font-size:0.9rem;">📍</span>
+                            <label for="sentiment-theater" style="font-family:'Roboto Mono',monospace; font-size:0.75rem; color:var(--primary); font-weight:bold;">TEATRO:</label>
+                            <select id="sentiment-theater" onchange="if(window.CobaltaSentiment)window.CobaltaSentiment.refresh()" style="background: rgba(10,11,16,0.9); border: 1px solid var(--primary); color: #fff; border-radius: 4px; padding: 0.35rem 0.6rem; font-family: 'Roboto Mono', monospace; font-size: 0.75rem; cursor: pointer;">
+                                <option value="todos">🌍 Todos los Teatros (Global)</option>
+                                <option value="frontera">🏔️ Teatro 1: Frontera Andina (Táchira/Apure)</option>
+                                <option value="zulia">⚡ Teatro 2: Zulia / Eje Eléctrico</option>
+                                <option value="capital">🏛️ Teatro 3: Distrito Capital / Miranda</option>
+                                <option value="sur">🌳 Teatro 4: Sur / Minero (Bolívar/Amazonas)</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.4rem; flex: 1; min-width: 200px;">
+                            <span style="font-size:0.9rem;">🔍</span>
+                            <input type="text" id="sentiment-target-filter" placeholder="Filtrar por actor / palabra clave (ej. @CANTV, PDVSA)..." onkeyup="if(event.key==='Enter' && window.CobaltaSentiment)window.CobaltaSentiment.refresh()" style="width: 100%; background: rgba(10,11,16,0.9); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 4px; padding: 0.35rem 0.6rem; font-family: 'Roboto Mono', monospace; font-size: 0.75rem;">
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <button class="btn-tactical" onclick="if(window.CobaltaSentiment)window.CobaltaSentiment.refresh()" style="padding: 0.35rem 0.8rem; font-size: 0.75rem; background: rgba(0, 229, 255, 0.15); border: 1px solid var(--primary); color: var(--primary); border-radius: 4px; font-family: 'Roboto Mono'; cursor: pointer;">
+                            ↻ Actualizar
+                        </button>
+                        <button class="btn-tactical" onclick="if(window.CobaltaSentiment)window.CobaltaSentiment.exportPsyopsReport()" style="padding: 0.35rem 0.8rem; font-size: 0.75rem; background: rgba(255, 45, 85, 0.15); border: 1px solid #FF2D55; color: #FF2D55; border-radius: 4px; font-family: 'Roboto Mono'; cursor: pointer;">
+                            📄 Informe PSYOPS (TXT)
+                        </button>
+                    </div>
                 </div>
 
                 <!-- NUEVO ROL COBALTO: REPORTE PSYOPS -->

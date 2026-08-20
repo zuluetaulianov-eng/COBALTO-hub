@@ -1,59 +1,212 @@
-            <!-- TAB: SOCIAL -->
-            <div id="tab-social" class="tab-content">
-                <div class="flex gap-1 flex-wrap items-center" style="margin-bottom: 1.5rem;">
-                    <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="social-search" class="search-box" style="flex:1; min-width:200px;" placeholder="Filtrar redes sociales...">
-                    <button class="border-primary text-primary" style="background:rgba(0,229,255,0.1);padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-size:0.75rem;" onclick="if(window.CobaltoIntel)CobaltoIntel.expandAllSocial()">Expandir todo</button>
-                    <button style="background:transparent;border:1px solid var(--border-color);color:var(--text-muted);padding:0.5rem 1rem;border-radius:8px;cursor:pointer;font-size:0.75rem;" onclick="if(window.CobaltoIntel)CobaltoIntel.collapseAllSocial()">Colapsar todo</button>
-                </div>
-            
-                <div class="flex-column gap-05" style="flex:1;">
-                    <div id="social-list"></div>
-                </div>
+<!-- TAB: INTELIGENCIA SOCIAL & RADAR DE REDES -->
+<div id="tab-social" class="tab-content">
+    <!-- CABECERA DE MANDOS Y METRICAS -->
+    <div class="panel-glass" style="padding: 1.25rem; margin-bottom: 1.5rem; background: linear-gradient(135deg, rgba(10, 11, 16, 0.9) 0%, rgba(15, 23, 42, 0.8) 100%); border-left: 4px solid var(--primary);">
+        <div class="flex-between items-center flex-wrap gap-1" style="margin-bottom: 1rem;">
+            <div>
+                <div class="font-mono text-muted" style="font-size: 0.75rem; letter-spacing: 2px;">OSINT HUMINT & DIGITAL INTEL</div>
+                <h2 style="margin: 0.2rem 0; font-size: 1.3rem; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>🌐 RADAR DE REDES SOCIALES & FOROS PÚBLICOS</span>
+                </h2>
+                <div style="font-size: 0.8rem; color: var(--text-muted);">Extracción anti-censura multicanal: Telegram, Reddit, Mastodon, Bluesky y agregadores OSINT en tiempo real.</div>
+            </div>
+            <div class="flex items-center gap-05">
+                <span id="social-last-sync-time" class="font-mono text-muted" style="font-size: 0.7rem; margin-right: 6px;">Sincronizado: justo ahora</span>
+                <button class="btn-tactical" onclick="if(window.CobaltoIntel && window.CobaltoIntel.refreshSocial) window.CobaltoIntel.refreshSocial();" style="font-size: 0.8rem; padding: 6px 14px;">
+                    🔄 SINCRONIZAR RADAR
+                </button>
+                <button class="btn-tactical" onclick="if(window.CobaltoIntel) window.CobaltoIntel.toggleSocialAutoRefresh(this);" style="font-size: 0.8rem; padding: 6px 14px; border-color: rgba(255,255,255,0.2);">
+                    ⏱️ AUTO-REFRESCO (OFF)
+                </button>
+                <button class="btn-tactical" onclick="if(window.CobaltoCore) window.CobaltoCore.switchTab('tab-graph');" style="font-size: 0.8rem; padding: 6px 14px; background: rgba(179, 136, 255, 0.15); border-color: #B388FF; color: #B388FF;">
+                    🕸️ GRAFO DE ENTIDADES
+                </button>
+                <button class="btn-tactical" onclick="if(window.CobaltoIntel) window.CobaltoIntel.exportSocialReport();" style="font-size: 0.8rem; padding: 6px 14px; background: rgba(255, 45, 85, 0.15); border-color: #FF2D55; color: #FF2D55;">
+                    📄 EXPORTAR SITREP SOCIAL
+                </button>
+                <button class="btn-tactical" onclick="if(window.CobaltoIntel) window.CobaltoIntel.showOperatorGuide();" style="font-size: 0.8rem; padding: 6px 10px; background: rgba(255, 204, 0, 0.15); border-color: #FFCC00; color: #FFCC00;" title="Guía Operativa de Uso">
+                    ❓ AYUDA
+                </button>
+            </div>
+        </div>
 
-                <div class="panel-tactical" style="margin-top: 1.5rem;">
-                    <h3 class="text-primary font-mono" style="margin:0 0 1rem 0;">GRUPOS SOCIALES</h3>
-                    <div id="social-groups-container">
-                        {% for group, items in social_groups.items() %}
-                        <div class="social-group-panel" style="margin-bottom: 1.5rem; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden;">
-                            <div class="social-header">
-                                <span>{{ group }}</span>
-                                <span class="social-count">{{ items|length }}</span>
-                                <span class="social-toggle" style="transition:transform 0.3s;margin-left:auto;font-size:0.8rem;">▶</span>
-                            </div>
-                            <div class="social-items" style="display:none;">
-                                {% for item in items[:25] %}
-                                {% set is_reddit = 'Reddit' in (item.source or '') or 'r/' in (item.source or '') or 'reddit.com' in (item.link or '') %}
-                                {% set is_telegram = 'Telegram' in (item.source or '') or 't.me' in (item.link or '') %}
-                                <div class="social-item {% if is_reddit %}reddit-item{% endif %}" data-search-text="{{ item.title|lower }}">
-                                    <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem; flex-wrap:wrap;">
-                                        {% if is_reddit %}
-                                        <span class="social-tag social-tag-reddit">🤖 {{ item.source or 'Reddit OSINT' }}</span>
-                                        {% elif is_telegram %}
-                                        <span class="social-tag social-tag-telegram">✈️ {{ item.source or 'Telegram' }}</span>
-                                        {% elif item.source %}
-                                        <span class="social-tag">📡 {{ item.source }}</span>
-                                        {% endif %}
-                                        {% if item.published %}
-                                        <span style="font-size:0.7rem; color:var(--text-muted); margin-left:auto; font-family:'Roboto Mono', monospace;">{{ item.published[:16] }}</span>
-                                        {% endif %}
-                                    </div>
-                                    <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer" style="font-weight:600; text-decoration:none;">{{ item.title }}</a>
-                                    {% if item.summary %}
-                                    <p style="margin-top:0.3rem; font-size:0.8rem; color:var(--text-muted); line-height:1.4;">{{ item.summary }}</p>
-                                    {% endif %}
-                                </div>
-                                {% endfor %}
-                                {% if items|length > 25 %}
-                                <div style="padding:0.5rem 1rem;font-size:0.75rem;color:var(--text-muted);border-top:1px solid rgba(255,255,255,0.04);">+{{ items|length - 25 }} m&aacute;s</div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        {% else %}
-                        <div class="empty-state" style="padding:2rem;">
-                            <p style="color:var(--text-muted);">No hay datos sociales disponibles.</p>
-                        </div>
-                        {% endfor %}
-                    </div>
+        <!-- KPI METRICS GRID -->
+        <div class="grid-4 gap-1">
+            <div style="background: rgba(255,255,255,0.03); padding: 0.8rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div class="text-muted font-mono" style="font-size: 0.7rem;">📡 MENSAJES MONITOREADOS</div>
+                <div id="social-kpi-total" class="font-mono" style="font-size: 1.4rem; font-weight: bold; color: var(--primary); margin-top: 2px;">
+                    {% set total_social_items = namespace(val=0) %}
+                    {% for g, items in social_groups.items() %}{% set total_social_items.val = total_social_items.val + items|length %}{% endfor %}
+                    {{ total_social_items.val }}
                 </div>
             </div>
 
+            <div style="background: rgba(255,255,255,0.03); padding: 0.8rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div class="text-muted font-mono" style="font-size: 0.7rem;">🤖 REDDIT SUBREDDITS</div>
+                <div id="social-kpi-reddit" class="font-mono" style="font-size: 1.4rem; font-weight: bold; color: #ff5722; margin-top: 2px;">
+                    r/Colombia • r/vzla
+                </div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.03); padding: 0.8rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div class="text-muted font-mono" style="font-size: 0.7rem;">✈️ TELEGRAM CANALES</div>
+                <div id="social-kpi-telegram" class="font-mono" style="font-size: 1.4rem; font-weight: bold; color: #0088cc; margin-top: 2px;">
+                    18 CANALES
+                </div>
+            </div>
+
+            <div style="background: rgba(255,255,255,0.03); padding: 0.8rem 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+                <div class="text-muted font-mono" style="font-size: 0.7rem;">🇨🇴 🇻🇪 TEATROS ACTIVOS</div>
+                <div id="social-kpi-theaters" class="font-mono" style="font-size: 1.4rem; font-weight: bold; color: #34d399; margin-top: 2px;">
+                    COL / VEN
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BARRA DE BUSQUEDA Y FILTROS -->
+    <div class="panel-glass" style="padding: 1rem; margin-bottom: 1.5rem; background: rgba(10, 11, 16, 0.6);">
+        <div class="flex gap-1 flex-wrap items-center" style="margin-bottom: 0.8rem;">
+            <div style="flex: 1; min-width: 250px; position: relative;">
+                <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" 
+                       id="social-search" class="search-box" style="width: 100%; padding-left: 2.2rem;" 
+                       placeholder="Buscar palabras clave, hashtags o actores en redes..."
+                       oninput="if(window.CobaltoIntel) window.CobaltoIntel.filterSocial();">
+                <span style="position: absolute; left: 0.8rem; top: 50%; transform: translateY(-50%); opacity: 0.5;">🔍</span>
+            </div>
+            
+            <div class="flex items-center gap-05">
+                <button class="btn-tactical" style="padding: 0.5rem 0.8rem; font-size: 0.75rem;" 
+                        onclick="if(window.CobaltoIntel) window.CobaltoIntel.expandAllSocial();">
+                    ▶ Expandir Todo
+                </button>
+                <button class="btn-tactical" style="padding: 0.5rem 0.8rem; font-size: 0.75rem; border-color: rgba(255,255,255,0.2); color: var(--text-muted);" 
+                        onclick="if(window.CobaltoIntel) window.CobaltoIntel.collapseAllSocial();">
+                    ▼ Colapsar Todo
+                </button>
+            </div>
+        </div>
+
+        <!-- CHIPS DE FILTRADO POR PLATAFORMA Y TEATRO -->
+        <div class="flex flex-wrap items-center justify-between gap-1" style="border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.75rem;">
+            <!-- PLATAFORMAS -->
+            <div class="flex items-center gap-05 flex-wrap" id="social-platform-chips">
+                <span class="font-mono text-muted" style="font-size: 0.7rem; margin-right: 4px;">Plataforma:</span>
+                <button class="config-chip active" data-platform="ALL" onclick="if(window.CobaltoIntel) window.CobaltoIntel.setSocialPlatformFilter('ALL');">🌐 Todas</button>
+                <button class="config-chip" data-platform="TELEGRAM" onclick="if(window.CobaltoIntel) window.CobaltoIntel.setSocialPlatformFilter('TELEGRAM');">✈️ Telegram</button>
+                <button class="config-chip" data-platform="REDDIT" onclick="if(window.CobaltoIntel) window.CobaltoIntel.setSocialPlatformFilter('REDDIT');">🤖 Reddit</button>
+                <button class="config-chip" data-platform="BLUESKY" onclick="if(window.CobaltoIntel) window.CobaltoIntel.setSocialPlatformFilter('BLUESKY');">🦋 Bluesky</button>
+                <button class="config-chip" data-platform="MASTODON" onclick="if(window.CobaltoIntel) window.CobaltoIntel.setSocialPlatformFilter('MASTODON');">🐘 Mastodon</button>
+                <button class="config-chip" data-platform="NEWS" onclick="if(window.CobaltoIntel) window.CobaltoIntel.setSocialPlatformFilter('NEWS');">📻 Feeds OSINT</button>
+            </div>
+
+            <!-- TEATROS -->
+            <div class="flex items-center gap-05 flex-wrap" id="social-theater-chips">
+                <span class="font-mono text-muted" style="font-size: 0.7rem; margin-right: 4px;">Teatro:</span>
+                <button class="config-chip active" data-theater="ALL" onclick="if(window.CobaltoIntel) window.CobaltoIntel.setSocialTheaterFilter('ALL');">🌐 Global</button>
+                <button class="config-chip" data-theater="COL" onclick="if(window.CobaltoIntel) window.CobaltoIntel.setSocialTheaterFilter('COL');">🇨🇴 Colombia</button>
+                <button class="config-chip" data-theater="VEN" onclick="if(window.CobaltoIntel) window.CobaltoIntel.setSocialTheaterFilter('VEN');">🇻🇪 Venezuela</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTENEDOR DE GRUPOS SOCIALES (RENDERIZADO JINJA2 Y CLIENTE) -->
+    <div class="panel-tactical">
+        <div class="flex-between items-center" style="margin-bottom: 1rem;">
+            <h3 class="text-primary font-mono" style="margin: 0; font-size: 0.95rem;">
+                CANALES DE MONITOREO DIRECTO
+            </h3>
+            <span id="social-src-display" class="font-mono text-muted" style="font-size: 0.75rem;">
+                {{ social_groups.keys()|length }} grupos cargados
+            </span>
+        </div>
+
+        <div id="social-groups-container">
+            {% for group, items in social_groups.items() %}
+            <div class="social-group-panel social-group" data-src="{{ group|lower }}" data-group-name="{{ group }}" style="margin-bottom: 1rem; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; background: rgba(10,11,16,0.4);">
+                <div class="social-header" onclick="if(window.CobaltoIntel) window.CobaltoIntel.toggleSocialGroup(this);" style="padding: 0.8rem 1rem; background: rgba(255,255,255,0.02); cursor: pointer; display: flex; align-items: center; gap: 0.8rem;">
+                    <span style="font-weight: 600; color: #fff; font-size: 0.9rem;">{{ group }}</span>
+                    <span class="social-count" style="background: rgba(0,229,255,0.1); color: var(--primary); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold; font-family: monospace;">
+                        {{ items|length }}
+                    </span>
+                    <span class="social-toggle" style="transition: transform 0.3s; margin-left: auto; font-size: 0.8rem; color: var(--primary);">▶</span>
+                </div>
+                
+                <div class="social-items" style="display: none; padding: 0.8rem; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 0.8rem;">
+                    {% for item in items[:25] %}
+                    {% set is_reddit = 'Reddit' in (item.source or '') or 'r/' in (item.source or '') or 'reddit.com' in (item.link or '') %}
+                    {% set is_telegram = 'Telegram' in (item.source or '') or 't.me' in (item.link or '') %}
+                    {% set text_search = ((item.title or '') + ' ' + (item.summary or '') + ' ' + (item.source or ''))|lower %}
+                    
+                    <div class="social-item {% if is_reddit %}reddit-item{% endif %}" 
+                         data-search-text="{{ text_search }}"
+                         data-source-type="{% if is_reddit %}REDDIT{% elif is_telegram %}TELEGRAM{% else %}NEWS{% endif %}"
+                         style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); padding: 0.8rem; border-radius: 6px; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div>
+                            <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
+                                {% if is_reddit %}
+                                <span class="social-tag social-tag-reddit" style="background: rgba(255,87,34,0.15); color: #ff5722; border: 1px solid #ff5722; padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold;">
+                                    🤖 {{ item.source or 'Reddit OSINT' }}
+                                </span>
+                                {% elif is_telegram %}
+                                <span class="social-tag social-tag-telegram" style="background: rgba(0,136,204,0.15); color: #0088cc; border: 1px solid #0088cc; padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold;">
+                                    ✈️ {{ item.source or 'Telegram' }}
+                                </span>
+                                {% else %}
+                                <span class="social-tag" style="background: rgba(0,229,255,0.15); color: var(--primary); border: 1px solid var(--primary); padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold;">
+                                    📡 {{ item.source }}
+                                </span>
+                                {% endif %}
+
+                                {% if item.published %}
+                                <span class="font-mono text-muted" style="font-size: 0.65rem; margin-left: auto;">
+                                    {{ item.published[:16] }}
+                                </span>
+                                {% endif %}
+                            </div>
+
+                            <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer" 
+                               style="font-weight: 600; font-size: 0.85rem; color: #f1f5f9; text-decoration: none; display: block; margin-bottom: 0.4rem; line-height: 1.3;">
+                                {{ item.title|striptags }}
+                            </a>
+
+                            {% if item.summary %}
+                            <p style="margin: 0; font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
+                                {{ item.summary|striptags }}
+                            </p>
+                            {% endif %}
+                        </div>
+
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.6rem; border-top: 1px solid rgba(255,255,255,0.03); padding-top: 0.4rem;">
+                            <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer" 
+                               style="font-size: 0.7rem; color: var(--primary); text-decoration: none; font-weight: 500;">
+                                Abrir Fuente ↗
+                            </a>
+
+                            <button class="btn-tactical" style="padding: 1px 6px; font-size: 0.65rem; cursor: pointer;"
+                                    data-title="{{ item.title|striptags|e }}"
+                                    data-summary="{{ item.summary|striptags|e }}"
+                                    onclick="if(window.CobaltoIntel) window.CobaltoIntel.sendItemToRag(this)">
+                                🎯 RAG IA
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    {% if items|length > 25 %}
+                    <div style="grid-column: 1 / -1; padding: 0.5rem; font-size: 0.75rem; color: var(--text-muted); text-center; border-top: 1px solid rgba(255,255,255,0.04);">
+                        +{{ items|length - 25 }} publicaciones adicionales en este canal
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="empty-state text-center text-muted" style="padding: 2.5rem;">
+                <div style="font-size: 2rem; margin-bottom: 0.5rem;">🛡️</div>
+                <div style="font-size: 0.9rem; font-weight: bold; color: #fff;">SIN DATOS DE REDES SOCIALES DISPONIBLES</div>
+                <div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem;">Inicie una sincronización para extraer publicaciones públicas de Telegram y Reddit.</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>

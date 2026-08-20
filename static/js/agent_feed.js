@@ -222,6 +222,32 @@
     }, 4000);
   }
 
+  function createTask() {
+    var input = document.getElementById("agent-custom-prompt");
+    var select = document.getElementById("agent-tool-select");
+    if (!input || !input.value.trim()) {
+      showToast("⚠️ Ingrese una instrucción u objetivo para el agente", "error");
+      return;
+    }
+    var prompt = input.value.trim();
+    var tool_name = select ? select.value : "";
+
+    fetch("/api/agent/create-task", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: prompt, tool_name: tool_name }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        showToast("🚀 Misión desplegada al agente: " + (d.tool_name || "OSINT"), "success");
+        input.value = "";
+        loadTasks();
+      })
+      .catch(function () {
+        showToast("❌ Error asignando misión", "error");
+      });
+  }
+
   window.AgentFeed = {
     init: init,
     destroy: destroy,
@@ -231,5 +257,6 @@
     reject: reject,
     loadTasks: loadTasks,
     runCycle: runCycle,
+    createTask: createTask,
   };
 })();

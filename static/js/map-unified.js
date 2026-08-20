@@ -451,4 +451,16 @@ window.UnifiedMap = {
         var totalMarkers = this.state.renderedMarkers.length;
         if (hudMarkerCountEl) hudMarkerCountEl.textContent = totalMarkers + ' VECTORES';
     },
+
+    flyToCoordinates: function(lat, lng, zoom, label) {
+        if (!this.map) return;
+        var z = zoom || 12;
+        this.map.flyTo([lat, lng], z, { animate: true, duration: 1.5 });
+        if (label) {
+            L.popup()
+                .setLatLng([lat, lng])
+                .setContent('<div class="font-mono" style="padding:4px;font-size:11px;color:#00e5ff;">📍 <strong>' + label + '</strong><br><span style="color:#aaa;">' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '</span></div>')
+                .openOn(this.map);
+        }
+    },
 };

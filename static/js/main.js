@@ -290,11 +290,6 @@ window.CobaltoCore = {
             }
         });
 
-        document.querySelectorAll('.social-header').forEach(function(el) {
-            el.addEventListener('click', function() {
-                if (window.CobaltoIntel) CobaltoIntel.toggleSocialGroup(this);
-            });
-        });
 
         document.querySelectorAll('.btn-neo4j-graph').forEach(function(el) {
             el.addEventListener('click', function() {
@@ -1151,8 +1146,86 @@ window.CobaltoCore = {
             .catch(function() {});
     },
 
+    _cyberItems: [],
+    _cyberItems: [],
+    _cyberFilterCategory: 'ALL',
+    _cyberSearchQuery: '',
+
+    _stripHtml: function(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/<br\s*\/?>/gi, ' ')
+            .replace(/<\/p>/gi, ' ')
+            .replace(/<[^>]*>/g, '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    },
+
+    _getCyberCategory: function(item) {
+        var txt = ((item.title || '') + ' ' + (item.summary || '') + ' ' + (item.source || '')).toLowerCase();
+        if (txt.includes('ransomware') || txt.includes('0day') || txt.includes('zero-day') || txt.includes('exploit') || txt.includes('lockbit') || txt.includes('blackcat') || item.severity === 'ALTA' || item.severity === 'CRÍTICO') return 'CRITICAL';
+        if (txt.includes('darknet') || txt.includes('pastebin') || txt.includes('leak') || txt.includes('dump') || txt.includes('credenciales')) return 'DARKNET';
+        if (txt.includes('vencert') || txt.includes('cert') || txt.includes('advisory') || txt.includes('boletín')) return 'VENCERT';
+        return 'CYBER';
+    },
+
     renderCyberTab: function() {
-        this.lazyLoadTab('tab-cyber', '/api/cyber', data => this._renderCyberGrid(data));
+        var self = this;
+        this.lazyLoadTab('tab-cyber', '/api/cyber', function(data) {
+            self._cyberItems = data || [];
+            self._updateCyberKPIs(self._cyberItems);
+            self._renderCyberGrid(self._cyberItems);
+        });
+    },
+
+    _updateCyberKPIs: function(items) {
+        var self = this;
+        var total = items.length;
+        var r = 0, d = 0, v = 0;
+        items.forEach(function(item) {
+            var cat = item.category || self._getCyberCategory(item);
+            if (cat === 'CRITICAL') r++;
+            else if (cat === 'DARKNET') d++;
+            else if (cat === 'VENCERT') v++;
+        });
+        var elTotal = document.getElementById('cyber-kpi-total');
+        var elR = document.getElementById('cyber-kpi-ransomware');
+        var elD = document.getElementById('cyber-kpi-darknet');
+        var elV = document.getElementById('cyber-kpi-vencert');
+        if (elTotal) elTotal.textContent = total;
+        if (elR) elR.textContent = r;
+        if (elD) elD.textContent = d;
+        if (elV) elV.textContent = v;
+    },
+
+    filterCyber: function(category, btn) {
+        this._cyberFilterCategory = category || 'ALL';
+        if (btn && btn.parentElement) {
+            btn.parentElement.querySelectorAll('.btn-cyber-filter').forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+        }
+        this._applyCyberFilters();
+    },
+
+    searchCyber: function(query) {
+        this._cyberSearchQuery = (query || '').toLowerCase().trim();
+        this._applyCyberFilters();
+    },
+
+    _applyCyberFilters: function() {
+        var self = this;
+        var cat = self._cyberFilterCategory || 'ALL';
+        var q = self._cyberSearchQuery || '';
+        var filtered = self._cyberItems.filter(function(item) {
+            var itemCat = item.category || self._getCyberCategory(item);
+            if (cat !== 'ALL' && itemCat !== cat) return false;
+            if (q) {
+                var txt = (self._stripHtml(item.title) + ' ' + self._stripHtml(item.summary) + ' ' + (item.source || '')).toLowerCase();
+                if (!txt.includes(q)) return false;
+            }
+            return true;
+        });
+        self._renderCyberGrid(filtered);
     },
 
     _renderCyberGrid: function(data) {
@@ -1162,26 +1235,64 @@ window.CobaltoCore = {
         var items = data || [];
         if (!items.length) {
             grid.innerHTML =
-                '<div class="empty-state" id="cyber-empty">' +
+                '<div class="empty-state" id="cyber-empty" style="grid-column: 1 / -1;">' +
                 '<div class="empty-icon">\uD83D\uDEE1\uFE0F</div>' +
-                '<p style="color:#00ffaa;">NINGUNA ALERTA CIBERN\u00C9TICA ACTIVA</p>' +
-                '<p style="font-size:0.8rem; color:var(--text-muted);">Infraestructura cr\u00EDtica monitoreada sin anomal\u00EDas.</p>' +
-                '<p style="font-size:0.7rem; color:var(--text-muted); margin-top:1rem;">Sensores: Monitor Cyber Activo \u00B7 DeepWeb Ransomware Tracker \u00B7 VenCERT \u00B7 Pastebin</p>' +
+                '<p style="color:#00ffaa;">NINGUNA ALERTA CIBERN\u00C9TICA COINCIDE CON EL FILTRO</p>' +
+                '<p style="font-size:0.8rem; color:var(--text-muted);">Intente modificar los t\u00E9rminos de b\u00FAsqueda o cambiar el filtro de severidad.</p>' +
                 '</div>';
             return;
         }
         var esc = self.utils.escapeHTML;
         var html = '';
         items.forEach(function(item) {
+            var cat = item.category || self._getCyberCategory(item);
             var borderColor = '#00ffaa';
-            if (item.severity === 'ALTA') borderColor = '#ff4444';
-            else if (item.severity === 'MEDIA') borderColor = '#44aaee';
-            html += '<div class="news-card" style="border-left: 3px solid ' + borderColor + ';">' +
-                '<div class="news-header">' +
-                '<span class="news-source">' + esc(item.source || '') + '</span>' +
-                '<span class="news-time">' + esc(item.published || '') + '</span></div>' +
-                '<a href="' + esc(item.link || '#') + '" target="_blank" rel="noopener noreferrer" class="news-title">' + esc(item.title || '') + '</a>' +
-                '<p class="news-summary">' + esc(item.summary || '') + '</p></div>';
+            var badgeText = '\uD83D\uDCBB CYBER INTEL';
+            var badgeBg = 'rgba(0, 255, 170, 0.1)';
+            var badgeColor = '#00ffaa';
+
+            if (cat === 'CRITICAL') {
+                borderColor = '#ff4444';
+                badgeText = '\u2623\uFE0F RANSOMWARE / EXPLOIT';
+                badgeBg = 'rgba(255, 68, 68, 0.15)';
+                badgeColor = '#ff4444';
+            } else if (cat === 'DARKNET') {
+                borderColor = '#ffaa00';
+                badgeText = '\uD83D\uDD03 DARKNET / LEAK';
+                badgeBg = 'rgba(255, 170, 0, 0.15)';
+                badgeColor = '#ffaa00';
+            } else if (cat === 'VENCERT') {
+                borderColor = '#44aaee';
+                badgeText = '\uD83D\uDEE1\uFE0F CERT ADVISORY';
+                badgeBg = 'rgba(68, 170, 238, 0.15)';
+                badgeColor = '#44aaee';
+            }
+
+            var cleanTitle = self._stripHtml(item.title || 'Alerta Cibern\u00E9tica');
+            var cleanSummary = self._stripHtml(item.summary || '');
+            var titleStr = esc(cleanTitle);
+            var summaryStr = esc(cleanSummary);
+            var sourceStr = esc(item.source || 'SOC Cyber');
+            var timeStr = esc(item.published || 'Reciente');
+            var linkStr = esc(item.link || '#');
+
+            html += '<div class="panel-glass" style="padding: 1rem; border-left: 4px solid ' + borderColor + '; display: flex; flex-direction: column; justify-content: space-between; position: relative;">' +
+                '<div>' +
+                '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; gap: 0.5rem;">' +
+                '<span style="background:' + badgeBg + '; color:' + badgeColor + '; padding: 2px 6px; border-radius: 4px; font-size: 0.65rem; font-family: monospace; font-weight: bold;">' + badgeText + '</span>' +
+                '<span style="font-size: 0.65rem; color: #888; font-family: monospace;">' + timeStr + '</span>' +
+                '</div>' +
+                '<a href="' + linkStr + '" target="_blank" rel="noopener noreferrer" style="font-weight: 600; font-size: 0.88rem; color: #f1f5f9; text-decoration: none; display: block; margin-bottom: 0.5rem; line-height: 1.3;">' + titleStr + '</a>' +
+                '<p style="margin: 0; font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">' + summaryStr + '</p>' +
+                '</div>' +
+                '<div style="display: flex; align-items: center; justify-content: space-between; margin-top: 0.8rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.5rem;">' +
+                '<span style="font-size: 0.68rem; color: var(--text-muted); font-family: monospace;">Fuente: ' + sourceStr + '</span>' +
+                '<div style="display: flex; gap: 0.4rem;">' +
+                '<button class="btn-tactical" style="padding: 2px 6px; font-size: 0.65rem;" data-title="' + titleStr + '" data-summary="' + summaryStr + '" onclick="if(window.CobaltoIntel) window.CobaltoIntel.sendItemToRag(this)">\uD83C\uDFAF RAG IA</button>' +
+                '<a href="' + linkStr + '" target="_blank" rel="noopener noreferrer" style="font-size: 0.65rem; color: var(--primary); text-decoration: none; padding: 2px 6px; border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 4px;">Abrir \u2197</a>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
         });
         grid.innerHTML = html;
     },
@@ -1334,29 +1445,79 @@ window.CobaltoCore = {
                 '<div class="empty-state" style="padding:2rem;">' +
                 '<div class="empty-icon">📊</div>' +
                 '<p style="color:var(--primary);">SIN NARRATIVAS ACTIVAS</p>' +
-                '<p style="font-size:0.8rem; color:var(--text-muted);">El motor de análisis lingüístico no ha detectado campañas de influencia o narrativas coordinadas activas en las últimas horas.</p>' +
+                '<p style="font-size:0.8rem; color:var(--text-muted);">El motor de análisis lingüístico no ha detectado campañas de influencia activas en las últimas horas.</p>' +
                 '</div>';
             return;
         }
+
+        // Update KPI metrics in header if present
+        var kpiCount = document.getElementById('narrative-kpi-count');
+        var kpiTop = document.getElementById('narrative-kpi-top');
+        var kpiSources = document.getElementById('narrative-kpi-sources');
+        var kpiMentions = document.getElementById('narrative-kpi-mentions');
+
+        var totalMentions = 0;
+        var uniqueSources = new Set();
+        data.narratives.forEach(n => {
+            totalMentions += (n.count || 0);
+            (n.sources || []).forEach(s => uniqueSources.add(s));
+        });
+
+        if (kpiCount) kpiCount.textContent = data.narratives.length;
+        if (kpiTop) kpiTop.textContent = data.narratives[0] ? data.narratives[0].name : '--';
+        if (kpiSources) kpiSources.textContent = uniqueSources.size || '--';
+        if (kpiMentions) kpiMentions.textContent = totalMentions;
+
         var esc = this.utils.escapeHTML;
         var html = '';
         data.narratives.forEach(function(n) {
             var color = esc(n.color || 'var(--primary)');
-            html += '<div class="news-card narrative-card" style="border-left:3px solid ' + color + ';" data-search="' + esc((n.name + ' ' + n.description).toLowerCase()) + '">';
-            html += '<div class="news-header"><span class="news-source">' + esc(n.name) + '</span><span class="news-time">' + n.count + ' menciones</span></div>';
-            html += '<div style="margin-top:0.5rem;"><p style="color:var(--text-muted);font-size:0.85rem;">' + esc(n.description) + '</p></div>';
-            if (n.articles && n.articles.length) {
-                html += '<div style="margin-top:0.8rem;padding-top:0.8rem;border-top:1px solid var(--border-color);">';
-                for (var i = 0; i < Math.min(n.articles.length, 5); i++) {
-                    var a = n.articles[i];
-                    html += '<a href="' + esc(a.link || '#') + '" target="_blank" class="narrative-article-link">' + esc(a.title || '') + '</a>';
-                }
+            var nameStr = esc(n.name || 'Narrativa');
+            var descStr = esc(n.description || '');
+            var sourcesList = n.sources || [];
+            
+            html += '<div class="news-card narrative-card" style="border-left:3px solid ' + color + ';" data-search="' + esc((n.name + ' ' + n.description).toLowerCase()) + '" data-category="' + esc(n.name.substring(0, 2)) + '">';
+            html += '<div class="news-header">';
+            html += '<span class="news-source" style="font-weight:700; font-size:0.95rem;">' + nameStr + '</span>';
+            html += '<span class="news-time" style="background:rgba(0,229,255,0.1); padding:0.2rem 0.55rem; border-radius:4px; font-weight:600; color:var(--primary);">' + (n.count || 0) + ' menciones</span>';
+            html += '</div>';
+            html += '<div style="margin-top:0.5rem;">';
+            html += '<p style="color:var(--text-muted); font-size:0.85rem; margin:0 0 0.5rem 0;">' + descStr + '</p>';
+            
+            if (sourcesList.length) {
+                html += '<div style="display:flex; gap:0.3rem; flex-wrap:wrap; margin-top:0.4rem;">';
+                sourcesList.forEach(function(src) {
+                    html += '<span style="font-size:0.7rem; background:rgba(255,255,255,0.05); color:var(--text-muted); border:1px solid var(--border-color); padding:0.1rem 0.4rem; border-radius:3px;">' + esc(src) + '</span>';
+                });
                 html += '</div>';
             }
             html += '</div>';
+
+            if (n.articles && n.articles.length) {
+                html += '<div style="margin-top:0.8rem; padding-top:0.8rem; border-top:1px solid var(--border-color); display:flex; flex-direction:column; gap:0.35rem;">';
+                for (var i = 0; i < Math.min(n.articles.length, 5); i++) {
+                    var a = n.articles[i];
+                    var titleClean = esc(a.title || 'Artículo');
+                    var sourceClean = esc(a.source || '');
+                    var linkUrl = esc(a.link || '#');
+                    html += '<div style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">';
+                    html += '<a href="' + linkUrl + '" target="_blank" class="narrative-article-link" style="color:var(--primary); font-size:0.8rem; text-decoration:none; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1;">' + titleClean + '</a>';
+                    if (sourceClean) {
+                        html += '<span style="font-size:0.7rem; color:var(--text-muted); white-space:nowrap;">' + sourceClean + '</span>';
+                    }
+                    html += '</div>';
+                }
+                html += '</div>';
+            }
+
+            var safePrompt = nameStr.replace(/'/g, "\\'");
+            html += '<div style="margin-top:0.8rem; padding-top:0.6rem; border-top:1px dashed var(--border-color); display:flex; justify-content:flex-end;">';
+            html += '<button class="btn-tactical" style="font-size:0.72rem; padding:0.25rem 0.6rem;" onclick="if(window.openRagModal){window.openRagModal(\'Analizar campaña narrativa: ' + safePrompt + '\');}">🎯 RAG IA</button>';
+            html += '</div>';
+
+            html += '</div>';
         });
         container.innerHTML = html;
-        data.narratives.forEach(function(n) { if (n.articles && n.articles.length > 5) n.articles = n.articles.slice(0, 5); });
         this.filterNarratives();
     },
 
@@ -1369,8 +1530,28 @@ window.CobaltoCore = {
         });
     },
 
+    filterNarrativeCategory: function(cat, btn) {
+        if (btn && btn.parentNode) {
+            btn.parentNode.querySelectorAll('.btn-tactical').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+        }
+        document.querySelectorAll('.narrative-card').forEach(function(card) {
+            if (cat === 'all') {
+                card.style.display = 'block';
+            } else {
+                var search = card.getAttribute('data-search') || '';
+                card.style.display = search.includes(cat.toLowerCase()) ? 'block' : 'none';
+            }
+        });
+    },
+
     renderRealtimeTab: function(data) {
-        var grid = document.getElementById('rt-grid');
+        if (window.CobaltoRT) {
+            window.CobaltoRT.data = window.CobaltoRT.parseData(data);
+            window.CobaltoRT.render(window.CobaltoRT.data);
+            return;
+        }
+        var grid = document.getElementById('rt-content-area') || document.getElementById('rt-grid');
         if (!grid) return;
         var items = [];
         if (data) {

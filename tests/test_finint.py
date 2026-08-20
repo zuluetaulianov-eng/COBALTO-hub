@@ -31,7 +31,7 @@ def test_finint_risk_scoring():
     result = asyncio.run(check_wallet("1F1tAaz5x1HUXrCNLbtMDqcw6o5GNn4xqX", chain="bitcoin"))
     assert result["sanctioned"] is True
     assert result["risk_score"] == 100
-    assert result["sanctions_info"]["entity"] == "Tornado Cash"
+    assert "Tornado Cash" in result["sanctions_info"]["entity"]
 
 
 def test_finint_non_sanctioned_wallet():
@@ -90,3 +90,38 @@ def test_finint_entity_linker_imports():
     assert callable(link_onion_to_entity)
     assert callable(check_wallet_against_entities)
     assert callable(run_finint_link_cycle)
+
+
+def test_darkweb_tron_and_solana_extraction():
+    from finint_darkweb import analyze_text_for_finint
+    text = "TRON: TBs15M8yvVbB7f4T2N9Z7e32N9L4vQ1a1Z, ETH: 0x8589427373D6D84E98730D7795D8f6f8731FDA16"
+    res = analyze_text_for_finint(text)
+    assert "tron" in res["crypto_addresses"]
+    assert "eth" in res["crypto_addresses"]
+    assert "TBs15M8yvVbB7f4T2N9Z7e32N9L4vQ1a1Z" in res["crypto_addresses"]["tron"]
+
+
+def test_finint_tron_sanctioned_check():
+    import asyncio
+
+    from finint_blockchain import check_wallet
+    res = asyncio.run(check_wallet("TBs15M8yvVbB7f4T2N9Z7e32N9L4vQ1a1Z", chain="tron"))
+    assert res["sanctioned"] is True
+    assert res["risk_score"] == 100
+    assert "Garantex" in res["sanctions_info"]["entity"]
+
+
+def test_generar_informe_finint_deterministico():
+    from intel_reports import generar_informe_finint_deterministico
+    wallet_data = {
+        "address": "TBs15M8yvVbB7f4T2N9Z7e32N9L4vQ1a1Z",
+        "chain": "tron",
+        "sanctioned": True,
+        "risk_score": 100,
+        "sanctions_info": {"entity": "Garantex TRON USDT Treasury", "program": "SDN / RUSSIA-EO14024"},
+    }
+    doc = generar_informe_finint_deterministico("TBs15M8yvVbB7f4T2N9Z7e32N9L4vQ1a1Z", "tron", wallet_data)
+    assert doc.codigo.startswith("FININT-TRON-")
+    assert doc.nivel_alerta == "ALERTA CRÍTICA"
+    assert "INFORME DE INTELIGENCIA FINANCIERA" in doc.analisis_completo
+    assert "Garantex" in doc.analisis_completo

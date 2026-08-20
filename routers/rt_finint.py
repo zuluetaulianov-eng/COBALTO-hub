@@ -58,3 +58,20 @@ async def analyze_finint_text(data: dict):
     text = data.get("text", "")
     result = analyze_text_for_finint(text)
     return result
+
+
+@router.post("/api/finint/generate-report")
+async def generate_finint_report(data: dict):
+    from finint_blockchain import check_wallet
+    from intel_reports import generar_informe_finint_deterministico
+    address = data.get("address", "")
+    chain = data.get("chain", "bitcoin")
+    wallet_data = await check_wallet(address, chain)
+    doc_data = generar_informe_finint_deterministico(address, chain, wallet_data)
+    return {
+        "status": "ok",
+        "codigo": doc_data.codigo,
+        "resumen": doc_data.resumen_ejecutivo,
+        "nivel_alerta": doc_data.nivel_alerta,
+        "contenido": doc_data.analisis_completo,
+    }

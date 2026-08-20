@@ -13,6 +13,25 @@
                 <span id="agent-task-count" class="text-muted font-mono" style="font-size: 0.85rem;">0 tareas</span>
             </div>
         </div>
+
+        <!-- Panel de Creación de Misiones Tácticas por el Operador -->
+        <div style="background: rgba(0,229,255,0.05); border: 1px dashed var(--primary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+            <h4 style="margin-top:0; margin-bottom:0.5rem; color:var(--primary); font-size:0.85rem;" class="font-mono">⚡ Asignar Misión Directa a la Flota de Agentes</h4>
+            <div class="flex flex-wrap" style="gap: 0.5rem; align-items: center;">
+                <input id="agent-custom-prompt" type="text" class="config-input" placeholder="Ej: Investigar IP 190.202.10.5 o Dominio pdvsa.com..." style="flex: 1; min-width: 250px;" onkeydown="if(event.key==='Enter') AgentFeed.createTask()">
+                <select id="agent-tool-select" class="config-select" style="width: auto;">
+                    <option value="">Auto-Detectar Herramienta OSINT</option>
+                    <option value="recon_shodan">🔍 Shodan IP Scanner</option>
+                    <option value="recon_whois">🌐 WHOIS Lookup</option>
+                    <option value="recon_dns">📡 DNS Recon</option>
+                    <option value="recon_ofac">🔴 OFAC Sanctions Checker</option>
+                    <option value="search_news">📰 Buscar Noticias OSINT</option>
+                    <option value="search_entities">👤 Buscar en Registro de Entidades</option>
+                </select>
+                <button class="btn-tactical btn-sm" style="background:var(--primary); color:#000; font-weight:bold;" onclick="AgentFeed.createTask()">🚀 Desplegar Agente</button>
+            </div>
+        </div>
+
         <div class="flex flex-wrap gap-1" style="margin-bottom: 0.5rem;">
             <button class="btn-tactical btn-sm" data-agent-status="" onclick="AgentFeed.filterStatus('')">Todas</button>
             <button class="btn-tactical btn-sm" data-agent-status="pending_approval" onclick="AgentFeed.filterStatus('pending_approval')">⏳ Pendientes</button>

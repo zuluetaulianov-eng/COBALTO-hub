@@ -37,8 +37,10 @@ ONION_TARGETS = [
 
 # Regex patterns for finding crypto addresses in text
 CRYPTO_PATTERNS = {
-    "btc": re.compile(r"\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b"),
+    "btc": re.compile(r"\b(?:[13][a-km-zA-HJ-NP-Z1-9]{25,34}|bc1[a-z0-9]{39,59})\b"),
     "eth": re.compile(r"\b0x[a-fA-F0-9]{40}\b"),
+    "tron": re.compile(r"\bT[A-Za-z1-9]{33}\b"),
+    "solana": re.compile(r"\b[1-9A-HJ-NP-Za-km-z]{32,44}\b"),
     "monero": re.compile(r"\b4[0-9AB][1-9A-HJ-NP-Za-km-z]{93}\b"),
 }
 

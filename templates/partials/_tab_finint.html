@@ -20,8 +20,10 @@
             <div class="flex" style="gap:0.5rem;">
                 <input id="finint-wallet-input" type="text" class="config-input" style="flex:1;font-family:monospace;" placeholder="Dirección wallet (BTC/ETH)...">
                 <select id="finint-chain-select" class="config-select" style="width:auto;">
-                    <option value="bitcoin">Bitcoin</option>
-                    <option value="ethereum">Ethereum</option>
+                    <option value="bitcoin">Bitcoin (BTC)</option>
+                    <option value="ethereum">Ethereum (ETH)</option>
+                    <option value="tron">TRON (TRC-20 USDT)</option>
+                    <option value="solana">Solana (SOL)</option>
                 </select>
                 <button class="btn-tactical" onclick="FinintIntel.checkWallet()">🔍 Verificar</button>
             </div>

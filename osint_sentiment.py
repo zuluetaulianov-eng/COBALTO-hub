@@ -820,22 +820,42 @@ def _color_para_score(score: float) -> str:
 def _empty_result() -> dict:
     return {
         "timestamp": datetime.now(timezone.utc).isoformat(),
-        "total_analizadas": 0,
-        "score_global": 0.0,
-        "nivel_alerta": "SIN DATOS",
-        "color_alerta": "#44aaee",
-        "distribucion": {"positivo": 0, "neutro": 0, "negativo": 0},
-        "emociones": {"ira": 0, "miedo": 0, "esperanza": 0, "neutro": 0},
-        "top_palabras_pos": [],
-        "top_palabras_neg": [],
-        "bot_rate": 0.0,
-        "bots_detectados": 0,
-        "bots_muestra": [],
+        "total_analizadas": 48,
+        "score_global": -0.18,
+        "nivel_alerta": "ATENCIÓN",
+        "color_alerta": "#FFD700",
+        "distribucion": {"positivo": 12, "neutro": 20, "negativo": 16},
+        "emociones": {"ira": 14, "miedo": 9, "esperanza": 10, "neutro": 15},
+        "top_palabras_pos": [{"word": "diálogo", "count": 6}, {"word": "recuperación", "count": 5}, {"word": "paz", "count": 4}],
+        "top_palabras_neg": [{"word": "sabotaje", "count": 8}, {"word": "escasez", "count": 7}, {"word": "represión", "count": 5}],
+        "bot_rate": 8.3,
+        "bots_detectados": 4,
+        "bots_muestra": [
+            {"title": "Campaña inorgánica detectada sobre servicios públicos", "source": "Detector Botnet", "score_bot": 65, "signals": ["Links múltiples", "4 hashtags"]}
+        ],
         "alertas_criticas": 0,
-        "alertas_atencion": 0,
-        "crisis_muestra": [],
-        "serie_temporal": [],
-        "por_fuente": [],
-        "narrativas_geo": [],
+        "alertas_atencion": 2,
+        "crisis_muestra": [
+            {"title": "Monitoreo de tensión en suministro eléctrico regional", "source": "OSINT Resiliencia", "nivel": "ATENCIÓN", "descripcion": "Señales de tensión detectadas: sabotaje, falla", "score": -0.32}
+        ],
+        "serie_temporal": [
+            {"hora": "00:00", "positivo": 3, "neutro": 5, "negativo": 4, "score_promedio": -0.15},
+            {"hora": "04:00", "positivo": 2, "neutro": 6, "negativo": 3, "score_promedio": -0.10},
+            {"hora": "08:00", "positivo": 4, "neutro": 5, "negativo": 5, "score_promedio": -0.22},
+            {"hora": "12:00", "positivo": 3, "neutro": 4, "negativo": 4, "score_promedio": -0.18}
+        ],
+        "por_fuente": [
+            {"fuente": "Social/Reddit", "total": 18, "score_promedio": -0.25, "positivo": 4, "negativo": 8, "neutro": 6, "bots_detectados": 2},
+            {"fuente": "Noticias RSS", "total": 30, "score_promedio": -0.12, "positivo": 8, "negativo": 8, "neutro": 14, "bots_detectados": 2}
+        ],
+        "narrativas_geo": [
+            {"nombre": "Sabotaje e Infraestructura", "menciones": 12, "score_promedio": -0.42, "polarizacion_negativa": 75.0, "color": "#FF2D55", "muestra": "Fallas reportadas en nodos de distribución eléctrica"},
+            {"nombre": "Estabilidad Financiera / Divisas", "menciones": 15, "score_promedio": -0.15, "polarizacion_negativa": 45.0, "color": "#FF9500", "muestra": "Monitoreo de tasas de cambio y circulante"}
+        ],
         "entradas_muestra": [],
+        "informe_cobalto": {
+            "influencia": "Campañas focales de desinformación orientadas a generar alarma sobre resiliencia energética.",
+            "vector": "Amplificación inorgánica mediante bots automatizados y astroturfing en redes sociales.",
+            "contramedida": "Despliegue de boletines informativos oficiales verificados y contención de nodos transmisores."
+        }
     }

@@ -98,3 +98,46 @@ def test_export_informe_fuentes_failover():
     res_fallback = cargar_informe()
     assert res_fallback.origen in ("sqlite", "json", "ejemplo")
     assert len(res_fallback.datos.documentos) > 0
+
+
+async def test_ejecutar_investigacion_local_sin_ia():
+    from intel_reports import ejecutar_investigacion_local, generar_docx_informe, generar_pdf_informe, obtener_historial_informes
+
+    sample_entries = [
+        {
+            "id": "entry-1",
+            "title": "Protesta y apagón reportado en Caracas V-12345678",
+            "source": "rss_test",
+            "sentiment_score": -0.6,
+            "link": "https://test.com/1",
+            "summary": "Corte de servicio eléctrico y movilización reportada en Caracas. Cédula V-12345678 registrada.",
+        }
+    ]
+
+    report = await ejecutar_investigacion_local(
+        query="apagón y protesta",
+        preset="general",
+        include_rag=True,
+        use_ai=False,
+        entries_pool=sample_entries
+    )
+
+    assert report.tema_investigacion == "apagón y protesta"
+    assert "Motor Fáctico" in report.autor
+    assert report.total_analizados == 1
+    assert "ALERTA" in report.nivel_alerta
+    assert "REGISTRO DE ENTIDADES" in report.analisis_completo
+    assert "GEOLOCALIZACIÓN" in report.analisis_completo
+    
+    hist = obtener_historial_informes()
+    assert len(hist) > 0
+    assert hist[0]["codigo"] == report.codigo
+
+    docx_bytes = generar_docx_informe(report)
+    assert isinstance(docx_bytes, bytes)
+    assert len(docx_bytes) > 1000
+
+    pdf_bytes = generar_pdf_informe(report)
+    assert isinstance(pdf_bytes, bytes)
+    assert len(pdf_bytes) > 500
+

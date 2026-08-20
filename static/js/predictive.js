@@ -148,6 +148,9 @@
 
       var typeBadge = '<span style="background:var(--primary)22;color:var(--primary);border:1px solid var(--primary)44;padding:2px 8px;border-radius:4px;font-size:0.7rem;">' + escapeHtml(a.entity_type) + "</span>";
 
+      var trendIcon = a.trend === "up" ? '📈 <span style="color:#FF2D55;">Ascendente</span>' : (a.trend === "down" ? '📉 <span style="color:#00FFAA;">Descendente</span>' : '➡️ <span style="color:#FFCC00;">Estable</span>');
+      var trendBadge = '<span style="background:rgba(255,255,255,0.05);border:1px solid var(--border-color);padding:2px 8px;border-radius:4px;font-size:0.7rem;">Tendencia: ' + trendIcon + '</span>';
+
       var rulesHtml = "";
       if (a.rules_triggered && a.rules_triggered.length > 0) {
         rulesHtml = a.rules_triggered.map(function (r) {
@@ -155,52 +158,45 @@
         }).join(" ");
       }
 
-      var signalsHtml = "";
-      if (a.threat_score) {
-        var bars = "";
-        var components = [
-          { label: "Compuesto", pct: 25 },
-          { label: "Agentes", pct: 20 },
-          { label: "Exposición", pct: 15 },
-          { label: "Recencia", pct: 10 },
-          { label: "Severidad", pct: 30 },
-        ];
-        for (var si = 0; si < components.length; si++) {
-          bars +=
-            '<div style="display:flex;align-items:center;gap:4px;margin:1px 0;">' +
-            '<span style="width:60px;font-size:0.65rem;color:#888;">' + components[si].label + '</span>' +
-            '<div style="flex:1;height:4px;background:rgba(255,255,255,0.1);border-radius:2px;">' +
-            '<div style="width:' + components[si].pct + '%;height:100%;background:var(--primary);border-radius:2px;"></div></div></div>';
-        }
-      }
-
       var scoreBar = "";
       if (a.threat_score !== undefined) {
         var sc = a.threat_score;
         var scColor = sc >= 75 ? "#FF2D55" : sc >= 50 ? "#FF9500" : "#FFCC00";
         scoreBar =
-          '<div style="display:flex;align-items:center;gap:8px;">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-top:0.4rem;">' +
           '<div style="flex:1;height:6px;background:rgba(255,255,255,0.08);border-radius:3px;">' +
           '<div style="width:' + sc + "%;height:100%;background:" + scColor + ";border-radius:3px;transition:width 0.5s;\"></div></div>" +
-          '<span style="font-weight:700;font-size:1rem;color:' + scColor + ';">' + sc + "</span></div>";
+          '<span style="font-weight:700;font-size:1rem;color:' + scColor + ';">' + sc + "/100</span></div>";
+      }
+
+      var summaryHtml = a.human_summary ? '<div style="font-size:0.82rem;color:var(--text-muted);margin:0.4rem 0;line-height:1.4;">' + escapeHtml(a.human_summary) + '</div>' : '';
+
+      var recsHtml = "";
+      if (a.recommendations && a.recommendations.length > 0) {
+        recsHtml = '<div style="margin-top:0.4rem;background:rgba(0,229,255,0.04);border:1px solid rgba(0,229,255,0.15);padding:0.5rem;border-radius:4px;font-size:0.75rem;">' +
+          '<div style="color:var(--primary);font-weight:600;margin-bottom:0.2rem;">🛡️ Recomendaciones de Mitigación Táctica:</div>' +
+          a.recommendations.map(function(rc) { return '<div>• ' + escapeHtml(rc) + '</div>'; }).join('') +
+          '</div>';
       }
 
       var resolveBtn = a.status === "active"
-        ? '<button class="btn-tactical" style="padding:2px 10px;font-size:0.7rem;" onclick="PredictiveIntel.resolveAlert(\'' + a.entity_id + '\')">✅ Resolver</button>'
+        ? '<button class="btn-tactical" style="padding:2px 10px;font-size:0.7rem;" onclick="PredictiveIntel.resolveAlert(\'' + a.entity_id + '\')">✅ Resolver Alerta</button>'
         : "";
 
       html +=
-        '<div class="panel-glass" style="padding:1rem;margin-bottom:0.5rem;border-left:3px solid ' + levelColor + ';">' +
+        '<div class="panel-glass" style="padding:1rem;margin-bottom:0.8rem;border-left:4px solid ' + levelColor + ';">' +
         '<div class="flex-between" style="margin-bottom:0.3rem;">' +
         '<div class="flex" style="gap:0.5rem;align-items:center;flex-wrap:wrap;">' +
-        statusBadge + " " + typeBadge +
-        '<span style="font-weight:600;font-size:0.9rem;">' + escapeHtml(a.entity_name) + "</span>" +
+        statusBadge + " " + typeBadge + " " + trendBadge +
+        '<span style="font-weight:600;font-size:0.95rem;">' + escapeHtml(a.entity_name) + "</span>" +
         "</div>" +
         '<span class="text-muted font-mono" style="font-size:0.7rem;">' + (a.created_at || "").slice(11, 19) + "</span>" +
         "</div>" +
         scoreBar +
+        summaryHtml +
         (rulesHtml ? '<div class="flex flex-wrap gap-05" style="margin-top:0.3rem;">' + rulesHtml + "</div>" : "") +
-        '<div class="flex-between" style="margin-top:0.5rem;">' +
+        recsHtml +
+        '<div class="flex-between" style="margin-top:0.6rem;">' +
         resolveBtn +
         "</div>" +
         "</div>";

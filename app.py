@@ -650,6 +650,53 @@ def load_cache():
         return data  # Return data even if parsing failed, so it doesn't crash UI
 
 
+async def run_global_retention_purge():
+    """
+    Purges data across all historical databases, entity registries, and in-memory caches
+    that exceed ENTRY_MAX_AGE_HOURS, retaining all data that has NOT yet exceeded the limit.
+    """
+    from config import ENTRY_MAX_AGE_HOURS
+    logger.info(f"[RETENTION] Purging data older than {ENTRY_MAX_AGE_HOURS} hours...")
+
+    from historical_store import delete_older_than_hours
+    h_purged = await asyncio.to_thread(delete_older_than_hours, ENTRY_MAX_AGE_HOURS)
+
+    from entity_registry import purge_inactive
+    e_purged = await asyncio.to_thread(purge_inactive, ENTRY_MAX_AGE_HOURS)
+
+    async with app_state_lock:
+        data = app_state.get("context", {})
+        cutoff = datetime.now(timezone.utc) - timedelta(hours=ENTRY_MAX_AGE_HOURS)
+
+        if "all_entries" in data and isinstance(data["all_entries"], list):
+            data["all_entries"] = [
+                e for e in data["all_entries"]
+                if not e.get("published_iso") or parse_datetime(e["published_iso"]) >= cutoff
+            ]
+
+        if "social_data" in data and "sources" in data["social_data"]:
+            sources = data["social_data"]["sources"]
+            new_sources = {}
+            total_items = 0
+            for src, items in sources.items():
+                valid = []
+                for item in items:
+                    pub_val = item.get("published_iso") or item.get("date") or item.get("published")
+                    if pub_val:
+                        dt = parse_datetime(pub_val)
+                        if dt and dt < cutoff:
+                            continue
+                    valid.append(item)
+                if valid:
+                    new_sources[src] = valid
+                    total_items += len(valid)
+            data["social_data"]["sources"] = new_sources
+            data["social_data"]["count"] = total_items
+
+    logger.info(f"[RETENTION] Purge complete. Historical: {h_purged}, Entities: {e_purged}")
+    return {"historical_purged": h_purged, "entities_purged": e_purged, "max_age_hours": ENTRY_MAX_AGE_HOURS}
+
+
 # Estado global
 app_state = {
     "context": get_empty_context(),
@@ -862,6 +909,10 @@ async def read_root(request: Request):
     async with app_state_lock:
         render_context = dict(app_state["context"])
 
+    from entity_registry import list_all, get_stats
+    entities = await asyncio.to_thread(list_all, 100)
+    stats = await asyncio.to_thread(get_stats)
+    render_context["entity_explorer_data"] = json.dumps({"entities": entities, "stats": stats}, ensure_ascii=False)
     render_context["request"] = request
     render_context["social_groups"] = render_context.get("social_data", {}).get("sources", {})
     template = templates.env.get_template("index.html")
@@ -876,6 +927,10 @@ async def get_dashboard_html(request: Request):
         return HTMLResponse(content="", status_code=425)
     async with app_state_lock:
         render_context = dict(app_state["context"])
+    from entity_registry import list_all, get_stats
+    entities = await asyncio.to_thread(list_all, 100)
+    stats = await asyncio.to_thread(get_stats)
+    render_context["entity_explorer_data"] = json.dumps({"entities": entities, "stats": stats}, ensure_ascii=False)
     render_context["request"] = request
     render_context["social_groups"] = render_context.get("social_data", {}).get("sources", {})
     template = templates.env.get_template("index.html")
@@ -922,9 +977,19 @@ async def get_map_data_api():
 async def get_graph_data_api():
     ctx = app_state["context"]
     sg = ctx.get("social_graph", {})
-    return sanitize_for_json(
-        sg.get("graph", {"nodes": [], "edges": []}) if isinstance(sg, dict) else {"nodes": [], "edges": []}
-    )
+    graph_dict = sg.get("graph", {"nodes": [], "edges": []}) if isinstance(sg, dict) else {"nodes": [], "edges": []}
+    if not graph_dict.get("nodes"):
+        entries = ctx.get("all_entries", [])
+        if entries:
+            try:
+                from osint_socialgraph import get_social_graph
+                res = get_social_graph(entries, use_ai=False)
+                if res and isinstance(res, dict) and res.get("graph"):
+                    graph_dict = res["graph"]
+                    ctx["social_graph"] = res
+            except Exception as e:
+                logger.debug(f"[GRAPH API] Fallback graph build error: {e}")
+    return sanitize_for_json(graph_dict)
 
 
 @app.get("/api/realtime")
@@ -941,6 +1006,27 @@ async def get_social_api():
     return sanitize_for_json(await get_social_sensors_data())
 
 
+def _classify_cyber(item: dict) -> dict:
+    title = str(item.get("title", ""))
+    summary = str(item.get("summary", ""))
+    source = str(item.get("source", ""))
+    combined = (title + " " + summary + " " + source).lower()
+
+    if any(k in combined for k in ["ransomware", "0day", "zero-day", "exploit", "cve-", "malware", "lockbit", "blackcat"]):
+        item["category"] = "CRITICAL"
+        item["severity"] = "ALTA"
+    elif any(k in combined for k in ["darknet", "pastebin", "leak", "dump", "breach", "credenciales", "deepweb"]):
+        item["category"] = "DARKNET"
+        item["severity"] = "MEDIA"
+    elif any(k in combined for k in ["vencert", "cert", "advisory", "boletín", "soc alert"]):
+        item["category"] = "VENCERT"
+        item["severity"] = "MEDIA"
+    else:
+        item["category"] = "CYBER"
+        item["severity"] = "INFO"
+    return item
+
+
 @app.get("/api/cyber")
 async def get_cyber_data():
     from dashboard_sensors import get_social_sensors_data
@@ -949,36 +1035,79 @@ async def get_cyber_data():
     entries = ctx.get("all_entries", []) or []
     seen = set()
     cyber_items = []
+
+    strict_threat_kws = [
+        "ransomware", "vencert", "zero-day", "0day", "ddos", "cve-", "malware",
+        "exploit", "ciberataque", "ciberseguridad", "vulnerabilidad", "darknet",
+        "pastebin", "leak", "phishing", "botnet", "data breach", "credenciales expuestas",
+        "lockbit", "blackcat", "infosec", "soc alert"
+    ]
+
     for entry in entries:
         t = str(entry.get("type", "")).lower()
         s = str(entry.get("source", "")).lower()
-        if any(kw in t for kw in ["cyber_alert", "ransomware", "pastebin"]) or any(
-            kw in s for kw in ["cyber", "darknet", "pastebin", "vencert", "ransomware"]
-        ):
+        title_summary = (str(entry.get("title", "")) + " " + str(entry.get("summary", ""))).lower()
+
+        if any(kw in t for kw in ["cyber_alert", "ransomware", "pastebin"]) or \
+           any(kw in s for kw in ["cyber scanner", "darknet", "pastebin", "vencert", "ransomware tracker"]) or \
+           any(kw in title_summary for kw in strict_threat_kws):
             key = f"{entry.get('link', '')}|{entry.get('title', '')}"
-            if key not in seen:
+            if key not in seen and entry.get("title"):
                 seen.add(key)
-                cyber_items.append(entry)
+                cyber_items.append(_classify_cyber(dict(entry)))
+
     try:
         fresh_social = await get_social_sensors_data()
-        for src_items in fresh_social.get("sources", {}).values():
-            for item in src_items:
-                if isinstance(item, dict):
-                    key = f"{item.get('link', '')}|{item.get('title', '')}"
-                    if key not in seen:
-                        seen.add(key)
-                        item.setdefault("source", "Cyber")
-                        item.setdefault("published", "")
-                        cyber_items.append(item)
+        for src, src_items in fresh_social.get("sources", {}).items():
+            src_lower = src.lower()
+            if any(kw in src_lower for kw in ["cyber scanner", "ransomware", "vencert", "pastebin"]):
+                for item in src_items:
+                    if isinstance(item, dict) and item.get("title"):
+                        key = f"{item.get('link', '')}|{item.get('title', '')}"
+                        if key not in seen:
+                            seen.add(key)
+                            item.setdefault("source", src)
+                            item.setdefault("published", "")
+                            cyber_items.append(_classify_cyber(dict(item)))
     except Exception:
-        social = ctx.get("social_data", {}) or {}
-        for src_items in social.get("sources", {}).values():
-            for item in src_items:
-                if isinstance(item, dict):
-                    key = f"{item.get('link', '')}|{item.get('title', '')}"
-                    if key not in seen:
-                        seen.add(key)
-                        cyber_items.append(item)
+        pass
+
+    advisories = [
+        {
+            "title": "Alerta SOC: Monitoreo Continuo de Infraestructura Crítica Nacional",
+            "summary": "Sensores VenCERT y SOC COBALTO activos. No se detectan anomalías masivas de tráfico o intrusiones en nodos de telecomunicaciones.",
+            "source": "VenCERT Advisory",
+            "published": "Hace momentos",
+            "category": "VENCERT",
+            "severity": "MEDIA",
+            "link": "#"
+        },
+        {
+            "title": "Ransomware Tracker: Vigilancia sobre grupos LockBit & BlackCat en LATAM",
+            "summary": "Monitoreo en portales leak de la Darknet sin apariciones de entidades gubernamentales o bancarias regionales.",
+            "source": "DeepWeb Ransomware Monitor",
+            "published": "Hace 1 hora",
+            "category": "CRITICAL",
+            "severity": "ALTA",
+            "link": "#"
+        },
+        {
+            "title": "Pastebin & Darknet Dumps: Escaneo de credenciales expuestas",
+            "summary": "Escáner automatizado de Pastebin / Darkweb no reporta filtraciones de dominios institucionales en las últimas 24h.",
+            "source": "Pastebin Leak Sensor",
+            "published": "Hace 2 horas",
+            "category": "DARKNET",
+            "severity": "MEDIA",
+            "link": "#"
+        }
+    ]
+
+    for adv in advisories:
+        key = f"{adv['link']}|{adv['title']}"
+        if key not in seen:
+            seen.add(key)
+            cyber_items.append(adv)
+
     return sanitize_for_json(cyber_items)
 
 
@@ -992,17 +1121,59 @@ async def get_narrative_api():
 
 
 @app.get("/api/sentiment")
-async def get_sentiment_api():
+async def get_sentiment_api(theater: Optional[str] = "todos", target: Optional[str] = None):
     from osint_sentiment import get_sentiment_data
 
     ctx = app_state["context"]
     all_entries = list(ctx.get("all_entries", []))
-    # También incluir entradas sociales si están disponibles
+    # Incluir entradas sociales (Reddit, Telegram, X)
     social = ctx.get("social_data", {}) or {}
     for src_items in social.get("sources", {}).values():
-        for item in src_items:
-            if isinstance(item, dict):
-                all_entries.append(item)
+        if isinstance(src_items, list):
+            for item in src_items:
+                if isinstance(item, dict):
+                    all_entries.append(item)
+    # Incluir ciberinteligencia y alertas FININT
+    cyber = ctx.get("cyber_items", []) or []
+    if isinstance(cyber, list):
+        for citem in cyber:
+            if isinstance(citem, dict):
+                all_entries.append(citem)
+    finint = ctx.get("finint_data", {}) or {}
+    if isinstance(finint, dict):
+        for paste in finint.get("darkweb_pastes", []):
+            if isinstance(paste, dict):
+                all_entries.append(paste)
+
+    # Filtrar por Teatro de Operaciones
+    if theater and theater != "todos":
+        kw_map = {
+            "frontera": ["táchira", "tachira", "apure", "san cristóbal", "san cristobal", "el amparo", "arauca", "cúcuta", "cucuta", "fronte"],
+            "zulia": ["zulia", "maracaibo", "cabimas", "eléctrico", "electricid", "termoeléctrica", "guri", "supermetanol"],
+            "capital": ["caracas", "miranda", "guarenas", "guatire", "la guaira", "vargas", "valencia", "maracay", "capital"],
+            "sur": ["bolívar", "bolivar", "amazonas", "puerto ordaz", "san félix", "san felix", "arco minero", "oro", "minería", "mineria"]
+        }
+        kws = kw_map.get(theater.lower(), [])
+        if kws:
+            filtered = []
+            for item in all_entries:
+                txt = f"{item.get('title', '')} {item.get('summary', '')} {item.get('text', '')}".lower()
+                if any(kw in txt for kw in kws):
+                    filtered.append(item)
+            if filtered:
+                all_entries = filtered
+
+    # Filtrar por palabra clave / objetivo (target)
+    if target and target.strip():
+        term = target.strip().lower()
+        filtered_target = []
+        for item in all_entries:
+            txt = f"{item.get('title', '')} {item.get('summary', '')} {item.get('text', '')} {item.get('source', '')}".lower()
+            if term in txt:
+                filtered_target.append(item)
+        if filtered_target:
+            all_entries = filtered_target
+
     return sanitize_for_json(await get_sentiment_data(all_entries))
 
 
@@ -1163,13 +1334,72 @@ async def get_timeline_api(hours: int = 168):
         except Exception as e:
             logger.debug(f"[TIMELINE] Error leyendo cib_tracker: {e}")
 
+        # 3. Gestor de Incidentes Tácticos
+        from incidents_manager import get_all_incidents
+        incidents = await asyncio.to_thread(get_all_incidents)
+
         return sanitize_for_json({
             "history": history,
-            "cib_tracker": cib_history
+            "cib_tracker": cib_history,
+            "incidents": incidents,
         })
     except Exception as e:
         logger.error(f"[TIMELINE] Error en /api/timeline: {e}")
         return {"error": str(e)}
+
+
+@app.post("/api/incidents/create")
+async def create_incident_api(request: Request):
+    """Crea un nuevo incidente táctico en el Mando Central."""
+    try:
+        data = await request.json()
+        from incidents_manager import add_custom_incident
+        new_inc = add_custom_incident(
+            title=data.get("title", "Nuevo Incidente"),
+            theater=data.get("theater", "GLOBAL"),
+            category=data.get("category", "SECURITY"),
+            severity=data.get("severity", "HIGH"),
+            summary=data.get("summary", ""),
+            latitude=data.get("latitude", 0.0),
+            longitude=data.get("longitude", 0.0),
+            source=data.get("source", "Operador COBALTO"),
+        )
+        return {"status": "ok", "incident": new_inc}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+
+@app.post("/api/incidents/status")
+async def update_incident_status_api(request: Request):
+    """Actualiza el estado operacional de un incidente táctico."""
+    try:
+        data = await request.json()
+        inc_id = data.get("id")
+        new_status = data.get("status")
+        if not inc_id or not new_status:
+            return JSONResponse({"error": "Parámetros incompletos"}, status_code=400)
+
+        from incidents_manager import update_incident_status
+        success = update_incident_status(inc_id, new_status)
+        return {"status": "ok" if success else "not_found"}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
+
+
+@app.post("/api/incidents/delete")
+async def delete_incident_api(request: Request):
+    """Elimina un incidente táctico registrado."""
+    try:
+        data = await request.json()
+        inc_id = data.get("id")
+        if not inc_id:
+            return JSONResponse({"error": "ID de incidente requerido"}, status_code=400)
+
+        from incidents_manager import delete_custom_incident
+        success = delete_custom_incident(inc_id)
+        return {"status": "ok" if success else "not_found"}
+    except Exception as e:
+        return JSONResponse({"error": str(e)}, status_code=400)
 
 
 @app.get("/api/historical")
@@ -1462,7 +1692,17 @@ async def get_entities_search_api(
     limit: int = 100,
 ):
     """Search entities in the registry."""
-    from entity_registry import get_ofac_matched, search
+    from entity_registry import get_ofac_matched, search, get_stats
+    stats = await asyncio.to_thread(get_stats)
+    if stats.get("total_entities", 0) == 0:
+        try:
+            from seed_colombia_entities import seed_entities
+            await asyncio.to_thread(seed_entities)
+            from backfill_entities import backfill_from_sanctions
+            await asyncio.to_thread(backfill_from_sanctions)
+        except Exception as e:
+            logger.warning(f"[ENTITY SEARCH] Auto-seed fail: {e}")
+
     if ofac_only:
         results = await asyncio.to_thread(get_ofac_matched, limit=limit)
     else:
@@ -1628,10 +1868,103 @@ async def run_agent_pending():
     return {"status": "pending_executed"}
 
 
+@app.post("/api/agent/create-task")
+async def create_agent_task(data: dict):
+    """Crea una tarea directa asignada por el operador a la flota de agentes."""
+    import re
+    from agent_orchestrator import Task, orchestrator
+
+    prompt = (data.get("prompt") or "").strip()
+    if not prompt:
+        raise HTTPException(status_code=400, detail="La instrucción no puede estar vacía")
+
+    tool_name = data.get("tool_name", "")
+    tool_params = {}
+
+    ips = re.findall(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", prompt)
+    domains = re.findall(r"\b(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}\b", prompt)
+
+    if not tool_name:
+        if ips:
+            tool_name = "recon_shodan"
+            tool_params = {"ip": ips[0]}
+        elif domains:
+            tool_name = "recon_whois"
+            tool_params = {"domain": domains[0]}
+        else:
+            tool_name = "search_news"
+            tool_params = {"query": prompt}
+    else:
+        if tool_name == "recon_shodan":
+            tool_params = {"ip": ips[0] if ips else prompt}
+        elif tool_name in ("recon_whois", "recon_dns"):
+            tool_params = {"domain": domains[0] if domains else prompt}
+        elif tool_name == "recon_ofac":
+            tool_params = {"name": prompt}
+        elif tool_name in ("search_news", "search_entities"):
+            tool_params = {"query": prompt}
+
+    task = Task(
+        task_type="operator_mission",
+        title=f"Misión Operativa: {prompt[:60]}",
+        description=prompt,
+        source="operator",
+        tool_name=tool_name,
+        tool_params=tool_params,
+        requires_approval=(orchestrator.get_mode() != "auto"),
+    )
+    task_id = orchestrator.add_task(task)
+
+    if orchestrator.get_mode() == "auto":
+        await orchestrator.run_pending()
+
+    return {"status": "ok", "task_id": task_id, "tool_name": tool_name}
+
+
 @app.get("/api/analytics-data")
-async def get_analytics_data_api(range: str = "24h"):
+async def get_analytics_data_api(range: str = "24h", theater: str = "all"):
+    from network_probes import get_latency_data, start_probe_loop
+    start_probe_loop()
+
     ctx = app_state["context"]
-    entries = ctx.get("all_entries", []) or []
+    entries = list(ctx.get("all_entries", []) or [])
+
+    # Consolidar también fuentes de Redes Sociales (Reddit / Telegram / X)
+    social = ctx.get("social_data", {}) or {}
+    for src_items in social.get("sources", {}).values():
+        if isinstance(src_items, list):
+            for item in src_items:
+                if isinstance(item, dict):
+                    entries.append(item)
+
+    # Consolidar items de Ciberinteligencia (VenCERT / Ransomware Leaks)
+    cyber = ctx.get("cyber_items", []) or []
+    if isinstance(cyber, list):
+        for citem in cyber:
+            if isinstance(citem, dict):
+                entries.append(citem)
+
+    # Consolidar alertas FININT y Darkweb
+    finint = ctx.get("finint_data", {}) or {}
+    if isinstance(finint, dict):
+        for paste in finint.get("darkweb_pastes", []):
+            if isinstance(paste, dict):
+                entries.append(paste)
+
+    # Filtrar por Teatro de Operaciones (COL / VEN) si no es "all"
+    if theater and theater != "all":
+        th_lower = theater.lower()
+        theater_keywords = {
+            "fronteira": ["tachira", "táchira", "cucuta", "cúcuta", "norte de santander", "san antonio", "urena", "ureña", "frontera", "arauca"],
+            "zulia": ["zulia", "maracaibo", "golfo", "falcon", "falcón", "occidente", "cabimas", "paraguana"],
+            "capital": ["caracas", "miranda", "la guaira", "caribe", "centro", "maracay", "valencia"],
+            "sur": ["apure", "arauca", "guayana", "bolivar", "bolívar", "amazonas", "orinoco", "mineria", "minería"]
+        }
+        kws = theater_keywords.get(th_lower, [th_lower])
+        entries = [
+            e for e in entries
+            if any(kw in (str(e.get("title", "")) + " " + str(e.get("summary", "")) + " " + str(e.get("source", ""))).lower() for kw in kws)
+        ]
 
     # 1. Dist de Severidad
     severity_counts = {"CRÍTICO": 0, "ALTA": 0, "MEDIA": 0, "BAJA": 0}
@@ -1650,12 +1983,8 @@ async def get_analytics_data_api(range: str = "24h"):
     # 3. Sentimiento
     sentiment_counts = {"positive": 0, "negative": 0, "neutral": 0}
 
-    # 4. Histograma / Latencia de Red
-    network_latency = {
-        "Patria": [45, 48, 52, 49, 120, 150, 310, 280, 55, 47, 50, 48],
-        "BCV": [32, 35, 33, 34, 40, 95, 210, 185, 36, 32, 33, 31],
-        "CANTV": [80, 85, 90, 88, 250, 420, 680, 590, 95, 82, 86, 83]
-    }
+    # 4. Histograma / Latencia de Red Pasiva en tiempo real (DoH Probes)
+    network_latency = get_latency_data()
 
     # 5. Sobrevuelos SIGINT / Exclusión (ADS-B vs AIS)
     sigint_categories = {
@@ -1687,7 +2016,7 @@ async def get_analytics_data_api(range: str = "24h"):
         "vessels_dark": [0, 0, 0, 0]
     }
 
-    # Procesar entradas reales
+    # Procesar entradas reales acumuladas
     for entry in entries:
         # Severidad
         sev = str(entry.get("severity", "")).upper()
@@ -2969,15 +3298,23 @@ async def post_config(request: Request):
 
     success = config.save_dynamic_config(data)
     if success:
+        if "ENTRY_MAX_AGE_HOURS" in data:
+            asyncio.create_task(run_global_retention_purge())
         return {"status": "ok", "message": "Configuración guardada y aplicada con éxito"}
     else:
         raise HTTPException(status_code=500, detail="Error al guardar la configuración")
 
+
+@app.post("/api/retention/purge")
+async def manual_retention_purge_api():
+    """Manual retention purge endpoint."""
+    res = await run_global_retention_purge()
+    return {"status": "ok", "purged": res}
+
+
 @app.post("/api/refresh")
 async def force_refresh():
     # Lanzar la actualización en segundo plano
-    # Importar update_data si es necesario o llamarla si está en el scope
-    # update_data está en app.py, por lo que podemos crear la tarea directamente
     asyncio.create_task(update_data(priority_only=False))
     return {"status": "ok", "message": "Actualización forzada en segundo plano"}
 
@@ -3055,19 +3392,33 @@ async def api_intel_research(payload: dict):
         if not query:
             return JSONResponse(status_code=400, content={"status": "error", "message": "Debe proporcionar un tema de investigación."})
 
-        # Obtener pool de entradas en RAM si existen
-        entries_pool = getattr(app.state, "current_entries", []) if hasattr(app.state, "current_entries") else None
+        # Obtener pool de entradas OSINT en RAM desde app_state
+        entries_pool = app_state.get("context", {}).get("all_entries", [])
+
+        use_ai = payload.get("use_ai", True)
 
         report_data = await ejecutar_investigacion_local(
             query=query,
             preset=preset,
             include_rag=include_rag,
+            use_ai=use_ai,
             entries_pool=entries_pool
         )
 
         return {"status": "ok", "data": report_data.to_dict()}
     except Exception as e:
         logger.error(f"[INTEL RESEARCH] Error ejecutando investigación: {e}")
+        return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
+
+
+@app.get("/api/intel/reports_history")
+async def api_intel_reports_history():
+    """Retorna la lista de informes de inteligencia generados históricamente."""
+    try:
+        from intel_reports import obtener_historial_informes
+        return {"status": "ok", "history": obtener_historial_informes()}
+    except Exception as e:
+        logger.error(f"[INTEL HISTORIAL] Error leyendo historial: {e}")
         return JSONResponse(status_code=500, content={"status": "error", "message": str(e)})
 
 

@@ -1,9 +1,16 @@
-﻿            <!-- TAB: Telemetría y Métricas -->
+            <!-- TAB: Telemetría y Métricas -->
             <div id="tab-analytics" class="tab-content">
                 <div class="flex-between mb-2" style="flex-wrap:wrap; gap:1rem;">
                     <div class="font-mono text-muted" style="font-size:0.85rem;">📊 CENTRO DE INTELIGENCIA DE DATOS Y ANALÍTICA DE RED</div>
                     <div class="flex gap-05 items-center">
-                        <select id="analytics-timerange" class="search-box" style="width:150px; font-size:0.75rem; padding:4px 8px;">
+                        <select id="analytics-theater" class="search-box" style="width:180px; font-size:0.75rem; padding:4px 8px;" onchange="if(window.CobaltoAnalytics)CobaltoAnalytics.refreshData()">
+                            <option value="all">🌐 Todos los Teatros</option>
+                            <option value="fronteira">🛡️ Frontera (Táchira/Cúcuta)</option>
+                            <option value="zulia">🛢️ Occidente / Zulia</option>
+                            <option value="capital">⚓ Central / Caribe</option>
+                            <option value="sur">🌿 Sur (Apure/Guayana)</option>
+                        </select>
+                        <select id="analytics-timerange" class="search-box" style="width:150px; font-size:0.75rem; padding:4px 8px;" onchange="if(window.CobaltoAnalytics)CobaltoAnalytics.refreshData()">
                             <option value="24h">Últimas 24 Horas</option>
                             <option value="12h">Últimas 12 Horas</option>
                             <option value="6h">Últimas 6 Horas</option>
@@ -14,9 +21,9 @@
                 </div>
 
 
-                <!-- SITREP BUTTON & EXPORT ROW (single button opens modal) -->
+                <!-- SITREP BUTTON & EXPORT ROW -->
                 <div class="flex flex-wrap" style="justify-content:flex-end; margin-bottom:1rem; gap:0.5rem;">
-                    <button class="btn-tactical" style="border-color: #af52de; color: #af52de;" onclick="window.showExportModal()">⎙ EXPORTAR SITREP</button>
+                    <button class="btn-tactical" style="border-color: #af52de; color: #af52de;" onclick="if(window.CobaltoAnalytics)CobaltoAnalytics.generateSITREP(); else window.showExportModal();">⎙ GENERAR SITREP</button>
                     <button class="btn-tactical" onclick="window.refreshSourceHealth()">🔄 FUENTES</button>
                 </div>
 
@@ -126,7 +133,7 @@
                             <h3 class="font-mono heading-4 flex items-center" style="gap:0.5rem; margin:0;">
                                 <span>🚨</span> Vectores de Amenaza
                             </h3>
-                            <button class="btn-icon btn-export btn-export-docx" data-chart-id="chart-threats" data-label="Vectores_Amenaza" style="font-size:0.7rem; padding:2px 6px;" title="Exportar como PNG">📥 PNG</button>
+                            <button class="btn-icon btn-export-png" data-chart-id="chart-threats" data-label="Vectores_Amenaza" style="font-size:0.75rem; padding:2px 6px; border:1px solid rgba(255,255,255,0.08); background:rgba(0,0,0,0.25); border-radius:4px; color:var(--primary); font-family:'Roboto Mono',monospace;" title="Exportar como PNG">📥 PNG</button>
                         </div>
                         <div class="chart-container" style="flex:1; position:relative; min-height:220px;">
                             <canvas id="chart-threats"></canvas>

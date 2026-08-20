@@ -28,8 +28,10 @@ window.CobaltoAnalytics = {
 
         const rangeSelector = document.getElementById("analytics-timerange");
         const range = rangeSelector ? rangeSelector.value : "24h";
+        const theaterSelector = document.getElementById("analytics-theater");
+        const theater = theaterSelector ? theaterSelector.value : "all";
 
-        fetch(`/api/analytics-data?range=${range}`)
+        fetch(`/api/analytics-data?range=${range}&theater=${theater}`)
             .then(response => {
                 if (!response.ok) throw new Error("API HTTP Error: " + response.status);
                 return response.json();
@@ -586,6 +588,8 @@ window.CobaltoAnalytics = {
     generateSITREP: function() {
         const bluf = document.getElementById('analytics-ai-bluf')?.innerText || 'Sin BLUF disponible.';
         const threatLvl = document.getElementById('kpi-threat-level')?.innerText || 'N/A';
+        const threatStatus = document.getElementById('kpi-threat-status')?.innerText || '';
+        const theaterText = document.getElementById('analytics-theater')?.selectedOptions[0]?.text || 'Todos los Teatros';
         const actionsNodes = document.getElementById('analytics-action-list')?.querySelectorAll('li');
         const actions = Array.from(actionsNodes || []).map(li => "- " + li.innerText).join('\n');
         
@@ -593,15 +597,16 @@ window.CobaltoAnalytics = {
         
         const sitrep = `
 =====================================================
-    MINISTERIO DEL PODER POPULAR PARA LA DEFENSA
-    SITREP EJECUTIVO - INTELIGENCIA TÁCTICA Y REDES
+    COBALTO HUB - SISTEMA C4ISR Y AUDITORÍA SOC
+    SITREP TÁCTICO DE TELEMETRÍA Y AMENAZAS
 =====================================================
 FECHA Y HORA (UTC): ${timestamp}
-NIVEL DE AMENAZA:   ${threatLvl}
-AGENTE ANALISTA:    Cobalto HUB (ARES Protocol)
+TEATRO OPERACIONAL: ${theaterText}
+NIVEL DE AMENAZA:   ${threatLvl} ${threatStatus}
+AGENTE SOC/IA:      Cobalto Hub (Agente ARES Protocol)
 
 -----------------------------------------------------
-[ 1. SÍNTESIS EJECUTIVA - BLUF ]
+[ 1. SÍNTESIS EJECUTIVA (BLUF) ]
 -----------------------------------------------------
 ${bluf}
 
@@ -611,26 +616,28 @@ ${bluf}
 ${actions}
 
 -----------------------------------------------------
-[ 3. VECTORES DE INFECCIÓN Y DISTRIBUCIÓN ]
+[ 3. TELEMETRÍA Y TRAZABILIDAD DE RED ]
 -----------------------------------------------------
-> Revise los gráficos en el panel de control del COBALTO HUB para un desglose geolocalizado de las amenazas y los nodos CIB.
+> Sondas pasivas DoH activas para Patria, BCV y CANTV.
+> Consolidación total de fuentes RSS, VenCERT, Reddit, Telegram, FININT y USGS.
+> Revise el panel interactivo del COBALTO HUB para la consola de auditoría forense con hashes individualizados.
 
-[FIN DEL REPORTE]
+=====================================================
+[ FIN DEL REPORTE - CONFIDENCIALIDAD TÁCTICA ]
 =====================================================
         `;
         
-        // Descargar como archivo de texto plano
-        const blob = new Blob([sitrep.trim()], { type: 'text/plain' });
+        const blob = new Blob([sitrep.trim()], { type: 'text/plain;charset=utf-8' });
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `SITREP_COBALTO_${timestamp.slice(0,10)}.txt`;
+        a.download = `SITREP_COBALTO_${theaterText.replace(/[^a-zA-Z0-9]/g, '_')}_${timestamp.slice(0,10)}.txt`;
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
         
-        console.log("[SITREP] Reporte exportado exitosamente.");
+        console.log("[SITREP] SITREP Táctico exportado exitosamente.");
     },
 
     // ==========================================

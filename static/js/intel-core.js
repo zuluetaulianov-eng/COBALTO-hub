@@ -68,12 +68,20 @@ window.CobaltoIntel = {
 
     // --- RADAR SOCIAL ---
     toggleSocialGroup: function(header) {
-        var items = header.parentElement.querySelector('.social-items');
+        if (!header) return;
+        var panel = header.closest('.social-group-panel') || header.parentElement;
+        if (!panel) return;
+        var items = panel.querySelector('.social-items');
         var toggle = header.querySelector('.social-toggle');
         if (!items) return;
-        var hidden = items.style.display === 'none';
-        items.style.display = hidden ? 'grid' : 'none';
-        if (toggle) toggle.style.transform = hidden ? 'rotate(90deg)' : 'rotate(0deg)';
+
+        var currentDisplay = items.style.display || window.getComputedStyle(items).display;
+        var isHidden = currentDisplay === 'none';
+
+        items.style.display = isHidden ? 'grid' : 'none';
+        if (toggle) {
+            toggle.style.transform = isHidden ? 'rotate(90deg)' : 'rotate(0deg)';
+        }
     },
 
     expandAllSocial: function() {
@@ -86,38 +94,96 @@ window.CobaltoIntel = {
         document.querySelectorAll('.social-toggle').forEach(function(el) { el.style.transform = 'rotate(0deg)'; });
     },
 
+    _socialPlatformFilter: 'ALL',
+    _socialTheaterFilter: 'ALL',
+
+    setSocialPlatformFilter: function(platform) {
+        this._socialPlatformFilter = platform;
+        var chips = document.querySelectorAll('#social-platform-chips .config-chip');
+        chips.forEach(function(c) {
+            if (c.getAttribute('data-platform') === platform) c.classList.add('active');
+            else c.classList.remove('active');
+        });
+        this.filterSocial();
+    },
+
+    setSocialTheaterFilter: function(theater) {
+        this._socialTheaterFilter = theater;
+        var chips = document.querySelectorAll('#social-theater-chips .config-chip');
+        chips.forEach(function(c) {
+            if (c.getAttribute('data-theater') === theater) c.classList.add('active');
+            else c.classList.remove('active');
+        });
+        this.filterSocial();
+    },
+
+    sendItemToRag: function(btn) {
+        if (!btn) return;
+        var title = btn.getAttribute('data-title') || '';
+        var summary = btn.getAttribute('data-summary') || '';
+        this.sendToRag(title, summary);
+    },
+
     filterSocial: function() {
         var searchEl = document.getElementById('social-search');
         var q = searchEl ? searchEl.value.trim().toLowerCase() : '';
+        var platform = this._socialPlatformFilter || 'ALL';
+        var theater = this._socialTheaterFilter || 'ALL';
+        var isFiltering = q !== '' || platform !== 'ALL' || theater !== 'ALL';
+
         var groups = document.querySelectorAll('.social-group');
         var totalVisible = 0;
         var srcVisible = 0;
+
+        var self = this;
         groups.forEach(function(g) {
-            var src = g.getAttribute('data-src') || '';
             var items = g.querySelectorAll('.social-item');
-            var matchSrc = !q || src.includes(q);
-            var anyItem = false;
+            var itemsContainer = g.querySelector('.social-items');
+            var toggleIcon = g.querySelector('.social-toggle');
+            var anyItemInGroup = false;
+
             items.forEach(function(it) {
-                var title = (it.getAttribute('data-search-text') || '').toLowerCase();
-                var match = !q || title.includes(q);
-                it.style.display = match ? 'block' : 'none';
-                if (match) anyItem = true;
+                var text = (it.getAttribute('data-search-text') || '').toLowerCase();
+                var srcType = (it.getAttribute('data-source-type') || 'NEWS').toUpperCase();
+
+                // Match Keyword
+                var matchQ = !q || text.includes(q);
+
+                // Match Platform
+                var matchPlat = (platform === 'ALL') ||
+                    (platform === 'TELEGRAM' && srcType === 'TELEGRAM') ||
+                    (platform === 'REDDIT' && srcType === 'REDDIT') ||
+                    (platform === 'NEWS' && srcType === 'NEWS') ||
+                    (platform === 'BLUESKY' && text.includes('bluesky')) ||
+                    (platform === 'MASTODON' && text.includes('mastodon'));
+
+                // Match Theater
+                var matchTheater = (theater === 'ALL') ||
+                    (theater === 'COL' && (text.includes('colombia') || text.includes('bogot') || text.includes('medellin') || text.includes('eln') || text.includes('petro'))) ||
+                    (theater === 'VEN' && (text.includes('venezuela') || text.includes('caracas') || text.includes('vzla') || text.includes('maduro')));
+
+                var show = matchQ && matchPlat && matchTheater;
+                it.style.display = show ? 'flex' : 'none';
+                if (show) anyItemInGroup = true;
             });
-            var show = matchSrc || anyItem;
-            g.style.display = show ? 'block' : 'none';
-            if (show && anyItem) {
-                var visibleInGroup = 0;
-                items.forEach(function(it) { if (it.style.display !== 'none') visibleInGroup++; });
-                totalVisible += visibleInGroup;
+
+            g.style.display = anyItemInGroup ? 'block' : 'none';
+
+            if (anyItemInGroup) {
+                srcVisible++;
+                if (itemsContainer && isFiltering) {
+                    itemsContainer.style.display = 'grid';
+                    if (toggleIcon) toggleIcon.style.transform = 'rotate(90deg)';
+                }
+                var visibleItems = g.querySelectorAll('.social-item[style*="display: flex"], .social-item[style*="display:block"]');
+                totalVisible += visibleItems.length;
             }
-            if (anyItem) srcVisible++;
         });
-        var totalEl = document.getElementById('social-total-display');
+
+        var kpiTotalEl = document.getElementById('social-kpi-total');
         var srcEl = document.getElementById('social-src-display');
-        if (totalEl) totalEl.textContent = totalVisible + '/' + document.querySelectorAll('.social-item').length + ' items';
-        if (srcEl) srcEl.textContent = srcVisible + ' fuentes';
+        if (srcEl) srcEl.textContent = srcVisible + ' grupos (' + totalVisible + ' publicaciones)';
         
-        // Persistence
         this.saveFilter('social_q', q);
     },
 
@@ -167,6 +233,133 @@ window.CobaltoIntel = {
         var srcEl = document.getElementById('social-src-display');
         if (totalEl) totalEl.textContent = total;
         if (srcEl) srcEl.textContent = srcCount;
+    },
+
+    exportSocialReport: function() {
+        var groups = document.querySelectorAll('.social-group');
+        var report = `========================================================\n`;
+        report += `COBALTO HUB - INFORME TÁCTICO DE REDES SOCIALES & OSINT\n`;
+        report += `FECHA DE EXTRACCIÓN: ${new Date().toISOString()}\n`;
+        report += `FILTROS ACTIVOS: Plataforma: ${this._socialPlatformFilter || 'ALL'} | Teatro: ${this._socialTheaterFilter || 'ALL'}\n`;
+        report += `========================================================\n\n`;
+
+        var totalItems = 0;
+        groups.forEach(function(g, gIdx) {
+            if (g.style.display === 'none') return;
+            var groupName = g.getAttribute('data-group-name') || `Grupo ${gIdx + 1}`;
+            var items = g.querySelectorAll('.social-item');
+            var visibleItems = [];
+            items.forEach(function(it) {
+                if (it.style.display !== 'none') visibleItems.push(it);
+            });
+
+            if (visibleItems.length > 0) {
+                report += `[${gIdx + 1}] CANAL / FUENTE: ${groupName} (${visibleItems.length} publicaciones)\n`;
+                report += `--------------------------------------------------------\n`;
+                visibleItems.forEach(function(it, iIdx) {
+                    var titleEl = it.querySelector('a');
+                    var title = titleEl ? titleEl.textContent.trim() : 'Sin título';
+                    var link = titleEl ? titleEl.getAttribute('href') : '';
+                    var summaryEl = it.querySelector('p');
+                    var summary = summaryEl ? summaryEl.textContent.trim() : '';
+                    var tagEl = it.querySelector('.social-tag');
+                    var tag = tagEl ? tagEl.textContent.trim() : '';
+
+                    report += `${iIdx + 1}. [${tag}] ${title}\n`;
+                    if (summary) report += `   • Resumen: ${summary}\n`;
+                    if (link) report += `   • Enlace: ${link}\n`;
+                    report += `\n`;
+                    totalItems++;
+                });
+            }
+        });
+
+        report += `========================================================\n`;
+        report += `TOTAL DE PUBLICACIONES MONITOREADAS: ${totalItems}\n`;
+        report += `FIN DE INFORME - COBALTO HUB RADAR SOCIAL\n`;
+
+        var blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement('a');
+        a.href = url;
+        a.download = `SITREP_REDES_SOCIALES_${new Date().toISOString().slice(0, 10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    },
+
+    refreshSocial: function() {
+        if (window.CobaltoCore && window.CobaltoCore.lazyLoadTab) {
+            var self = this;
+            window.CobaltoCore.lazyLoadTab('tab-social', '/api/social', function(data) {
+                if (window.CobaltoCore.renderSocialTab) window.CobaltoCore.renderSocialTab(data);
+                self.filterSocial();
+                var timeEl = document.getElementById('social-last-sync-time');
+                if (timeEl) {
+                    var now = new Date();
+                    timeEl.textContent = 'Sincronizado: ' + now.toLocaleTimeString();
+                }
+            });
+        }
+    },
+
+    toggleSocialAutoRefresh: function(btn) {
+        if (this._socialAutoRefreshInterval) {
+            clearInterval(this._socialAutoRefreshInterval);
+            this._socialAutoRefreshInterval = null;
+            if (btn) {
+                btn.style.background = 'transparent';
+                btn.style.borderColor = 'rgba(255,255,255,0.2)';
+                btn.textContent = '⏱️ AUTO-REFRESCO (OFF)';
+            }
+        } else {
+            this.refreshSocial();
+            var self = this;
+            this._socialAutoRefreshInterval = setInterval(function() {
+                self.refreshSocial();
+            }, 60000);
+            if (btn) {
+                btn.style.background = 'rgba(0, 229, 255, 0.15)';
+                btn.style.borderColor = '#00E5FF';
+                btn.textContent = '⏱️ AUTO-REFRESCO (60s ON)';
+            }
+        }
+    },
+
+    showOperatorGuide: function() {
+        var existing = document.getElementById('modal-operator-guide');
+        if (existing) { existing.style.display = 'flex'; return; }
+
+        var modal = document.createElement('div');
+        modal.id = 'modal-operator-guide';
+        modal.style.cssText = 'position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); backdrop-filter:blur(8px); z-index:99999; display:flex; align-items:center; justify-content:center; padding:20px;';
+        modal.innerHTML = `
+            <div style="background: linear-gradient(180deg, rgba(16,22,34,0.98) 0%, rgba(10,11,16,1) 100%); border: 1px solid #FFCC00; border-radius: 12px; max-width: 650px; width: 100%; padding: 25px; box-shadow: 0 0 35px rgba(255,204,0,0.2); font-family: 'Inter', sans-serif; color: #fff; position: relative;">
+                <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,204,0,0.3); padding-bottom:12px; margin-bottom:18px;">
+                    <div style="font-family:'Roboto Mono',monospace; color:#FFCC00; font-size:1.1rem; font-weight:bold;">❓ GUÍA TÁCTICA DE OPERACIONES (SOC/OSINT)</div>
+                    <button onclick="document.getElementById('modal-operator-guide').style.display='none';" style="background:transparent; border:none; color:#aaa; font-size:1.4rem; cursor:pointer;">✕</button>
+                </div>
+                <div style="display:flex; flex-direction:column; gap:14px; font-size:0.88rem; line-height:1.6; color:#d1d5db;">
+                    <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:6px; border-left:3px solid #00E5FF;">
+                        <strong style="color:#00E5FF;">1. SELECCIÓN DE TEATRO & FILTRADO:</strong> Usa los chips superiores (<span style="color:#fff;">🇨🇴 COLOMBIA</span>, <span style="color:#fff;">🇻🇪 VENEZUELA</span>) o escribe una palabra clave para aislar amenazas en zonas específicas.
+                    </div>
+                    <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:6px; border-left:3px solid #FF2D55;">
+                        <strong style="color:#FF2D55;">2. ANÁLISIS RAG E HIPÓTESIS:</strong> Haz clic en <span style="color:#00E5FF;">🎯 RAG IA</span> en cualquier publicación para enviarla a la Inteligencia Artificial Local (Ollama) e inferir repercusiones de seguridad.
+                    </div>
+                    <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:6px; border-left:3px solid #B388FF;">
+                        <strong style="color:#B388FF;">3. MAPEO DE RELACIONES (GRAFO):</strong> Pulsa <span style="color:#B388FF;">🕸️ GRAFO DE ENTIDADES</span> para ver a los actores clave. La métrica <em>"Influencia Macro"</em> señala a los líderes de opinión y <em>"Nodo Enlace"</em> a los puentes de desinformación.
+                    </div>
+                    <div style="background:rgba(255,255,255,0.03); padding:12px; border-radius:6px; border-left:3px solid #FFCC00;">
+                        <strong style="color:#FFCC00;">4. REPORTES EJECUTIVOS (SITREP):</strong> Exporta el resumen del turno con <span style="color:#FF2D55;">📄 EXPORTAR SITREP SOCIAL</span> o la topología completa de la red con el botón <span style="color:#fff;">💾 EXPORTAR JSON</span> en el grafo.
+                    </div>
+                </div>
+                <div style="margin-top:20px; text-align:right;">
+                    <button onclick="document.getElementById('modal-operator-guide').style.display='none';" class="btn-tactical" style="background:#FFCC00; color:#000; font-weight:bold; border:none; padding:8px 20px; cursor:pointer;">ENTENDIDO</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
     },
 
     // --- ALERTAS ---
@@ -353,11 +546,13 @@ window.CobaltoIntel = {
         const query = queryInput.value.trim();
         const preset = presetSelect ? presetSelect.value : 'general';
         const includeRag = includeRagCheck ? includeRagCheck.checked : true;
+        const useAiCheck = document.getElementById('intel-use-ai');
+        const useAi = useAiCheck ? useAiCheck.checked : true;
         const originalBtnText = btn ? btn.innerHTML : '';
 
         if (btn) {
             btn.disabled = true;
-            btn.innerHTML = '⏳ PENSANDO E INFERIENDO (OLLAMA)...';
+            btn.innerHTML = useAi ? '⏳ PENSANDO E INFERIENDO (OLLAMA)...' : '⚡ SINTETIZANDO INFORME FÁCTICO...';
             btn.style.opacity = '0.75';
         }
 
@@ -376,11 +571,11 @@ window.CobaltoIntel = {
 
                     <div style="display: inline-flex; align-items: center; gap: 10px; background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); padding: 6px 18px; border-radius: 20px; margin-bottom: 20px;">
                         <span class="ai-status-dot" style="width: 12px; height: 12px; background: #00e5ff; box-shadow: 0 0 10px #00e5ff; animation: pulse 1s infinite;"></span>
-                        <span style="color: #00e5ff; font-family: 'Roboto Mono', monospace; font-size: 0.85rem; font-weight: bold; letter-spacing: 1.5px;">ESTADO: PROCESANDO CON IA LOCAL OLLAMA</span>
+                        <span style="color: #00e5ff; font-family: 'Roboto Mono', monospace; font-size: 0.85rem; font-weight: bold; letter-spacing: 1.5px;">ESTADO: ${useAi ? 'PROCESANDO CON IA LOCAL OLLAMA' : 'SINTETIZANDO MOTOR FÁCTICO (SIN IA)'}</span>
                     </div>
 
                     <h3 style="color: #ffffff; font-size: 1.1rem; margin-bottom: 8px; font-weight: bold;">INVESTIGANDO: "${this.escapeHTML(query)}"</h3>
-                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">Recuperando contexto fáctico RAG e infiriendo informe de inteligencia táctica...</p>
+                    <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 20px;">Recuperando contexto fáctico RAG y generando informe de inteligencia...</p>
                     
                     <!-- Barra de Progreso Dinámica -->
                     <div style="max-width: 520px; margin: 0 auto 20px; background: rgba(255,255,255,0.06); border-radius: 6px; padding: 3px; border: 1px solid rgba(255,255,255,0.1);">
@@ -389,7 +584,7 @@ window.CobaltoIntel = {
 
                     <div id="intel-progress-steps" style="max-width: 520px; margin: 0 auto; text-align: left; background: rgba(0,0,0,0.4); padding: 18px 22px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); font-family: 'Roboto Mono', monospace; font-size: 0.82rem; line-height: 1.8;">
                         <div id="step-1" style="color: #00e5ff;"><span class="tactical-spinner"></span> 1. Consultando base de datos fáctica RAG...</div>
-                        <div id="step-2" style="color: var(--text-muted);">&bull; 2. Enviando prompt y contexto a Ollama (IP 192.168.1.213)...</div>
+                        <div id="step-2" style="color: var(--text-muted);">&bull; 2. ${useAi ? 'Enviando prompt y contexto a Ollama' : 'Procesando reglas fácticas y matriz de datos'}...</div>
                         <div id="step-3" style="color: var(--text-muted);">&bull; 3. Generando matriz de amenazas e informe estructurado...</div>
                     </div>
 
@@ -406,11 +601,10 @@ window.CobaltoIntel = {
                 const bar = document.getElementById('intel-bar-fill');
                 if (el) el.innerText = elapsed + 's';
                 
-                // Progreso visual interpolado (hasta 95% antes de respuesta)
                 let pct = Math.min(95, Math.floor((elapsed / 30) * 100));
                 if (bar) bar.style.width = pct + '%';
 
-                if (elapsed >= 3 && document.getElementById('step-2')) {
+                if (elapsed >= 1 && document.getElementById('step-2')) {
                     const s1 = document.getElementById('step-1');
                     const s2 = document.getElementById('step-2');
                     if (s1 && !s1.dataset.done) {
@@ -421,36 +615,22 @@ window.CobaltoIntel = {
                     if (s2 && !s2.dataset.active) {
                         s2.dataset.active = 'true';
                         s2.style.color = '#00e5ff';
-                        s2.innerHTML = '<span class="tactical-spinner"></span> 2. Inferencia activa en Ollama local (Generando respuesta)...';
+                        s2.innerHTML = `<span class="tactical-spinner"></span> 2. ${useAi ? 'Inferencia activa en Ollama local...' : 'Generando síntesis determinística...'}`;
                     }
                 }
-                if (elapsed >= 22 && document.getElementById('step-3')) {
-                    const s2 = document.getElementById('step-2');
-                    const s3 = document.getElementById('step-3');
-                    if (s2 && s2.dataset.active && !s2.dataset.phase2) {
-                        s2.dataset.phase2 = 'true';
-                        s2.style.color = '#34d399';
-                        s2.innerHTML = '✓ 2. Inferencia Ollama finalizando redacción...';
-                    }
-                    if (s3 && !s3.dataset.active) {
-                        s3.dataset.active = 'true';
-                        s3.style.color = '#00e5ff';
-                        s3.innerHTML = '<span class="tactical-spinner"></span> 3. Estructurando informe ejecutivo y formato exportable...';
-                    }
-                }
-            }, 1000);
+            }, 500);
         }
 
         // Notificación Flotante de IA Pensando
         if (window.showAIThinkingToast) {
-            window.showAIThinkingToast('IA OLLAMA PENSANDO...', `Analizando fuentes RAG e inferiendo sobre "${query.slice(0, 35)}..."`);
+            window.showAIThinkingToast(useAi ? 'IA OLLAMA PENSANDO...' : 'MOTOR FÁCTICO GENERANDO...', `Procesando fuentes RAG sobre "${query.slice(0, 35)}..."`);
         }
 
         try {
             const resp = await fetch('/api/intel/research', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ query, preset, include_rag: includeRag })
+                body: JSON.stringify({ query, preset, include_rag: includeRag, use_ai: useAi })
             });
 
             if (stepTimer) clearInterval(stepTimer);

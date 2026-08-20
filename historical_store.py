@@ -275,10 +275,10 @@ def get_stats() -> Dict:
     }
 
 
-def delete_older_than(days: int = RETENTION_DAYS) -> int:
-    """Delete entries older than N days. Returns count of deleted rows."""
+def delete_older_than_hours(hours: int) -> int:
+    """Delete entries older than N hours. Returns count of deleted rows."""
     _init()
-    cutoff = (datetime.now() - timedelta(days=days)).isoformat()
+    cutoff = (datetime.now() - timedelta(hours=hours)).isoformat()
     partitions = _get_all_partitions()
     deleted = 0
     with db_lock:
@@ -290,14 +290,21 @@ def delete_older_than(days: int = RETENTION_DAYS) -> int:
                 except Exception:
                     pass
     if deleted:
-        logger.info(f"[HISTORICAL] Cleaned {deleted} entries older than {days}d")
+        logger.info(f"[HISTORICAL] Cleaned {deleted} entries older than {hours}h")
     return deleted
+
+
+def delete_older_than(days: int = RETENTION_DAYS) -> int:
+    """Delete entries older than N days. Returns count of deleted rows."""
+    return delete_older_than_hours(days * 24)
 
 
 def _cleanup():
     """Auto-cleanup: drop empty partitions and delete old entries."""
     try:
-        delete_older_than(RETENTION_DAYS)
+        import config
+        max_age = getattr(config, "ENTRY_MAX_AGE_HOURS", 48)
+        delete_older_than_hours(max_age)
         _drop_empty_partitions()
     except Exception as e:
         logger.warning(f"[HISTORICAL] Cleanup error: {e}")

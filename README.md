@@ -4,7 +4,7 @@
 > **Target Dossier Engine (360° Risk Score)**, **Pipeline de Ingestión Autónoma y Cosecha de Keywords** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
 > Consolida fuentes RSS, canales de Telegram, redes sociales, ciberseguridad, rastreo de aeronaves/buques, telemetría de campo en vivo y análisis geopolítico multiagente con IA.  
 > **v14.0** — Pipeline de Inteligencia Autónoma (Auto-Tracker & Keyword Harvester), Expedientes 360° de Actores (Dossier Engine),  
-> Cobertura completa Bilateral para Teatros operacionales (Colombia, Venezuela, Internacional), Panel de Configuración Táctico (12 Canales Telegram, 55 Feeds RSS, 20 Targets, 116 Keywords) y 136/136 Tests Aprobados.
+> Cobertura completa Bilateral para Teatros operacionales (Colombia, Venezuela, Internacional), Panel de Configuración Táctico (12 Canales Telegram, 55 Feeds RSS, 20 Targets, 116 Keywords) y 141/141 Tests Aprobados.
 
 ---
 
@@ -17,7 +17,8 @@
 - **🌐 Arquitectura Multipaís (Multi-Theater Engine):** Escalado modular de la plataforma mediante perfiles regionales JSON bajo `data/theaters/` (`colombia.json`, `venezuela.json`, `global.json`). Registro centralizado en `theaters_config.py` para la carga dinámica de vectores de seguimiento y términos clave.
 - **🏷️ Auto-Etiquetado Inteligente (`country_tags`):** Integración de lógica en `extractor.py` que detecta y clasifica automáticamente las noticias y fuentes por país (`COL`, `VEN`, `GLOBAL`) en tiempo real según dominios, fuentes y contenido.
 - **🗺️ Selector Táctico de Teatros & Nav FlyTo (`window.switchTheater`):** Componente selector integrado en la barra lateral (`_sidebar.html`). Al alternar de teatro, el mapa Leaflet realiza una transición suave (`flyTo`) al centro operacional del país (ej: Colombia `[6.5, -70.0]`) y filtra dinámicamente las tarjetas de noticias en pantalla.
-- **🧪 Suite de Testing & Calidad (136/136 Pass & Ruff Clean):** Verificación al 100% de la suite de pruebas `pytest` y cumplimiento del estándar de código Ruff.
+- **💳 FININT & Dark Web Avanzado:** Integración de soporte para análisis de billeteras Tron (TRC-20) y Solana. Generador determinístico de Informes Ejecutivos FININT (`intel_reports.py`) con clasificación de riesgo de evasión de sanciones y vinculación automática al Grafo de Entidades.
+- **🧪 Suite de Testing & Calidad (141/141 Pass & Ruff Clean):** Verificación al 100% de la suite de pruebas `pytest` y cumplimiento del estándar de código Ruff.
 
 ---
 

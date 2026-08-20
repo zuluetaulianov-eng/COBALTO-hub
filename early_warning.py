@@ -53,14 +53,44 @@ class EarlyWarningEngine:
                 continue
 
             rules_triggered = self._match_rules(sc, context)
+            
+            # Trend calculation
+            prev_score = 0
+            if sid in self._active_warnings:
+                prev_score = self._active_warnings[sid].get("threat_score", 0)
+            
+            if score > prev_score + 5:
+                trend = "up"
+            elif score < prev_score - 5:
+                trend = "down"
+            else:
+                trend = "stable"
+
+            # Tactical recommendations
+            recommendations = self._generate_tactical_recommendations(rules_triggered, level, sc.get("entity_type", ""))
+            
+            # Human readable summary
+            ename = sc.get("entity_name", "Desconocida")
+            ofac_flag = " (Coincidencia OFAC SDN)" if sc.get("ofac_match") else ""
+            human_summary = (
+                f"Alerta {level.upper()} para '{ename}'{ofac_flag}. Puntaje de amenaza: {score}/100. "
+                f"Factores clave: {', '.join(rules_triggered) if rules_triggered else 'Umbral de riesgo superado'}."
+            )
+
             warning = {
                 "id": f"ew-{sid}-{int(datetime.now().timestamp())}",
                 "entity_id": sid,
-                "entity_name": sc.get("entity_name", "Unknown"),
+                "entity_name": ename,
                 "entity_type": sc.get("entity_type", "unknown"),
                 "threat_score": score,
+                "prev_score": prev_score,
+                "trend": trend,
                 "level": level,
                 "rules_triggered": rules_triggered,
+                "recommendations": recommendations,
+                "human_summary": human_summary,
+                "signals": sc.get("signals", {}),
+                "ofac_match": sc.get("ofac_match", False),
                 "status": "active",
                 "created_at": now,
                 "updated_at": now,
@@ -77,6 +107,28 @@ class EarlyWarningEngine:
             logger.info(f"[EARLY WARNING] {level.upper()}: {sc.get('entity_name', '?')} (score={score})")
 
         return new_warnings
+
+    def _generate_tactical_recommendations(self, rules: List[str], level: str, entity_type: str) -> List[str]:
+        recs = []
+        if "ofac_high_threat" in rules or "ofac_elevated" in rules:
+            recs.append("Congelar operaciones asociadas y notificar a la unidad de Inteligencia Financiera.")
+        if "infrastructure_critical" in rules or "infrastructure_elevated" in rules:
+            recs.append("Bloquear IP/Dominio en el cortafuegos perimetral y activar monitoreo DNS.")
+        if "composite_event_proximity" in rules:
+            recs.append("Desplegar inspección por cámaras CCTV o sensores SIGINT en el radio de cercanía.")
+        if "agent_corroboration" in rules:
+            recs.append("Revisar el expediente de investigación detallado generado por el agente ARES.")
+        if "recent_high_severity_activity" in rules:
+            recs.append("Configurar alertas de picos noticiosos en tiempo real para el teatro de operaciones.")
+        
+        if not recs:
+            if level == "critical":
+                recs.append("Iniciar protocolo de verificación prioritaria y convocar comité de crisis.")
+            elif level == "high":
+                recs.append("Intensificar el seguimiento del objetivo en tableros de control.")
+            else:
+                recs.append("Mantener en observación continua dentro de la ventana de monitoreo.")
+        return recs
 
     def resolve(self, entity_id: str) -> bool:
         """Mark a warning as resolved."""

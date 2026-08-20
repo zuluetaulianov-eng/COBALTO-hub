@@ -291,3 +291,21 @@ def extract_tactical_entities(text: str) -> Dict[str, List[str]]:
 
     return extracted
 
+
+def purge_inactive(hours: int) -> int:
+    """Delete non-OFAC, non-Wikidata entities inactive for more than N hours."""
+    _init()
+    from datetime import datetime, timedelta
+    cutoff = (datetime.now() - timedelta(hours=hours)).isoformat()
+    deleted = 0
+    with db_lock:
+        with _get_conn() as conn:
+            cur = conn.execute(
+                "DELETE FROM entities WHERE ofac_match = 0 AND (wikidata_qid IS NULL OR wikidata_qid = '') AND last_seen < ?",
+                (cutoff,),
+            )
+            deleted = cur.rowcount
+    if deleted:
+        logger.info(f"[ENTITY REGISTRY] Purged {deleted} inactive entities older than {hours}h")
+    return deleted
+

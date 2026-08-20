@@ -49,6 +49,24 @@ function exportGraphImage() {
     });
 }
 
+function exportGraphJSON() {
+    if (!graphRawData && (!graphAllNodes || !graphAllEdges)) return;
+    var dataToExport = {
+        timestamp: new Date().toISOString(),
+        nodes: graphAllNodes ? graphAllNodes.get() : [],
+        edges: graphAllEdges ? graphAllEdges.get() : []
+    };
+    var blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json;charset=utf-8' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'cobalto_topologia_grafo_' + new Date().toISOString().slice(0, 10) + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 function graphTooltipHTML(n) {
     var sent = n.sentiment || 'neutral';
     var sentColor = sent === 'positive' ? '#00FF88' : sent === 'negative' ? '#FF2D55' : '#FFCC00';
@@ -179,6 +197,7 @@ function initSocialGraph() {
             '<div class="graph-actions">' +
             '<button onclick="graphColorToggle()" id="graph-color-btn" class="graph-action-btn" title="Color por comunidad">\uD83C\uDFA8</button>' +
             '<button onclick="exportGraphImage()" class="graph-action-btn" title="Exportar PNG">\uD83D\uDCF7</button>' +
+            '<button onclick="exportGraphJSON()" class="graph-action-btn" title="Exportar JSON (Gephi/Maltego)">💾</button>' +
             '<button onclick="resetGraphView()" class="graph-action-btn" title="Reiniciar vista">\u27F2</button></div>';
     }
     buildGraphFilters(uniqTypes, uniqSent, uniqComm);
@@ -346,12 +365,12 @@ function showGraphNodeDetail(nodeId) {
         '<div class="gdetail-row"><span class="gdetail-label">Tipo</span><span class="gdetail-value">' + (node.group || '?') + '</span></div>' +
         '<div class="gdetail-row"><span class="gdetail-label">Comunidad</span><span class="gdetail-value">' + (node.community !== undefined ? node.community : '?') + '</span></div>' +
         '<div class="gdetail-row"><span class="gdetail-label">Sentimiento</span><span class="gdetail-value ' + sent + '">' + sent + ' (' + (node.sentiment_score || 0).toFixed(2) + ')</span></div></div>' +
-        '<div class="gdetail-section"><div class="gdetail-sectitle">Centralidad</div>' +
-        '<div class="gdetail-row"><span class="gdetail-label">PageRank</span><span class="gdetail-value">' + (node.pagerank || 0).toFixed(4) + '</span></div>' +
-        '<div class="gdetail-row"><span class="gdetail-label">Betweenness</span><span class="gdetail-value">' + (node.betweenness_centrality || 0).toFixed(4) + '</span></div>' +
-        '<div class="gdetail-row"><span class="gdetail-label">Degree</span><span class="gdetail-value">' + (node.degree_centrality || 0).toFixed(4) + '</span></div>' +
-        '<div class="gdetail-row"><span class="gdetail-label">Closeness</span><span class="gdetail-value">' + (node.closeness_centrality || 0).toFixed(4) + '</span></div>' +
-        '<div class="gdetail-row"><span class="gdetail-label">Eigenvector</span><span class="gdetail-value">' + (node.eigenvector_centrality || 0).toFixed(4) + '</span></div></div>' +
+        '<div class="gdetail-section"><div class="gdetail-sectitle">Métricas de Influencia & Enlace</div>' +
+        '<div class="gdetail-row" title="Importancia macro en la red social"><span class="gdetail-label">👑 Influencia Macro</span><span class="gdetail-value">' + (node.pagerank || 0).toFixed(4) + '</span></div>' +
+        '<div class="gdetail-row" title="Capacidad de conectar comunidades distintas"><span class="gdetail-label">🌉 Nodo Enlace / Puente</span><span class="gdetail-value">' + (node.betweenness_centrality || 0).toFixed(4) + '</span></div>' +
+        '<div class="gdetail-row" title="Número de conexiones directas"><span class="gdetail-label">🔌 Conexiones Directas</span><span class="gdetail-value">' + (node.degree_centrality || 0).toFixed(4) + '</span></div>' +
+        '<div class="gdetail-row" title="Cercanía promedio a todos los nodos"><span class="gdetail-label">🎯 Velocidad de Difusión</span><span class="gdetail-value">' + (node.closeness_centrality || 0).toFixed(4) + '</span></div>' +
+        '<div class="gdetail-row" title="Conexiones con otros nodos clave"><span class="gdetail-label">⚡ Red de Influencia</span><span class="gdetail-value">' + (node.eigenvector_centrality || 0).toFixed(4) + '</span></div></div>' +
         '<div class="gdetail-section"><div class="gdetail-sectitle">Actividad</div>' +
         '<div class="gdetail-row"><span class="gdetail-label">Menciones</span><span class="gdetail-value">' + (node.mention_frequency || 0) + '</span></div>' +
         '<div class="gdetail-row"><span class="gdetail-label">Tama\u00F1o</span><span class="gdetail-value">' + (node.size || 0) + '</span></div></div></div>' +
@@ -484,18 +503,36 @@ function updateKillChain() {
         return;
     }
     
-    // Ordenar por PageRank
-    nodes.sort((a,b) => (b.pagerank || 0) - (a.pagerank || 0));
+    // Algoritmo de Score de Amenaza Táctica Compuesta (OFAC + Botnet + Betweenness + PageRank)
+    nodes.forEach(n => {
+        var score = 0;
+        if (n.ofac_match) score += 100;
+        if (n.is_botnet) score += 50;
+        score += (n.betweenness_centrality || 0) * 40;
+        score += (n.pagerank || 0) * 30;
+        n._threatScore = score;
+    });
+    nodes.sort((a,b) => (b._threatScore || 0) - (a._threatScore || 0));
     var top5 = nodes.slice(0, 5);
     
     var html = '';
     top5.forEach((n, i) => {
-        var isBot = n.is_botnet ? '<span style="color:#FF9500;font-size:0.7rem;margin-left:5px;">[BOT]</span>' : '';
-        html += `<div style="background:rgba(255,255,255,0.05); padding:6px; border-radius:4px; font-family:'Inter',sans-serif; font-size:0.75rem; cursor:pointer; border-left:2px solid #FF2D55;" 
+        var ofacBadge = n.ofac_match ? '<span style="color:#FF2D55;font-weight:bold;font-size:0.65rem;margin-left:4px;">[OFAC]</span>' : '';
+        var botBadge = n.is_botnet ? '<span style="color:#FF9500;font-weight:bold;font-size:0.65rem;margin-left:4px;">[BOTNET]</span>' : '';
+        var bridgeBadge = (n.betweenness_centrality || 0) > 0.1 ? '<span style="color:#B388FF;font-weight:bold;font-size:0.65rem;margin-left:4px;">[PUENTE]</span>' : '';
+        
+        html += `<div style="background:rgba(255,255,255,0.05); padding:8px; border-radius:6px; font-family:'Inter',sans-serif; font-size:0.75rem; cursor:pointer; border-left:3px solid #FF2D55; margin-bottom:4px;" 
                     onclick="focusOnNode('${n.id}')"
                     onmouseover="this.style.background='rgba(255,45,85,0.2)'" onmouseout="this.style.background='rgba(255,255,255,0.05)'">
-            <span style="color:#64748B; margin-right:5px;">#${i+1}</span> <b style="color:#E2E8F0;">${n.label}</b> ${isBot}
-            <div style="color:#94A3B8; font-size:0.65rem; margin-top:3px;">Poder (PageRank): ${(n.pagerank||0).toFixed(4)}</div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span style="color:#64748B;">#${i+1}</span>
+                <b style="color:#E2E8F0; max-width:140px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${n.label || n.id}</b>
+                <div>${ofacBadge}${botBadge}${bridgeBadge}</div>
+            </div>
+            <div style="color:#94A3B8; font-size:0.65rem; margin-top:4px; display:flex; justify-content:space-between;">
+                <span>Score Amenaza: <b style="color:#FF2D55;">${(n._threatScore || 0).toFixed(1)} pts</b></span>
+                <span>Puente: ${(n.betweenness_centrality || 0).toFixed(3)}</span>
+            </div>
         </div>`;
     });
     list.innerHTML = html;

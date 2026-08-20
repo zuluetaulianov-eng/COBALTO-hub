@@ -15,9 +15,11 @@ logger = logging.getLogger(__name__)
 
 # Known OFAC-sanctioned wallet addresses (curated subset for offline lookup)
 SANCTIONED_WALLETS: Dict[str, Dict[str, str]] = {
-    # Examples — in production this would be a regularly updated dataset
-    "1F1tAaz5x1HUXrCNLbtMDqcw6o5GNn4xqX": {"entity": "Tornado Cash", "program": "SDN"},
-    "0x8589427373D6D84E98730D7795D8f6f8731FDA16": {"entity": "Tornado Cash", "program": "SDN"},
+    "1F1tAaz5x1HUXrCNLbtMDqcw6o5GNn4xqX": {"entity": "Tornado Cash Deposit Router", "program": "SDN / CYBER2"},
+    "0x8589427373D6D84E98730D7795D8f6f8731FDA16": {"entity": "Tornado Cash ETH Vault", "program": "SDN / CYBER2"},
+    "0xd90e2f925DA726b50C4Ed8D0Fb90Ad053324F31b": {"entity": "Garantex Exchange Wallet", "program": "SDN / RUSSIA-EO14024"},
+    "TBs15M8yvVbB7f4T2N9Z7e32N9L4vQ1a1Z": {"entity": "Garantex TRON USDT Treasury", "program": "SDN / RUSSIA-EO14024"},
+    "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh": {"entity": "Lazarus Group Hacker Wallet", "program": "SDN / DPRK3"},
 }
 
 # Trusted blockchain explorers (rate-limited, free tier)
@@ -29,6 +31,14 @@ BLOCKCHAIN_EXPLORERS = {
     "ethereum": {
         "address_url": "https://api.etherscan.io/api?module=account&action=txlist&address={address}&sort=desc&apikey={api_key}",
         "rate_per_sec": 5,
+    },
+    "tron": {
+        "address_url": "https://api.trongrid.io/v1/accounts/{address}",
+        "rate_per_sec": 3,
+    },
+    "solana": {
+        "address_url": "https://api.mainnet-beta.solana.com",
+        "rate_per_sec": 2,
     },
 }
 

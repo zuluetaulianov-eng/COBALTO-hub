@@ -24,7 +24,15 @@ window.CobaltaSentiment = {
             this.showSkeleton();
         }
         this.animatePipeline();
-        fetch('/api/sentiment')
+        
+        const theaterEl = document.getElementById('sentiment-theater');
+        const targetEl = document.getElementById('sentiment-target-filter');
+        const theater = theaterEl ? theaterEl.value : 'todos';
+        const target = targetEl ? encodeURIComponent(targetEl.value.trim()) : '';
+        let url = `/api/sentiment?theater=${theater}`;
+        if (target) url += `&target=${target}`;
+
+        fetch(url)
             .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
             .then(data => {
                 this.data = data;
@@ -34,6 +42,52 @@ window.CobaltaSentiment = {
                 console.error('[SENTIMENT] Error:', err);
                 this.showError();
             });
+    },
+
+    exportPsyopsReport: function () {
+        if (!this.data) return;
+        const d = this.data;
+        const psy = d.informe_cobalto || {};
+        const theaterEl = document.getElementById('sentiment-theater');
+        const theaterName = theaterEl ? theaterEl.options[theaterEl.selectedIndex].text : 'Global';
+
+        let report = `========================================================\n`;
+        report += `COBALTO HUB - INFORME PSYOPS Y PERFILAMIENTO CONDUCTUAL\n`;
+        report += `FECHA DE EMISIÓN: ${new Date().toISOString()}\n`;
+        report += `TEATRO OPERACIONAL: ${theaterName}\n`;
+        report += `NIVEL DE AMENAZA GLOBAL: ${d.nivel_alerta || 'EVALUANDO'}\n`;
+        report += `========================================================\n\n`;
+
+        report += `[1] RESUMEN DE AMENAZA PSYOPS\n`;
+        report += `--------------------------------------------------------\n`;
+        report += `Operación de Influencia: ${psy.operacion_influencia || 'Sin detectar'}\n`;
+        report += `Vector Cognitivo: ${psy.vector_manipulacion || 'Sin detectar'}\n`;
+        report += `Contramedida Táctica: ${psy.contramedida || 'Sin medidas aplicables'}\n\n`;
+
+        report += `[2] TELEMETRÍA Y KPIs NLP\n`;
+        report += `--------------------------------------------------------\n`;
+        report += `Score Global: ${d.score_global}\n`;
+        report += `Total Entradas Analizadas: ${d.total_analizadas}\n`;
+        report += `Tasa de Bots / Astroturfing: ${d.bot_rate}%\n`;
+        report += `Alertas de Crisis Detectadas: ${d.alertas_criticas + d.alertas_atencion}\n\n`;
+
+        report += `[3] NARRATIVAS GEOPOLÍTICAS Y CRISIS\n`;
+        report += `--------------------------------------------------------\n`;
+        (d.narrativas_geo || []).forEach(n => {
+            report += `• ${n.nombre}: ${n.menciones} menciones (Score: ${n.score_promedio})\n`;
+        });
+        report += `\n========================================================\n`;
+        report += `FIN DEL REPORT PSYOPS - COBALTO INTELLIGENCE HUB\n`;
+
+        const blob = new Blob([report], { type: 'text/plain;charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `SITREP_PSYOPS_${new Date().toISOString().slice(0, 10)}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
     },
 
     // D1: Cargar historial de 7 días

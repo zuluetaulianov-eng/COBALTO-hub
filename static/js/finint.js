@@ -77,6 +77,11 @@
         .join("");
     }
 
+    var actionBtns = '<div class="flex" style="gap:0.5rem;">' +
+      '<button class="btn-tactical btn-sm" style="font-size:0.7rem;" onclick="FinintIntel.generateReport(\'' + escapeHtml(data.address) + '\', \'' + escapeHtml(data.chain) + '\')">📄 Generar Informe</button>' +
+      '<button class="btn-tactical btn-sm" style="font-size:0.7rem;" onclick="FinintIntel.linkWallet(\'' + escapeHtml(data.address) + '\', \'' + escapeHtml(data.chain) + '\')">🔗 Vincular a Entidades</button>' +
+      '</div>';
+
     container.innerHTML =
       '<div class="panel-glass" style="padding:1rem;border-left:3px solid ' + riskColor + ';">' +
       '<div class="flex-between" style="margin-bottom:0.5rem;">' +
@@ -91,14 +96,50 @@
       (data.balance_btc ? '<div><span class="text-muted" style="font-size:0.7rem;">Balance BTC</span><div style="font-size:1.2rem;font-weight:700;">' + data.balance_btc.toFixed(6) + "</div></div>" : "") +
       "</div>" +
       (txsHtml ? '<div style="margin-top:0.5rem;"><div class="text-muted" style="font-size:0.7rem;">TX Recientes</div>' + txsHtml + "</div>" : "") +
-      '<div class="text-muted" style="font-size:0.65rem;margin-top:0.5rem;">Verificado: ' + (data.checked_at || "").slice(11, 19) + "</div>" +
+      '<div class="flex-between" style="margin-top:0.6rem;">' +
+      '<span class="text-muted" style="font-size:0.65rem;">Verificado: ' + (data.checked_at || "").slice(11, 19) + "</span>" +
+      actionBtns +
+      "</div>" +
       "</div>";
+  }
+
+  function generateReport(address, chain) {
+    FinintIntel.showToast("📄 Generando Informe Fáctico FININT...");
+    fetch("/api/finint/generate-report", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address: address, chain: chain }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        if (res.status === "ok") {
+          alert("✅ Informe FININT Fáctico (" + res.codigo + ") generado y guardado en el historial.");
+          if (window.switchTab) window.switchTab("tab-reports");
+        }
+      })
+      .catch(function () { alert("❌ Error generando informe FININT."); });
+  }
+
+  function linkWallet(address, chain) {
+    var entityName = prompt("Ingrese el nombre de la entidad vinculada (opcional):", "");
+    fetch("/api/finint/link-wallet", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address: address, chain: chain, entity_name: entityName || "" }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (res) {
+        alert("✅ Wallet registrada correctamente en el Registro Unificado de Entidades.");
+        state.linksCount += 1;
+        updateBadge();
+      })
+      .catch(function () { alert("❌ Error registrando wallet."); });
   }
 
   function loadSanctioned() {
     var container = document.getElementById("finint-sanctioned-list");
     if (!container) return;
-    container.innerHTML = '<div class="text-muted">🔄 Cargando...</div>';
+    container.innerHTML = '<div class="text-muted">🔄 Cargando registros de la Lista OFAC...</div>';
 
     fetch("/api/finint/sanctioned-wallets")
       .then(function (r) { return r.json(); })
@@ -110,9 +151,25 @@
         }
         var html = wallets
           .map(function (w) {
-            return '<div class="panel-glass" style="padding:0.8rem;margin-bottom:0.3rem;border-left:3px solid #FF2D55;">' +
-              '<div class="font-mono" style="font-size:0.8rem;">' + escapeHtml(w.address) + "</div>" +
-              '<div style="font-size:0.75rem;color:#FF2D55;">' + escapeHtml(w.entity) + " — " + escapeHtml(w.program) + "</div>" +
+            var addrEsc = escapeHtml(w.address);
+            var entEsc = escapeHtml(w.entity);
+            var progEsc = escapeHtml(w.program);
+            return '<div class="panel-glass" style="padding:1rem;margin-bottom:0.6rem;border-left:4px solid #FF2D55;">' +
+              '<div class="flex-between" style="margin-bottom:0.4rem;flex-wrap:wrap;gap:0.5rem;">' +
+              '<div class="flex" style="gap:0.5rem;align-items:center;">' +
+              '<span style="background:#FF2D5522;color:#FF2D55;border:1px solid #FF2D5544;padding:2px 8px;border-radius:4px;font-size:0.7rem;font-weight:600;">🚫 OFAC SDN LIST</span>' +
+              '<span style="font-weight:600;font-size:0.9rem;">' + entEsc + "</span>" +
+              "</div>" +
+              '<span style="background:rgba(255,255,255,0.05);border:1px solid var(--border-color);padding:2px 8px;border-radius:4px;font-size:0.7rem;color:#888;">Programa: ' + progEsc + "</span>" +
+              "</div>" +
+              '<div style="background:rgba(0,0,0,0.35);padding:0.5rem 0.8rem;border-radius:4px;margin:0.4rem 0;display:flex;align-items:center;justify-content:space-between;border:1px solid rgba(255,255,255,0.08);">' +
+              '<span class="font-mono" style="font-size:0.82rem;color:var(--primary);word-break:break-all;">' + addrEsc + "</span>" +
+              '<button class="btn-tactical btn-sm" style="padding:2px 8px;font-size:0.65rem;margin-left:0.5rem;" onclick="navigator.clipboard.writeText(\'' + addrEsc + '\');FinintIntel.showToast(\'📋 Dirección copiada al portapapeles\');">📋 Copiar</button>' +
+              "</div>" +
+              '<div class="flex" style="gap:0.5rem;margin-top:0.5rem;flex-wrap:wrap;">' +
+              '<button class="btn-tactical btn-sm" style="padding:2px 10px;font-size:0.7rem;" onclick="FinintIntel.quickCheck(\'' + addrEsc + '\')">🔍 Verificar Análisis Táctico</button>' +
+              '<button class="btn-tactical btn-sm" style="padding:2px 10px;font-size:0.7rem;border-color:var(--border-color);" onclick="FinintIntel.linkWallet(\'' + addrEsc + '\', \'crypto\')">🔗 Vincular a Expediente</button>' +
+              "</div>" +
               "</div>";
           })
           .join("");
@@ -121,6 +178,27 @@
       .catch(function () {
         container.innerHTML = '<div style="color:#FF2D55;">Error cargando wallets sancionadas</div>';
       });
+  }
+
+  function quickCheck(address) {
+    switchTab("wallets");
+    var input = document.getElementById("finint-wallet-input");
+    if (input) input.value = address;
+    checkWallet();
+  }
+
+  function showToast(msg) {
+    var el = document.getElementById("finint-toast");
+    if (!el) {
+      el = document.createElement("div");
+      el.id = "finint-toast";
+      el.style.cssText = "position:fixed;bottom:20px;right:20px;background:#00E5FF;color:#0A0B10;padding:8px 16px;border-radius:6px;font-weight:600;z-index:9999;font-size:0.8rem;box-shadow:0 4px 15px rgba(0,229,255,0.3);";
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    el.style.display = "block";
+    clearTimeout(el._t);
+    el._t = setTimeout(function () { el.style.display = "none"; }, 3000);
   }
 
   function searchDarkWeb() {
@@ -227,7 +305,11 @@
     destroy: destroy,
     switchTab: switchTab,
     checkWallet: checkWallet,
+    linkWallet: linkWallet,
+    generateReport: generateReport,
     loadSanctioned: loadSanctioned,
+    quickCheck: quickCheck,
+    showToast: showToast,
     searchDarkWeb: searchDarkWeb,
     analyzeText: analyzeText,
   };

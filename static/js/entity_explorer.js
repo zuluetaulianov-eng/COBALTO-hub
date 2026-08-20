@@ -34,6 +34,19 @@
       .catch(function () {});
   }
 
+  function copyText(text, event) {
+    if (event) event.stopPropagation();
+    try {
+      navigator.clipboard.writeText(text).then(function() {
+        showToast("📋 Copiado al portapapeles: " + text.slice(0, 16) + "...", "success");
+      }).catch(function() {
+        showToast("📋 Copiado: " + text.slice(0, 16), "success");
+      });
+    } catch(e) {
+      showToast("📋 Copiado al portapapeles", "success");
+    }
+  }
+
   function searchEntities(query, type, source, ofacOnly) {
     var params = new URLSearchParams();
     if (query) params.set("q", query);
@@ -57,14 +70,24 @@
     var type = document.getElementById("entity-type-filter").value;
     var source = document.getElementById("entity-source-filter").value;
     var ofacOnly = document.getElementById("entity-ofac-only").checked;
+    var cryptoOnlyEl = document.getElementById("entity-crypto-only");
+    var cryptoOnly = cryptoOnlyEl ? cryptoOnlyEl.checked : false;
 
-    if (!query && !type && !source && !ofacOnly) {
+    if (!query && !type && !source && !ofacOnly && !cryptoOnly) {
       state.filtered = state.entities.slice();
       render();
       return;
     }
 
-    searchEntities(query, type, source, ofacOnly);
+    searchEntities(query, type, source, ofacOnly).then(function(res) {
+      if (cryptoOnly) {
+        state.filtered = (res || []).filter(function(item) {
+          var meta = getHumanEntityDetails(item);
+          return meta.isCrypto || item.entity_type === 'crypto_wallet';
+        });
+        render();
+      }
+    });
   }
 
   function filterType() { search(); }
@@ -92,47 +115,128 @@
       return;
     }
 
+  function detectCryptoBlockchain(address) {
+    if (!address) return null;
+    address = String(address).trim();
+    if (address.startsWith("0x") && address.length === 42) return { chain: "Ethereum", icon: "🪙", type: "wallet_eth" };
+    if ((address.startsWith("1") || address.startsWith("3") || address.startsWith("bc1")) && address.length >= 26 && address.length <= 65) return { chain: "Bitcoin", icon: "🪙", type: "wallet_btc" };
+    if (address.startsWith("T") && address.length === 34) return { chain: "TRON", icon: "🪙", type: "wallet_tron" };
+    if ((address.startsWith("4") || address.startsWith("8")) && address.length >= 95) return { chain: "Monero", icon: "🪙", type: "wallet_xmr" };
+    if (address.length >= 26 && /^[0-9a-zA-Z]{26,}$/.test(address) && !address.includes(" ")) return { chain: "Cripto", icon: "🪙", type: "crypto_wallet" };
+    return null;
+  }
+
+  function getHumanEntityDetails(entity) {
+    var rawName = entity.canonical_name || entity.id || "?";
+    var rawType = (entity.entity_type || "unknown").toLowerCase();
+    
+    // Auto-detect crypto address
+    var crypto = detectCryptoBlockchain(rawName);
+    if (crypto) {
+      return {
+        displayName: crypto.chain + " Wallet: " + rawName.slice(0, 8) + "..." + rawName.slice(-6),
+        fullAddress: rawName,
+        typeLabel: "🪙 Wallet " + crypto.chain,
+        typeColor: "#FF9500",
+        isCrypto: true
+      };
+    }
+
+    // IP address detection
+    if (/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/.test(rawName)) {
+      return {
+        displayName: "🌐 Dirección IP: " + rawName,
+        fullAddress: rawName,
+        typeLabel: "🌐 Dirección IP",
+        typeColor: "#00E5FF",
+        isCrypto: false
+      };
+    }
+
+    var labels = {
+      person: { label: "👤 Persona", color: "#00FFAA" },
+      organization: { label: "🏢 Organización", color: "#44AAEE" },
+      location: { label: "📍 Ubicación", color: "#FFAA00" },
+      infrastructure: { label: "🏗️ Infraestructura", color: "#FF5050" },
+      vessel: { label: "🚢 Buque", color: "#00CCFF" },
+      aircraft: { label: "✈️ Aeronave", color: "#CC88FF" },
+      event: { label: "⚡ Evento", color: "#FF8844" },
+      crypto_wallet: { label: "🪙 Billetera Cripto", color: "#FF9500" },
+      sanctioned_entity: { label: "🔴 Entidad Sancionada", color: "#FF2D55" },
+      unknown: { label: "📦 Entidad OSINT", color: "#888888" }
+    };
+
+    var info = labels[rawType] || labels.unknown;
+    return {
+      displayName: rawName,
+      fullAddress: rawName,
+      typeLabel: info.label,
+      typeColor: info.color,
+      isCrypto: false
+    };
+  }
+
+  function render() {
+    var container = document.getElementById("entity-results");
+    var totalDisplay = document.getElementById("entity-total-display");
+
+    if (!container) return;
+
+    if (!state.filtered || state.filtered.length === 0) {
+      container.innerHTML =
+        '<div class="empty-state" style="grid-column:1/-1;">' +
+        '<div style="font-size:2rem;margin-bottom:0.5rem;">📦</div>' +
+        '<div class="heading-4">0 entidades encontradas</div>' +
+        '<p class="text-muted">No hay entidades en el registro. Puebla el registro desde OFAC SDN + históricos, o ejecuta un ciclo completo.</p>' +
+        '<div class="flex" style="gap:0.5rem;justify-content:center;margin-top:0.8rem;">' +
+        '<button class="btn-tactical" onclick="EntityExplorer.runBackfill()">⚡ Poblar Entidades</button>' +
+        '<button class="btn-tactical" onclick="EntityExplorer.search(\'\', \'\', \'\', false)" style="border-color:var(--text-muted);">🔄 Recargar</button>' +
+        "</div>" +
+        "</div>";
+      if (totalDisplay) totalDisplay.textContent = "0 entidades";
+      updateStats();
+      return;
+    }
+
     var html = "";
     for (var i = 0; i < state.filtered.length; i++) {
       var e = state.filtered[i];
-      var typeBadge = getTypeBadge(e.entity_type);
+      var meta = getHumanEntityDetails(e);
+      
+      var typeBadge = '<span style="background:' + meta.typeColor + '22;color:' + meta.typeColor + ';border:1px solid ' + meta.typeColor + '44;padding:2px 6px;border-radius:4px;font-size:0.7rem;font-weight:600;">' + meta.typeLabel + '</span>';
       var ofacBadge = e.ofac_match
-        ? '<span class="badge-critical" style="font-size:0.7rem;">🔴 OFAC</span>'
+        ? '<span class="badge-critical" style="font-size:0.7rem;background:rgba(255,45,85,0.2);border:1px solid #FF2D55;color:#FF2D55;padding:2px 6px;border-radius:4px;">🔴 OFAC</span>'
         : "";
       var wikiBadge = e.wikidata_qid
         ? '<span class="badge-info" style="font-size:0.7rem;">🟦 Wikidata</span>'
         : "";
-      var aliasText =
-        e.aliases && e.aliases.length > 0
-          ? e.aliases.slice(0, 3).join(", ") +
-            (e.aliases.length > 3 ? "..." : "")
-          : "-";
+
+      var identifierHtml = meta.isCrypto
+        ? '<div style="font-family:monospace;font-size:0.72rem;color:#79C0FF;word-break:break-all;margin-top:2px;">' + escapeHtml(meta.fullAddress) + '</div>'
+        : '<span style="color:#d1d5db;">' + (e.aliases && e.aliases.length > 0 ? e.aliases.slice(0, 3).join(", ") : "-") + '</span>';
 
       html +=
         '<div class="panel-glass entity-card" data-entity-id="' +
         escapeHtml(e.id) +
-        '" style="padding:0.8rem;cursor:pointer;" onclick="EntityExplorer.showDetail(\'' +
+        '" style="padding:0.9rem;cursor:pointer;border-left:3px solid ' + (e.ofac_match ? '#FF2D55' : meta.typeColor) + ';" onclick="EntityExplorer.showDetail(\'' +
         escapeHtml(e.id) +
         "')\">" +
-        '<div class="flex-between" style="margin-bottom:0.3rem;">' +
-        '<span class="font-mono" style="font-size:0.8rem;font-weight:600;">' +
-        escapeHtml(e.canonical_name || "?") +
-        "</span>" +
-        '<div class="flex" style="gap:0.3rem;">' +
+        '<div class="flex-between" style="margin-bottom:0.4rem;align-items:flex-start;">' +
+        '<div style="font-size:0.88rem;font-weight:600;color:#FFF;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + escapeHtml(meta.displayName) + '">' +
+        escapeHtml(meta.displayName) +
+        "</div>" +
+        '<div class="flex" style="gap:0.3rem;flex-wrap:wrap;justify-content:flex-end;">' +
         typeBadge +
         ofacBadge +
         wikiBadge +
         "</div>" +
         "</div>" +
-        '<div class="text-muted" style="font-size:0.75rem;">Alias: ' +
-        aliasText +
+        '<div class="text-muted" style="font-size:0.75rem;">' +
+        '<strong>Identificador:</strong> ' + identifierHtml +
         "</div>" +
-        '<div class="text-muted" style="font-size:0.7rem;margin-top:0.3rem;">' +
-        "<span>Fuente: " +
-        e.source +
-        "</span> · <span>Visto: " +
-        (e.last_seen || "").slice(0, 10) +
-        "</span>" +
+        '<div class="text-muted" style="font-size:0.7rem;margin-top:0.4rem;display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,0.06);padding-top:4px;">' +
+        "<span>Fuente: <b style='color:#00E5FF;'>" + escapeHtml(e.source || 'ofac_sdn') + "</b></span>" +
+        "<span>Visto: " + (e.last_seen || "").slice(0, 10) + "</span>" +
         "</div>" +
         "</div>";
     }
@@ -200,12 +304,74 @@
           "</td></tr>" +
           propsHtml +
           "</table>" +
-          '<div style="margin-top:1rem;">' +
+          '<div style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">' +
           '<button class="btn-tactical" onclick="EntityExplorer.render()">⟵ Volver al listado</button>' +
+          '<button class="btn-tactical" onclick="EntityExplorer.researchEntityWithAI(\'' + escapeHtml(e.canonical_name).replace(/'/g, "\\'") + '\')" style="background:rgba(0,229,255,0.15); border-color:#00E5FF; color:#00E5FF;">🎯 INVESTIGAR CON IA (RAG)</button>' +
+          '<button class="btn-tactical" onclick="EntityExplorer.viewEntityInGraph(\'' + escapeHtml(e.canonical_name).replace(/'/g, "\\'") + '\')" style="background:rgba(179,136,255,0.15); border-color:#B388FF; color:#B388FF;">🕸️ VER EN GRAFO SOCIAL</button>' +
           "</div>" +
           "</div>";
       })
       .catch(function () {});
+  }
+
+  function researchEntityWithAI(name) {
+    if (window.CobaltoCore && window.CobaltoCore.switchTab) {
+      window.CobaltoCore.switchTab('tab-intel');
+      setTimeout(function() {
+        var input = document.getElementById('intel-query-input');
+        if (input) {
+          input.value = "Investigar antecedentes y amenazas de la entidad: " + name;
+          input.focus();
+        }
+      }, 300);
+    }
+  }
+
+  function viewEntityInGraph(name) {
+    if (window.CobaltoCore && window.CobaltoCore.switchTab) {
+      window.CobaltoCore.switchTab('tab-graph');
+      setTimeout(function() {
+        var input = document.getElementById('graph-search-input');
+        if (input) {
+          input.value = name;
+          var btn = document.getElementById('graph-search-btn');
+          if (btn) btn.click();
+        }
+      }, 400);
+    }
+  }
+
+  function exportEntitiesReport() {
+    var list = state.filtered || [];
+    var report = "========================================================\n";
+    report += "COBALTO HUB - REGISTRO DE ENTIDADES TÁCTICAS (SITREP)\n";
+    report += "FECHA DE EXTRACCIÓN: " + new Date().toISOString() + "\n";
+    report += "TOTAL DE ENTIDADES: " + list.length + "\n";
+    report += "========================================================\n\n";
+
+    for (var i = 0; i < list.length; i++) {
+      var e = list[i];
+      report += "[" + (i + 1) + "] " + (e.canonical_name || "Sin nombre") + "\n";
+      report += "   • Tipo: " + (e.entity_type || "desconocido") + "\n";
+      report += "   • Fuente: " + (e.source || "N/A") + "\n";
+      if (e.aliases && e.aliases.length > 0) report += "   • Alias: " + e.aliases.join(", ") + "\n";
+      if (e.ofac_match) report += "   • SANCIONES OFAC: 🔴 SÍ (IDs: " + (e.ofac_ids || []).join(", ") + ")\n";
+      if (e.wikidata_qid) report += "   • Wikidata QID: " + e.wikidata_qid + "\n";
+      report += "   • Última vista: " + (e.last_seen || "-") + "\n\n";
+    }
+
+    report += "========================================================\n";
+    report += "FIN DE REGISTRO DE ENTIDADES\n";
+
+    var blob = new Blob([report], { type: "text/plain;charset=utf-8" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "SITREP_ENTIDADES_" + new Date().toISOString().slice(0, 10) + ".txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   }
 
   function updateStats() {
@@ -293,5 +459,9 @@
     render: render,
     showDetail: showDetail,
     runBackfill: runBackfill,
+    researchEntityWithAI: researchEntityWithAI,
+    viewEntityInGraph: viewEntityInGraph,
+    exportEntitiesReport: exportEntitiesReport,
+    copyText: copyText,
   };
 })();

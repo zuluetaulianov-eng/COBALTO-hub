@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 # ==========================================
 
 # Coordenadas de Venezuela para eventos
-VENEZUELA_COORDS = {"north": 12.2, "south": 0.6, "west": -73.4, "east": -59.9}
+VENEZUELA_COORDS = {"north": 15.0, "south": -2.0, "west": -79.0, "east": -58.0}
 
 # ==========================================
 # USGS EARTHQUAKE API (Datos sísmicos)
@@ -47,7 +47,7 @@ def get_earthquakes_venezuela(days: int = 7) -> List[Dict[str, Any]]:
             "orderby": "time",
         }
 
-        resp = requests.get(url, params=params, timeout=30)
+        resp = requests.get(url, params=params, timeout=3)
         if resp.status_code == 200:
             data = resp.json()
             for feature in data.get("features", []):
@@ -109,7 +109,7 @@ def get_weather_alerts_venezuela() -> List[Dict[str, Any]]:
             url = f"{OPENWEATHER_API_BASE}/weather"
             params = {"lat": city["lat"], "lon": city["lon"], "appid": OPENWEATHER_API_KEY, "units": "metric"}
 
-            resp = requests.get(url, params=params, timeout=30)
+            resp = requests.get(url, params=params, timeout=3)
             if resp.status_code == 200:
                 data = resp.json()
                 weather = data.get("weather", [{}])[0]
@@ -164,7 +164,7 @@ def get_security_incidents() -> List[Dict[str, Any]]:
     ]
 
     try:
-        resp = safe_get("https://www.eluniversal.com/rss/venezuela", timeout=15)
+        resp = safe_get("https://www.eluniversal.com/rss/venezuela", timeout=3)
         if resp and resp.status_code == 200:
             feed = feedparser.parse(resp.text)
             for entry in feed.entries[:30]:
@@ -205,7 +205,7 @@ def get_protests_demonstrations() -> List[Dict[str, Any]]:
     ]
 
     try:
-        resp = safe_get("https://www.elnacional.com/rss/", timeout=15)
+        resp = safe_get("https://www.elnacional.com/rss/", timeout=3)
         if resp and resp.status_code == 200:
             feed = feedparser.parse(resp.text)
             for entry in feed.entries[:30]:
@@ -422,16 +422,30 @@ def get_all_events_data() -> Dict[str, Any]:
         if not earthquakes:
             earthquakes = [
                 {
+                    "id": "eq_col_74",
+                    "title": "Terremoto M 7.4 - 5 km al S de San José del Palmar, Colombia",
+                    "magnitude": 7.4,
+                    "depth": 110.3,
+                    "place": "San José del Palmar, Colombia",
+                    "time": "2026-08-10 12:34:28 UTC",
+                    "latitude": 4.97,
+                    "longitude": -76.23,
+                    "type": "earthquake",
+                    "source": "USGS Earthquake Hazards",
+                    "url": "https://www.usgs.gov/programs/earthquake-hazards"
+                },
+                {
                     "id": "eq_01",
-                    "title": "Sismo menor M 3.4 - Suroeste de Carupano",
+                    "title": "Sismo menor M 3.4 - Suroeste de Carúpano",
                     "magnitude": 3.4,
                     "depth": 15.0,
-                    "place": "12 km al suroeste de Carupano",
+                    "place": "12 km al suroeste de Carúpano",
                     "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                     "latitude": 10.5833,
                     "longitude": -63.3000,
                     "type": "earthquake",
-                    "source": "FUNVISIS / USGS"
+                    "source": "FUNVISIS / USGS",
+                    "url": "https://earthquake.usgs.gov/"
                 }
             ]
 

@@ -67,10 +67,13 @@ def clean_html(html_content: str) -> str:
     if not html_content:
         return ""
     try:
-        cleaned = cleaner.clean(html_content)
-        return BeautifulSoup(cleaned, "html.parser").get_text()[:300]
+        text = html.unescape(str(html_content))
+        text = re.sub(r'<(br|p|div|/p|/div)[^>]*>', ' ', text, flags=re.IGNORECASE)
+        text = re.sub(r'<[^>]+>', '', text)
+        text = re.sub(r'\s+', ' ', text).strip()
+        return text[:300]
     except Exception:
-        return html_content[:300]
+        return str(html_content)[:300]
 
 
 # ── Gestión de Conexión (Tor + Fallback + TLS Evasion + Proxies) ──

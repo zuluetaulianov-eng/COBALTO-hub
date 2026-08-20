@@ -1,72 +1,240 @@
-﻿            <!-- TAB: CRONOLOGÍA (NUEVO) -->
-            <div id="tab-timeline" class="tab-content" style="padding: 2rem;">
-                <div class="flex-between" style="margin-bottom: 1rem;">
-                    <div>
-                        <h2 class="text-primary font-mono heading-2 flex items-center" style="gap: 0.5rem;">
-                            <span style="font-size: 1.5rem;">⏳</span> MONITOREO LONGITUDINAL (TIMELINE)
-                        </h2>
-                        <p class="text-muted" style="font-size: 0.9rem;">Evolución táctica de operaciones de influencia y matrices de opinión (72h - 7d)</p>
-                    </div>
-                    <button class="btn-export btn-export-ia" onclick="if(window.CobaltoTimeline)CobaltoTimeline.refresh()">
-                        🔄 SINCRONIZAR CRONOLOGÍA
-                    </button>
+<!-- TAB: CENTRO DE COMANDO DE INCIDENTES Y MONITOREO LONGITUDINAL -->
+<div id="tab-timeline" class="tab-content" style="padding: 1.5rem;">
+    <!-- HEADER Y ACCIONES GENERALES -->
+    <div class="flex-between" style="margin-bottom: 1.2rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 class="text-primary font-mono heading-2 flex items-center" style="gap: 0.6rem; margin: 0;">
+                <span style="font-size: 1.6rem;">🛡️</span> CENTRO DE COMANDO DE INCIDENTES & TIMELINE
+            </h2>
+            <p class="text-muted" style="font-size: 0.85rem; margin-top: 0.2rem;">Rastreo táctico de crisis, alertas de alto impacto y evolución longitudinal (72h - 7d)</p>
+        </div>
+        <div class="flex" style="gap: 0.6rem;">
+            <button class="btn-tactical flex items-center" style="gap: 0.4rem; background: rgba(255, 45, 85, 0.15); border: 1px solid #FF2D55; color: #FF2D55; font-family: 'Roboto Mono';" onclick="if(window.CobaltoTimeline)CobaltoTimeline.exportTimelineReport()">
+                <span>📄</span> EXPORTAR AUDITORÍA
+            </button>
+            <button class="btn-tactical btn-tactical-primary flex items-center" style="gap: 0.4rem;" onclick="if(window.CobaltoTimeline)CobaltoTimeline.openNewIncidentModal()">
+                <span>➕</span> REGISTRAR INCIDENTE
+            </button>
+            <button class="btn-export btn-export-ia flex items-center" style="gap: 0.4rem;" onclick="if(window.CobaltoTimeline)CobaltoTimeline.refresh()">
+                <span>🔄</span> SINCRONIZAR
+            </button>
+        </div>
+    </div>
+
+    <!-- TARJETAS METRICAS KPI DE INCIDENTES -->
+    <div class="grid-4 gap-1" style="margin-bottom: 1.5rem;">
+        <div class="panel-glass flex-column justify-center" style="padding: 0.9rem; border-left: 3px solid #ff4444; background: rgba(10, 11, 16, 0.7);">
+            <div class="text-muted font-mono" style="font-size: 0.75rem;">🚨 CRÍTICOS / ABIERTOS</div>
+            <div class="flex-between items-center" style="margin-top: 0.2rem;">
+                <span id="kpi-inc-critical" class="font-mono text-danger" style="font-size: 1.6rem; font-weight: bold;">0</span>
+                <span style="font-size: 1.2rem; opacity: 0.6;">⚠️</span>
+            </div>
+        </div>
+        <div class="panel-glass flex-column justify-center" style="padding: 0.9rem; border-left: 3px solid #00e5ff; background: rgba(10, 11, 16, 0.7);">
+            <div class="text-muted font-mono" style="font-size: 0.75rem;">🇨🇴 TEATRO COLOMBIA</div>
+            <div class="flex-between items-center" style="margin-top: 0.2rem;">
+                <span id="kpi-inc-col" class="font-mono text-primary" style="font-size: 1.6rem; font-weight: bold;">0</span>
+                <span style="font-size: 1.2rem; opacity: 0.6;">🇨🇴</span>
+            </div>
+        </div>
+        <div class="panel-glass flex-column justify-center" style="padding: 0.9rem; border-left: 3px solid #ffaa00; background: rgba(10, 11, 16, 0.7);">
+            <div class="text-muted font-mono" style="font-size: 0.75rem;">🇻🇪 TEATRO VENEZUELA</div>
+            <div class="flex-between items-center" style="margin-top: 0.2rem;">
+                <span id="kpi-inc-ven" class="font-mono" style="color: #ffaa00; font-size: 1.6rem; font-weight: bold;">0</span>
+                <span style="font-size: 1.2rem; opacity: 0.6;">🇻🇪</span>
+            </div>
+        </div>
+        <div class="panel-glass flex-column justify-center" style="padding: 0.9rem; border-left: 3px solid #a855f7; background: rgba(10, 11, 16, 0.7);">
+            <div class="text-muted font-mono" style="font-size: 0.75rem;">⚡ CIB & BOT-STORMS</div>
+            <div class="flex-between items-center" style="margin-top: 0.2rem;">
+                <span id="kpi-inc-cib" class="font-mono" style="color: #a855f7; font-size: 1.6rem; font-weight: bold;">0</span>
+                <span style="font-size: 1.2rem; opacity: 0.6;">📡</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- FILTROS Y BARRA DE BÚSQUEDA -->
+    <div class="panel-tactical" style="padding: 0.8rem 1rem; margin-bottom: 1.5rem;">
+        <div class="flex-between items-center" style="flex-wrap: wrap; gap: 0.8rem;">
+            <!-- CHIPS DE FILTRO -->
+            <div class="flex items-center" style="gap: 0.4rem; flex-wrap: wrap;" id="incident-filter-chips">
+                <button class="config-chip active" data-filter="ALL" onclick="CobaltoTimeline.setFilter('ALL')">🌐 TODOS</button>
+                <button class="config-chip" data-filter="COL" onclick="CobaltoTimeline.setFilter('COL')">🇨🇴 COLOMBIA</button>
+                <button class="config-chip" data-filter="VEN" onclick="CobaltoTimeline.setFilter('VEN')">🇻🇪 VENEZUELA</button>
+                <button class="config-chip" data-filter="FRONTERA" onclick="CobaltoTimeline.setFilter('FRONTERA')">⚔️ FRONTERA</button>
+                <button class="config-chip" data-filter="CRITICAL" onclick="CobaltoTimeline.setFilter('CRITICAL')">🚨 CRÍTICOS</button>
+                <button class="config-chip" data-filter="CIB" onclick="CobaltoTimeline.setFilter('CIB')">⚡ CIB & DESINFORMACIÓN</button>
+            </div>
+
+            <!-- BUSCADOR INTERACTIVO -->
+            <div class="flex items-center" style="gap: 0.5rem; flex: 1; max-width: 320px;">
+                <input type="text" id="incidents-search-input" placeholder="🔍 Buscar vector o incidente..." 
+                       class="form-control font-mono" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; background: rgba(0,0,0,0.4);"
+                       oninput="CobaltoTimeline.searchIncidents(this.value)">
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN PRINCIPAL: MURO DE INCIDENTES & RASTREO CIB -->
+    <div class="grid-2 gap-2" style="margin-bottom: 2rem;">
+        <!-- PANEL IZQUIERDO: MURO DE INCIDENTES TÁCTICOS -->
+        <div class="panel-tactical" style="min-height: 450px;">
+            <div class="flex-between items-center" style="margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.6rem;">
+                <h3 class="panel-title" style="margin: 0; font-size: 1rem;">📋 MURO DE INCIDENTES Y OPERACIONES</h3>
+                <span id="incidents-count-badge" class="font-mono text-muted" style="font-size: 0.75rem;">0 cargados</span>
+            </div>
+            <div id="incidents-feed-container" class="flex-column gap-1" style="max-height: 520px; overflow-y: auto; padding-right: 0.3rem;">
+                <div class="empty-state text-center text-muted" style="padding: 2rem;">
+                    <div class="empty-icon">⏳</div>
+                    <div class="empty-title">CARGANDO MATRIZ DE INCIDENTES...</div>
                 </div>
+            </div>
+        </div>
 
-                <!-- TIMELINE SCRUBBER -->
-                <div class="panel-tactical" style="padding: 1rem; margin-bottom: 1.5rem;">
-                    <div class="flex-between" style="margin-bottom:0.5rem;">
-                        <h3 class="panel-title" style="margin:0;">⏱ REPRODUCTOR DE LÍNEA DE TIEMPO</h3>
-                        <span id="scrubber-timestamp" class="font-mono text-primary" style="font-size:0.85rem;"></span>
-                    </div>
-                    <div style="display:flex; align-items:center; gap:1rem; position:relative;">
-                        <span id="scrubber-label-start" class="font-mono text-muted" style="font-size:0.75rem;"></span>
-                        <output id="scrubber-tooltip"></output>
-                        <input type="range" id="timeline-scrubber" min="0" max="168" value="168" step="1"
-                               style="flex:1; height:6px; -webkit-appearance:none; appearance:none; 
-                                      background:linear-gradient(90deg, #1a1a2e, #00e5ff); 
-                                      border-radius:3px; outline:none; cursor:pointer;">
-                        <span id="scrubber-label-end" class="font-mono text-muted" style="font-size:0.75rem;"></span>
-                    </div>
-                    <div class="flex-between" style="margin-top:0.3rem;">
-                        <div class="flex" style="gap:1rem;">
-                            <span id="scrubber-entries-count" class="font-mono text-muted" style="font-size:0.75rem;">📰 0 entradas</span>
-                            <span id="scrubber-mode" class="font-mono" style="color:#ffaa00; font-size:0.75rem;">🔴 EN VIVO</span>
-                        </div>
-                    </div>
+        <!-- PANEL DERECHO: RASTREO PREDICTIVO CIB Y ESCALADAS -->
+        <div class="flex-column gap-2">
+            <!-- RASTREO CIB -->
+            <div class="panel-tactical" style="max-height: 270px; overflow-y: auto;">
+                <div class="flex-between items-center" style="margin-bottom: 0.6rem;">
+                    <h3 class="panel-title" style="margin:0; font-size: 0.95rem;">📡 CAMPAÑAS COORD. DETECTADAS (CIB)</h3>
+                    <span class="font-mono text-primary" style="font-size: 0.7rem;">DETECCIÓN AUTOMÁTICA</span>
                 </div>
-
-                <div class="grid-2 gap-2" style="margin-bottom: 2rem;">
-                    <!-- Gráfico Sentimiento vs Alertas -->
-                    <div class="panel-tactical" style="grid-column: span 2;">
-                        <h3 class="panel-title">TENDENCIA MACRO: SENTIMIENTO VS. ALERTAS</h3>
-                        <div style="height: 300px; position: relative;">
-                            <canvas id="timeline-chart-macro"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Seguimiento Predictivo de Campañas CIB -->
-                    <div class="panel-tactical" style="max-height: 400px; overflow-y: auto;">
-                        <h3 class="panel-title">📡 RASTREO PREDICTIVO: CAMPAÑAS COORD. (CIB)</h3>
-                        <div id="timeline-cib-container" class="flex-column gap-1">
-                            <div class="empty-state">
-                                <div class="empty-icon">⏳</div>
-                                <div class="empty-title">SIN DATOS CRONOLÓGICOS</div>
-                                <div class="empty-desc">No hay suficiente información histórica para construir una línea de tiempo. Los datos aparecerán automáticamente tras 72h de monitoreo continuo.</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Escalamiento de Alertas Críticas -->
-                    <div class="panel-tactical" style="max-height: 400px; overflow-y: auto;">
-                        <h3 class="panel-title">⚠️ ESCALADAS CRÍTICAS (Últimos 7 días)</h3>
-                        <div id="timeline-alerts-container" class="flex-column gap-1">
-                            <div class="empty-state">
-                                <div class="empty-icon">📊</div>
-                                <div class="empty-title">SIN ALERTAS HISTÓRICAS</div>
-                                <div class="empty-desc">No se han registrado alertas críticas en la ventana de tiempo seleccionada. Las alertas aparecerán a medida que el sistema las detecte.</div>
-                            </div>
-                        </div>
+                <div id="timeline-cib-container" class="flex-column gap-1">
+                    <div class="empty-state text-center text-muted" style="padding: 1rem; font-size: 0.8rem;">
+                        Radar limpio. Sin campañas CIB persistentes detectadas.
                     </div>
                 </div>
             </div>
 
+            <!-- ESCALADAS HISTÓRICAS -->
+            <div class="panel-tactical" style="max-height: 270px; overflow-y: auto;">
+                <div class="flex-between items-center" style="margin-bottom: 0.6rem;">
+                    <h3 class="panel-title" style="margin:0; font-size: 0.95rem;">⚠️ ESCALADAS & ALERTAS DE IMPACTO</h3>
+                    <span class="font-mono text-muted" style="font-size: 0.7rem;">ÚLTIMAS 72H</span>
+                </div>
+                <div id="timeline-alerts-container" class="flex-column gap-1">
+                    <div class="empty-state text-center text-muted" style="padding: 1rem; font-size: 0.8rem;">
+                        Sin alertas críticas registradas.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECCIÓN: REPRODUCTOR HISTÓRICO Y TENDENCIA MACRO -->
+    <div class="panel-tactical" style="padding: 1.2rem; margin-bottom: 1.5rem;">
+        <div class="flex-between items-center" style="margin-bottom: 1rem;">
+            <h3 class="panel-title flex items-center" style="margin: 0; gap: 0.5rem;">
+                <span>⏱️</span> TENDENCIA MACRO & REPRODUCTOR LONGITUDINAL (72H - 168H)
+            </h3>
+            <div class="flex items-center" style="gap: 0.8rem;">
+                <button class="btn-tactical" style="padding: 0.25rem 0.6rem; font-size: 0.75rem;" onclick="if(window.CobaltoTimeline)CobaltoTimeline.exportMacroChartPng()">
+                    🖼️ EXPORTAR GRÁFICO (PNG)
+                </button>
+                <span id="scrubber-timestamp" class="font-mono text-primary" style="font-size: 0.85rem;"></span>
+            </div>
+        </div>
+
+        <!-- SCRUBBER SLIDER -->
+        <div style="display: flex; align-items: center; gap: 1rem; position: relative; margin-bottom: 1rem;">
+            <span id="scrubber-label-start" class="font-mono text-muted" style="font-size: 0.75rem;"></span>
+            <output id="scrubber-tooltip"></output>
+            <input type="range" id="timeline-scrubber" min="0" max="168" value="168" step="1"
+                   style="flex: 1; height: 6px; -webkit-appearance: none; appearance: none; 
+                          background: linear-gradient(90deg, #1a1a2e, #00e5ff); 
+                          border-radius: 3px; outline: none; cursor: pointer;">
+            <span id="scrubber-label-end" class="font-mono text-muted" style="font-size: 0.75rem;"></span>
+        </div>
+        <div class="flex-between" style="margin-bottom: 1.2rem;">
+            <div class="flex" style="gap: 1rem;">
+                <span id="scrubber-entries-count" class="font-mono text-muted" style="font-size: 0.75rem;">📰 0 entradas</span>
+                <span id="scrubber-mode" class="font-mono" style="color: #ffaa00; font-size: 0.75rem;">🔴 EN VIVO</span>
+            </div>
+        </div>
+
+        <!-- GRÁFICO TENDENCIA MACRO -->
+        <div style="height: 280px; position: relative;">
+            <canvas id="timeline-chart-macro"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: REGISTRAR NUEVO INCIDENTE TÁCTICO -->
+<div id="modal-create-incident" class="modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="panel-glass" style="width: 100%; max-width: 540px; padding: 1.5rem; border: 1px solid var(--primary); background: #0a0b10; border-radius: 8px; box-shadow: 0 0 30px rgba(0,229,255,0.2);">
+        <div class="flex-between items-center" style="margin-bottom: 1.2rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.6rem;">
+            <h3 class="font-mono text-primary flex items-center" style="margin: 0; gap: 0.5rem; font-size: 1.1rem;">
+                <span>➕</span> REGISTRAR NUEVO INCIDENTE TÁCTICO
+            </h3>
+            <button onclick="CobaltoTimeline.closeNewIncidentModal()" style="background: none; border: none; color: #888; font-size: 1.4rem; cursor: pointer;">&times;</button>
+        </div>
+
+        <form id="form-create-incident" onsubmit="event.preventDefault(); CobaltoTimeline.submitNewIncident();">
+            <div class="flex-column gap-1" style="margin-bottom: 1rem;">
+                <label class="font-mono text-muted" style="font-size: 0.75rem;">TÍTULO DEL INCIDENTE</label>
+                <input type="text" id="inc-form-title" required class="form-control font-mono" placeholder="Ej: Movilización inusual en Sector La Fría" style="padding: 0.5rem; background: rgba(255,255,255,0.04);">
+            </div>
+
+            <div class="grid-2 gap-1" style="margin-bottom: 1rem;">
+                <div>
+                    <label class="font-mono text-muted" style="font-size: 0.75rem;">TEATRO / ZONA</label>
+                    <select id="inc-form-theater" class="form-control font-mono" style="padding: 0.5rem; background: rgba(255,255,255,0.04);">
+                        <option value="COL">🇨🇴 Colombia (COL)</option>
+                        <option value="VEN">🇻🇪 Venezuela (VEN)</option>
+                        <option value="FRONTERA">⚔️ Frontera (COL-VEN)</option>
+                        <option value="GLOBAL">🌐 Global / Internacional</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="font-mono text-muted" style="font-size: 0.75rem;">CATEGORÍA</label>
+                    <select id="inc-form-category" class="form-control font-mono" style="padding: 0.5rem; background: rgba(255,255,255,0.04);">
+                        <option value="SECURITY">⚔️ Seguridad Táctica</option>
+                        <option value="MILITARY">🛡️ Militar / Defensa</option>
+                        <option value="INFRASTRUCTURE">⚡ Infraestructura Crítica</option>
+                        <option value="CYBER">👾 Ciberataque / Red</option>
+                        <option value="CIB">📡 Operación de Información (CIB)</option>
+                        <option value="PROTEST">📢 Protesta / Disturbio</option>
+                        <option value="WEATHER">🌪️ Contingencia Climática</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid-2 gap-1" style="margin-bottom: 1rem;">
+                <div>
+                    <label class="font-mono text-muted" style="font-size: 0.75rem;">NIVEL DE SEVERIDAD</label>
+                    <select id="inc-form-severity" class="form-control font-mono" style="padding: 0.5rem; background: rgba(255,255,255,0.04);">
+                        <option value="CRITICAL">🚨 CRÍTICO (Alerta Máxima)</option>
+                        <option value="HIGH" selected>⚠️ ALTA (Requiere Atención)</option>
+                        <option value="MEDIUM">🟡 MEDIA (Monitoreo Standard)</option>
+                        <option value="LOW">🟢 BAJA (Informativo)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="font-mono text-muted" style="font-size: 0.75rem;">FUENTE / INFORMANTE</label>
+                    <input type="text" id="inc-form-source" class="form-control font-mono" value="Operador COBALTO" style="padding: 0.5rem; background: rgba(255,255,255,0.04);">
+                </div>
+            </div>
+
+            <div class="grid-2 gap-1" style="margin-bottom: 1rem;">
+                <div>
+                    <label class="font-mono text-muted" style="font-size: 0.75rem;">LATITUD</label>
+                    <input type="number" step="any" id="inc-form-lat" placeholder="Ej: 7.8939" class="form-control font-mono" style="padding: 0.5rem; background: rgba(255,255,255,0.04);">
+                </div>
+                <div>
+                    <label class="font-mono text-muted" style="font-size: 0.75rem;">LONGITUD</label>
+                    <input type="number" step="any" id="inc-form-lng" placeholder="Ej: -72.5078" class="form-control font-mono" style="padding: 0.5rem; background: rgba(255,255,255,0.04);">
+                </div>
+            </div>
+
+            <div class="flex-column gap-1" style="margin-bottom: 1.2rem;">
+                <label class="font-mono text-muted" style="font-size: 0.75rem;">DESCRIPCIÓN / OBSERVACIONES TÁCTICAS</label>
+                <textarea id="inc-form-summary" rows="3" class="form-control font-mono" placeholder="Detalle las observaciones iniciales del incidente..." style="padding: 0.5rem; background: rgba(255,255,255,0.04);"></textarea>
+            </div>
+
+            <div class="flex-between items-center">
+                <button type="button" class="btn-tactical" onclick="CobaltoTimeline.closeNewIncidentModal()">CANCELAR</button>
+                <button type="submit" class="btn-tactical btn-tactical-primary">➕ REGISTRAR INCIDENTE</button>
+            </div>
+        </form>
+    </div>
+</div>

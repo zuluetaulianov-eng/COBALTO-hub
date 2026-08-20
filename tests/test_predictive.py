@@ -134,3 +134,27 @@ def test_region_threat_scoring():
     assert "threat_score" in result
     assert "centroid_lat" in result
     assert result["centroid_lat"] == 10.0
+
+
+def test_early_warning_trend_and_recommendations():
+    from early_warning import EarlyWarningEngine
+    ew = EarlyWarningEngine()
+
+    scores = [
+        {
+            "entity_id": "trend_ent_1",
+            "entity_name": "Infraestructura Crítica IP",
+            "entity_type": "infrastructure:ip",
+            "threat_score": 85,
+            "ofac_match": True,
+            "signals": {"composite": 60, "agent": 70, "exposure": 50, "recency": 90, "severity": 70},
+        }
+    ]
+
+    warnings = ew.evaluate(scores)
+    assert len(warnings) == 1
+    w = warnings[0]
+    assert w["trend"] in ("up", "stable", "down")
+    assert len(w["recommendations"]) > 0
+    assert "Alerta CRITICAL" in w["human_summary"]
+    assert "ofac_high_threat" in w["rules_triggered"]

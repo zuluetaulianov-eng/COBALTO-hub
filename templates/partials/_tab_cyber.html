@@ -1,16 +1,63 @@
-﻿            <!-- TAB: CIBERSEGURIDAD -->
-            <div id="tab-cyber" class="tab-content">
-                <div class="panel-tactical" style="border-color: #00ffaa; margin-bottom: 1.5rem;">
-                    <h2 class="font-mono" style="color:#00ffaa; margin-top:0;">🛡️ Centro de Operaciones Cibernéticas (SOC)</h2>
-                    <p class="text-muted" style="font-size:0.9rem;">Monitoreo en vivo de Infraestructura Crítica, Darknet, Ransomware y Filtraciones de Datos (Pastebin).</p>
-                </div>
-                
-                <div id="cyber-grid" class="news-grid">
-                    <div class="empty-state" id="cyber-empty">
-                        <div class="empty-icon">🛡️</div>
-                        <p style="color:#00ffaa;">CARGANDO ALERTAS CIBERNÉTICAS...</p>
-                        <p style="font-size:0.7rem; color:var(--text-muted); margin-top:1rem;">Sensores: Monitor Cyber Activo · DeepWeb Ransomware Tracker · VenCERT · Pastebin</p>
-                    </div>
-                </div>
+<!-- TAB: CIBERSEGURIDAD / MONITOR DE AMENAZAS -->
+<div id="tab-cyber" class="tab-content">
+    <!-- PANEL CABECERA SOC & KPIs -->
+    <div class="panel-tactical" style="border-color: #00ffaa; margin-bottom: 1.5rem; padding: 1.2rem; background: rgba(10, 11, 16, 0.85);">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem;">
+            <div>
+                <h2 class="font-mono" style="color:#00ffaa; margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.3rem;">
+                    <span>🛡️</span> CENTRO DE OPERACIONES CIBERNÉTICAS (SOC)
+                </h2>
+                <p class="text-muted" style="font-size:0.8rem; margin: 0.2rem 0 0 0;">
+                    Monitoreo en vivo de Infraestructura Crítica, Darknet, Ransomware Trackers, Advisories CERT y Filtraciones de Datos.
+                </p>
             </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button class="btn-tactical" onclick="if(window.CobaltoCore) window.CobaltoCore.renderCyberTab();" style="padding: 6px 12px; font-size: 0.75rem;">
+                    🔄 Sincronizar SOC
+                </button>
+            </div>
+        </div>
 
+        <!-- METRICAS DE AMENAZAS (KPIs) -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 0.8rem; margin-bottom: 1rem;">
+            <div style="background: rgba(0, 255, 170, 0.05); border: 1px solid rgba(0, 255, 170, 0.2); border-radius: 6px; padding: 0.6rem 0.8rem;">
+                <div style="font-size: 0.65rem; color: #888; font-family: monospace; text-transform: uppercase;">Alertas SOC Totales</div>
+                <div id="cyber-kpi-total" style="font-size: 1.4rem; font-weight: 800; color: #00ffaa; font-family: monospace;">0</div>
+            </div>
+            <div style="background: rgba(255, 68, 68, 0.05); border: 1px solid rgba(255, 68, 68, 0.2); border-radius: 6px; padding: 0.6rem 0.8rem;">
+                <div style="font-size: 0.65rem; color: #888; font-family: monospace; text-transform: uppercase;">Ransomware & Zero-Day</div>
+                <div id="cyber-kpi-ransomware" style="font-size: 1.4rem; font-weight: 800; color: #ff4444; font-family: monospace;">0</div>
+            </div>
+            <div style="background: rgba(255, 170, 0, 0.05); border: 1px solid rgba(255, 170, 0, 0.2); border-radius: 6px; padding: 0.6rem 0.8rem;">
+                <div style="font-size: 0.65rem; color: #888; font-family: monospace; text-transform: uppercase;">Darknet & Dumps</div>
+                <div id="cyber-kpi-darknet" style="font-size: 1.4rem; font-weight: 800; color: #ffaa00; font-family: monospace;">0</div>
+            </div>
+            <div style="background: rgba(68, 170, 238, 0.05); border: 1px solid rgba(68, 170, 238, 0.2); border-radius: 6px; padding: 0.6rem 0.8rem;">
+                <div style="font-size: 0.65rem; color: #888; font-family: monospace; text-transform: uppercase;">Sensores VenCERT</div>
+                <div id="cyber-kpi-vencert" style="font-size: 1.4rem; font-weight: 800; color: #44aaee; font-family: monospace;">0</div>
+            </div>
+        </div>
+
+        <!-- BARRA DE FILTROS Y BÚSQUEDA -->
+        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; align-items: center; justify-content: space-between;">
+            <div style="display: flex; gap: 0.4rem; flex-wrap: wrap;">
+                <button class="btn-tactical btn-cyber-filter active" onclick="if(window.CobaltoCore) window.CobaltoCore.filterCyber('ALL', this);" style="padding: 4px 10px; font-size: 0.72rem;">🌐 TODAS</button>
+                <button class="btn-tactical btn-cyber-filter" onclick="if(window.CobaltoCore) window.CobaltoCore.filterCyber('CRITICAL', this);" style="padding: 4px 10px; font-size: 0.72rem; color: #ff4444; border-color: rgba(255,68,68,0.3);">☣️ RANSOMWARE</button>
+                <button class="btn-tactical btn-cyber-filter" onclick="if(window.CobaltoCore) window.CobaltoCore.filterCyber('DARKNET', this);" style="padding: 4px 10px; font-size: 0.72rem; color: #ffaa00; border-color: rgba(255,170,0,0.3);">🔓 DARKNET / LEAKS</button>
+                <button class="btn-tactical btn-cyber-filter" onclick="if(window.CobaltoCore) window.CobaltoCore.filterCyber('VENCERT', this);" style="padding: 4px 10px; font-size: 0.72rem; color: #44aaee; border-color: rgba(68,170,238,0.3);">🛡️ CERT ADVISORIES</button>
+            </div>
+            <div style="position: relative; flex-grow: 1; max-width: 320px;">
+                <input type="text" id="cyber-search-input" placeholder="🔍 Buscar por CVE, IP, malware..." onkeyup="if(window.CobaltoCore) window.CobaltoCore.searchCyber(this.value);" style="width: 100%; background: #0A0B10; border: 1px solid rgba(0, 255, 170, 0.3); border-radius: 4px; padding: 4px 8px; color: #00ffaa; font-size: 0.75rem; font-family: monospace;">
+            </div>
+        </div>
+    </div>
+
+    <!-- REJILLA DE TARJETAS DE AMENAZAS -->
+    <div id="cyber-grid" class="news-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 1rem;">
+        <div class="empty-state" id="cyber-empty">
+            <div class="empty-icon">🛡️</div>
+            <p style="color:#00ffaa;">CARGANDO ALERTAS CIBERNÉTICAS...</p>
+            <p style="font-size:0.7rem; color:var(--text-muted); margin-top:1rem;">Sensores: Monitor Cyber Activo · DeepWeb Ransomware Tracker · VenCERT · Pastebin</p>
+        </div>
+    </div>
+</div>
