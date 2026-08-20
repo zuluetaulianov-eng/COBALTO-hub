@@ -1,9 +1,9 @@
-﻿            <!-- TAB: NEWS -->
+            <!-- TAB: NEWS -->
             <div id="tab-news" class="tab-content active">
                 {% if all_entries %}
                 <div class="news-grid" id="news-grid">
                     {% for item in all_entries[:30] %}
-                    <div class="news-card" data-title="{{ item.title|lower }}" data-summary="{{ item.summary|lower }}">
+                    <div class="news-card" data-title="{{ item.title|lower }}" data-summary="{{ item.summary|lower }}" data-country="{% if item.country_tags %}{{ item.country_tags|join(' ') }}{% else %}GLOBAL{% endif %}">
                         <div class="news-header">
                             <span class="news-source">{{ item.source }}</span>
                             <span class="news-time">{{ item.published }}</span>

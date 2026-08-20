@@ -288,32 +288,32 @@
                 <div id="config-form-container" class="config-dashboard-layout">
                     <!-- Subtab Sidebar -->
                     <div class="config-subnav">
-                        <button data-subtab="subtab-rss" class="config-subtab-btn active">
+                        <button data-subtab="subtab-rss" class="config-subtab-btn active" onclick="if(window.CobaltoConfig)CobaltoConfig.switchSubTab('subtab-rss', this)">
                             <span>📡</span> RSS &amp; Telegram
                         </button>
-                        <button data-subtab="subtab-filters" class="config-subtab-btn">
+                        <button data-subtab="subtab-filters" class="config-subtab-btn" onclick="if(window.CobaltoConfig)CobaltoConfig.switchSubTab('subtab-filters', this)">
                             <span>🎯</span> Palabras Clave & Targets
                         </button>
-                        <button data-subtab="subtab-network" class="config-subtab-btn">
+                        <button data-subtab="subtab-network" class="config-subtab-btn" onclick="if(window.CobaltoConfig)CobaltoConfig.switchSubTab('subtab-network', this)">
                             <span>🔌</span> Conectividad & Tiempos
                         </button>
 
-                        <button data-subtab="subtab-advanced" class="config-subtab-btn">
+                        <button data-subtab="subtab-advanced" class="config-subtab-btn" onclick="if(window.CobaltoConfig)CobaltoConfig.switchSubTab('subtab-advanced', this)">
                             <span>⚙️</span> Inteligencia & LLMs
                         </button>
-                        <button data-subtab="subtab-sentimiento" class="config-subtab-btn">
+                        <button data-subtab="subtab-sentimiento" class="config-subtab-btn" onclick="if(window.CobaltoConfig)CobaltoConfig.switchSubTab('subtab-sentimiento', this)">
                             <span>🧠</span> Análisis Sentimiento
                         </button>
-                        <button data-subtab="subtab-c4i" class="config-subtab-btn">
+                        <button data-subtab="subtab-c4i" class="config-subtab-btn" onclick="if(window.CobaltoConfig)CobaltoConfig.switchSubTab('subtab-c4i', this)">
                             <span>🎛️</span> Centro Mando C4i
                         </button>
-                        <button data-subtab="subtab-tokens" class="config-subtab-btn">
+                        <button data-subtab="subtab-tokens" class="config-subtab-btn" onclick="if(window.CobaltoConfig)CobaltoConfig.switchSubTab('subtab-tokens', this)">
                             <span>🔑</span> Tokens & API Keys
                         </button>
-                        <button data-subtab="subtab-assets" class="config-subtab-btn">
+                        <button data-subtab="subtab-assets" class="config-subtab-btn" onclick="if(window.CobaltoConfig)CobaltoConfig.switchSubTab('subtab-assets', this)">
                             <span>🛩️</span> Rastreo Assets
                         </button>
-                        <button data-subtab="subtab-osiris" class="config-subtab-btn">
+                        <button data-subtab="subtab-osiris" class="config-subtab-btn" onclick="if(window.CobaltoConfig)CobaltoConfig.switchSubTab('subtab-osiris', this)">
                             <span>🛰️</span> OSIRIS Engine
                         </button>
                     </div>
@@ -1253,6 +1253,9 @@
                                     <tbody id="vessels-table-body"></tbody>
                                 </table>
                             </div>
+                        </div>
+
+                        <!-- SUBTAB: OSIRIS ENGINE -->
                         <div id="subtab-osiris" class="config-subtab-content">
                             <div class="config-section-title">🛰️ OSIRIS ENGINE — MÓDULOS</div>
                             <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Habilita o deshabilita módulos de OSIRIS Global Intel. Los cambios requieren recargar la pestaña OSIRIS.</p>

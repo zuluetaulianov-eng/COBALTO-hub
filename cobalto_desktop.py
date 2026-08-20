@@ -192,7 +192,99 @@ def launch_desktop(with_worker=True, dev_mode=False):
             time.sleep(1)
 
     target_url = f"http://127.0.0.1:{PORT}" if HOST in ("0.0.0.0", "127.0.0.1") else f"http://{HOST}:{PORT}"
-    _launch_qt_window(target_url)
+    _launch_tray_app(target_url)
+
+
+def launch_app_mode_window(url: str):
+    """
+    Lanza la consola táctica COBALTO en modo aplicación independiente (sin barra de navegador/pestañas)
+    utilizando MS Edge o Google Chrome nativos de Windows.
+    """
+    import shutil
+    import subprocess
+
+    edge_paths = [
+        r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+        r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+        shutil.which("msedge")
+    ]
+    for path in edge_paths:
+        if path and os.path.exists(path):
+            try:
+                return subprocess.Popen([path, f"--app={url}", "--name=CobaltoHUB"])
+            except Exception:
+                pass
+
+    chrome_paths = [
+        r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+        r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        shutil.which("chrome")
+    ]
+    for path in chrome_paths:
+        if path and os.path.exists(path):
+            try:
+                return subprocess.Popen([path, f"--app={url}", "--name=CobaltoHUB"])
+            except Exception:
+                pass
+
+    webbrowser.open(url)
+    return None
+
+
+def _launch_tray_app(url: str):
+    """
+    Lanza el icono en la bandeja del sistema (System Tray) con pystray y la ventana GUI en App Mode.
+    Si se cierra la ventana, los servicios backend continúan operando silenciosamente.
+    """
+    try:
+        import pystray
+        from PIL import Image
+    except ImportError:
+        _launch_qt_window(url)
+        return
+
+    icon_path = BUNDLE_DIR / "static" / "icons" / "icon-512.png"
+    if not icon_path.exists():
+        icon_path = BUNDLE_DIR / "static" / "icons" / "cobalto.ico"
+
+    try:
+        pil_image = Image.open(str(icon_path))
+    except Exception:
+        pil_image = Image.new('RGB', (64, 64), color=(0, 229, 255))
+
+    current_proc = [None]
+
+    def open_app_mode(icon=None, item=None):
+        if current_proc[0] is None or current_proc[0].poll() is not None:
+            current_proc[0] = launch_app_mode_window(url)
+
+    def open_in_browser(icon=None, item=None):
+        webbrowser.open(url)
+
+    def quit_service(icon=None, item=None):
+        if current_proc[0] and current_proc[0].poll() is None:
+            try:
+                current_proc[0].terminate()
+            except Exception:
+                pass
+        icon.stop()
+        os._exit(0)
+
+    menu = pystray.Menu(
+        pystray.MenuItem("🖥️  Abrir Consola C4I (App Mode)", open_app_mode, default=True),
+        pystray.MenuItem("🌐  Abrir en Navegador Web", open_in_browser),
+        pystray.Menu.SEPARATOR,
+        pystray.MenuItem("🛑  Detener Servicio y Salir", quit_service)
+    )
+
+    icon = pystray.Icon("COBALTO_HUB", pil_image, "COBALTO HUB v9.1 — Servicio Activo", menu)
+
+    # Abrir ventana de consola inmediatamente
+    open_app_mode()
+
+    print(" [OK] Servicio en bandeja de sistema activo.")
+    print(" [OK] Consola táctica iniciada en modo aplicación independiente.")
+    icon.run()
 
 
 def _launch_qt_window(url: str):

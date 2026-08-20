@@ -1,0 +1,26 @@
+{
+  "code": "GLOBAL",
+  "name": "Global / Internacional",
+  "flag": "🌐",
+  "enabled": true,
+  "description": "Monitoreo geoestratégico global y noticias de seguridad internacional",
+  "geo_center": [7.0, -68.0],
+  "default_zoom": 4,
+  "domains": [
+    "reuters.com",
+    "bbc.com",
+    "apnews.com",
+    "dw.com",
+    "cnn.com",
+    "insightcrime.org"
+  ],
+  "target_users": [
+    "InSightCrime",
+    "UN_Spokesperson"
+  ],
+  "seismic_geofence": {
+    "lat": 8.0,
+    "lon": -68.0,
+    "max_distance_km": 1500
+  }
+}

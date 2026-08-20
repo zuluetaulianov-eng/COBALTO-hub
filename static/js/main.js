@@ -14,6 +14,35 @@ function renderAgentCard(agent, esc) {
         '</div>';
 }
 
+window.currentTheater = 'ALL';
+window.switchTheater = function(code) {
+    window.currentTheater = code || 'ALL';
+    console.log('[THEATER] Switched operational theater to:', window.currentTheater);
+
+    var badge = document.getElementById('theater-active-badge');
+    if (badge) badge.textContent = window.currentTheater;
+
+    if (window.UnifiedMap && window.UnifiedMap.state && window.UnifiedMap.state.map) {
+        if (window.currentTheater === 'COL') {
+            window.UnifiedMap.state.map.flyTo([6.5, -70.0], 5);
+        } else if (window.currentTheater === 'VEN') {
+            window.UnifiedMap.state.map.flyTo([7.5, -66.5], 6);
+        } else if (window.currentTheater === 'GLOBAL') {
+            window.UnifiedMap.state.map.flyTo([7.0, -68.0], 4);
+        }
+    }
+
+    var cards = document.querySelectorAll('.news-card, .intel-card');
+    cards.forEach(function(card) {
+        var tags = (card.getAttribute('data-country') || '').toUpperCase();
+        if (window.currentTheater === 'ALL' || !tags || tags.includes(window.currentTheater) || tags.includes('GLOBAL')) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+};
+
 window.CobaltoCore = {
     state: {
         ws: null,
@@ -233,9 +262,11 @@ window.CobaltoCore = {
 
         document.querySelectorAll('.config-subtab-btn').forEach(function(btn) {
             var subtab = btn.getAttribute('data-subtab');
-            if (subtab && window.CobaltoConfig) {
+            if (subtab) {
                 btn.addEventListener('click', function() {
-                    CobaltoConfig.switchSubTab(subtab, btn);
+                    if (window.CobaltoConfig) {
+                        CobaltoConfig.switchSubTab(subtab, btn);
+                    }
                 });
             }
         });

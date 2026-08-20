@@ -16,11 +16,11 @@ _SEEN_CACHE = None
 
 
 def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
-    R = 6371.0
+    r_earth = 6371.0
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
     a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2) ** 2
-    return R * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return r_earth * 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
 
 
 def _init_seismic_table():
@@ -93,7 +93,7 @@ def get_seismic_data() -> Dict[str, Any]:
 
     target_lat = getattr(config, "SEISMIC_TARGET_LAT", 10.4806)
     target_lon = getattr(config, "SEISMIC_TARGET_LON", -66.9036)
-    max_distance = getattr(config, "SEISMIC_MAX_DISTANCE_KM", 400)
+    max_distance = getattr(config, "SEISMIC_MAX_DISTANCE_KM", 600)
     min_magnitude = getattr(config, "SEISMIC_MIN_MAGNITUDE", 3.5)
 
     earthquakes = []
@@ -106,6 +106,20 @@ def get_seismic_data() -> Dict[str, Any]:
     except Exception as e:
         logger.warning(f"[SEISMIC] USGS request failed: {e}")
         return {"earthquakes": [], "count": 0, "timestamp": datetime.now().isoformat()}
+
+    # Geocercas multipaís activas
+    geofences = []
+    try:
+        import theaters_config
+        for code, t in theaters_config.get_active_theaters().items():
+            gf = t.get("seismic_geofence")
+            if gf and "lat" in gf and "lon" in gf:
+                geofences.append((code, gf["lat"], gf["lon"], gf.get("max_distance_km", max_distance)))
+    except Exception:
+        pass
+
+    if not geofences:
+        geofences.append(("DEFAULT", target_lat, target_lon, max_distance))
 
     now_ts = datetime.now().isoformat()
 
@@ -125,8 +139,16 @@ def get_seismic_data() -> Dict[str, Any]:
             _mark_event_processed(event_id, mag, props.get("place", "Unknown"), coords[1], coords[0])
             continue
 
-        dist = _haversine_km(target_lat, target_lon, coords[1], coords[0])
-        if dist > max_distance:
+        # Verificar cercanía a cualquiera de las geocercas activas
+        matched_theater = None
+        min_dist = float("inf")
+        for t_code, t_lat, t_lon, t_max in geofences:
+            d = _haversine_km(t_lat, t_lon, coords[1], coords[0])
+            if d <= t_max and d < min_dist:
+                min_dist = d
+                matched_theater = t_code
+
+        if not matched_theater:
             _mark_event_processed(event_id, mag, props.get("place", "Unknown"), coords[1], coords[0])
             continue
 
@@ -138,7 +160,7 @@ def get_seismic_data() -> Dict[str, Any]:
             "depth": round(props.get("depth", 0), 1),
             "latitude": coords[1],
             "longitude": coords[0],
-            "distance_km": round(dist, 1),
+            "distance_km": round(min_dist, 1),
             "type": "earthquake",
             "alert": props.get("alert"),
             "tsunami": props.get("tsunami", 0),

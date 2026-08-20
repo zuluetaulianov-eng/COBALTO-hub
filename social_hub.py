@@ -83,6 +83,17 @@ _session.headers.update(scraper.get_headers())
 def safe_get(url: str, timeout: int = 12) -> Optional[requests.Response]:
     """Conexión inteligente usando TLS manager rotativo, proxies residenciales y Tor."""
     domain = url.split("/")[2] if "://" in url else url
+    
+    if "reddit.com" in domain:
+        headers = {"User-Agent": "cobalto-hub:v9.0 (by /u/cobaltouser)"}
+        try:
+            resp = _session.get(url, headers=headers, timeout=timeout)
+            if resp.status_code == 200 and resp.content:
+                return resp
+        except Exception:
+            pass
+
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"}
 
     # 1. Si el dominio bloquea Tor (Reddit, Telegram, etc.)
     if any(b in domain for b in TOR_BLOCKS):
@@ -92,12 +103,12 @@ def safe_get(url: str, timeout: int = 12) -> Optional[requests.Response]:
             proxies = {"http": proxy_url, "https": proxy_url}
 
         # Usar tls_manager para evitar TLS fingerprinting
-        resp = tls_manager.request("GET", url, platform="social_hub", proxies=proxies, timeout=timeout)
-        if resp is not None:
+        resp = tls_manager.request("GET", url, platform="social_hub", headers=headers, proxies=proxies, timeout=timeout)
+        if resp is not None and getattr(resp, "status_code", 0) == 200:
             return resp
         # Fallback a session directa
         try:
-            return _session.get(url, proxies=proxies, timeout=timeout)
+            return _session.get(url, headers=headers, proxies=proxies, timeout=timeout)
         except Exception:
             return None
 
@@ -120,18 +131,18 @@ def safe_get(url: str, timeout: int = 12) -> Optional[requests.Response]:
     if tor_port:
         proxies = {"http": f"socks5h://127.0.0.1:{tor_port}", "https": f"socks5h://127.0.0.1:{tor_port}"}
         try:
-            resp = tls_manager.request("GET", url, platform="social_hub", proxies=proxies, timeout=timeout + 5)
-            if resp is not None:
+            resp = tls_manager.request("GET", url, platform="social_hub", headers=headers, proxies=proxies, timeout=timeout + 5)
+            if resp is not None and getattr(resp, "status_code", 0) == 200:
                 return resp
         except Exception:
             pass
 
     # 3. Fallback final usando TLS manager o sesión directa
-    resp = tls_manager.request("GET", url, platform="social_hub", timeout=timeout)
-    if resp is not None:
+    resp = tls_manager.request("GET", url, platform="social_hub", headers=headers, timeout=timeout)
+    if resp is not None and getattr(resp, "status_code", 0) == 200:
         return resp
     try:
-        return _session.get(url, timeout=timeout)
+        return _session.get(url, headers=headers, timeout=timeout)
     except Exception:
         return None
 

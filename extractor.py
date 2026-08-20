@@ -450,6 +450,12 @@ async def parse_single_feed_async(session, source, url, retry_count=0, problem_i
                 # Offload de parsing de imágenes (BeautifulSoup) a hilo separado
                 image_url = await asyncio.to_thread(extract_featured_image, entry, url)
 
+                try:
+                    import theaters_config
+                    c_tags = theaters_config.detect_country_tags(text=text, domain=url, source=source)
+                except Exception:
+                    c_tags = ["GLOBAL"]
+
                 entries.append(
                     {
                         "title": title,
@@ -462,6 +468,7 @@ async def parse_single_feed_async(session, source, url, retry_count=0, problem_i
                         "source": source,
                         "type": "external",
                         "priority": is_priority,
+                        "country_tags": c_tags,
                     }
                 )
 

@@ -1,0 +1,41 @@
+{
+  "code": "COL",
+  "name": "Colombia",
+  "flag": "🇨🇴",
+  "enabled": true,
+  "description": "Monitoreo del conflicto armado, seguridad regional y transición política en Colombia",
+  "geo_center": [6.5, -70.0],
+  "default_zoom": 5,
+  "domains": [
+    "vanguardia.com",
+    "elpais.com.co",
+    "lafm.com.co",
+    "bluradio.com",
+    "cambiocolombia.com",
+    "verdadabierta.com",
+    "pares.com.co",
+    "france24.com",
+    "eltiempo.com",
+    "elespectador.com",
+    "semana.com",
+    "noticias.caracoltv.com",
+    "noticiasrcn.com",
+    "elheraldo.co",
+    "elcolombiano.com",
+    "lasillavacia.com"
+  ],
+  "target_users": [
+    "ArielAvilaAnaliza",
+    "LeonVaLenciaA",
+    "FIP_Col",
+    "Indepaz",
+    "DanielMejiaL",
+    "lasillavacia",
+    "DefensoriaCol"
+  ],
+  "seismic_geofence": {
+    "lat": 4.711,
+    "lon": -74.0721,
+    "max_distance_km": 600
+  }
+}

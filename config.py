@@ -75,6 +75,29 @@ RSS_FEEDS = {
     "Caribbean News Global": "https://caribbeannewsglobal.com/feed/",
     "Jamaica Gleaner": "https://jamaica-gleaner.com/feed/news.xml",
     "O Globo (Brasil)": "https://oglobo.globo.com/rss/oglobo",
+    # Colombia - Medios Nacionales y de Investigación
+    "El Tiempo (Colombia)": "https://www.eltiempo.com/rss/colombia.xml",
+    "El Espectador": "https://www.elespectador.com/arc/outboundfeeds/rss/",
+    "Revista Semana": "https://www.semana.com/arc/outboundfeeds/rss/",
+    "Caracol Radio": "https://caracol.com.co/rss/",
+    "RCN Radio": "https://www.rcnradio.com/rss",
+    "Noticias Caracol": "https://noticias.caracoltv.com/rss.xml",
+    "La Silla Vacía": "https://www.lasillavacia.com/feed/",
+    "La República": "https://www.larepublica.co/rss",
+    "Portafolio": "https://www.portafolio.co/rss",
+    "La Opinión (Cúcuta)": "https://www.laopinion.com.co/rss.xml",
+    "El Heraldo": "https://www.elheraldo.co/rss.xml",
+    "El Colombiano": "https://www.elcolombiano.com/rss",
+    "Cuestión Pública": "https://cuestionpublica.com/feed/",
+    "W Radio Colombia": "https://www.wradio.com.co/rss/",
+    "Vanguardia Liberal": "https://www.vanguardia.com/rss/colombia.xml",
+    "El País (Cali)": "https://www.elpais.com.co/rss",
+    "La FM": "https://www.lafm.com.co/rss",
+    "Blu Radio": "https://www.bluradio.com/rss",
+    "Cambio Colombia": "https://cambiocolombia.com/feed/",
+    "Verdad Abierta": "https://verdadabierta.com/feed/",
+    "Fundación Pares": "https://pares.com.co/feed/",
+    "France 24 Colombia": "https://www.france24.com/es/am%C3%A9rica-latina/colombia/rss",
     # Tech en Español
     "Apuntes de Seguridad": "https://www.apuntesdeseguridad.com/feed/",
 }
@@ -83,6 +106,9 @@ RSS_FEEDS = {
 TELEGRAM_SOURCES = {
     "Venevisión": "https://t.me/s/noticierovenevision",
     "Noticias Caracol": "https://t.me/s/NoticiasCaracol",
+    "El Tiempo Colombia": "https://t.me/s/ElTiempoColombia",
+    "Revista Semana": "https://t.me/s/RevistaSemana",
+    "Noticias RCN": "https://t.me/s/NoticiasRCN",
 }
 
 # ── Fuentes Prioritarias (para carga rápida inicial) ──
@@ -161,6 +187,17 @@ TARGET_USERS = [
     "TeamHDP",  # Grupo Hacker Team HDP
     "AnonymousVene",  # Anonymous Venezuela
     "CyberHuntersVen",  # Rastreadores cibernéticos locales
+    "infopresidencia",  # Presidencia de Colombia
+    "FuerzasMilCol",  # Fuerzas Militares de Colombia
+    "PoliciaColombia",  # Policía Nacional Colombia
+    "mindefensa",  # Ministerio de Defensa Colombia
+    "ArielAvilaAnaliza",  # Senador / Analista Conflicto
+    "LeonVaLenciaA",  # Dir. Fundación Pares
+    "FIP_Col",  # Fundación Ideas para la Paz
+    "Indepaz",  # Indepaz Colombia
+    "DanielMejiaL",  # Analista Seguridad
+    "lasillavacia",  # La Silla Vacía
+    "DefensoriaCol",  # Defensoría del Pueblo
 ]
 
 # ── Feeds con problemas conocidos ──
@@ -213,6 +250,90 @@ PROBLEM_FEEDS = {
 
 # ── Palabras clave refinadas ──
 KEYWORDS = [
+    # Colombia / Conflicto / Transición / Seguridad / Cobertura Binacional
+    "colombia",
+    "cúcuta",
+    "arauca",
+    "norte de santander",
+    "catatumbo",
+    "cauca",
+    "nariño",
+    "chocó",
+    "putumayo",
+    "guaviare",
+    "meta",
+    "maicao",
+    "tibú",
+    "tumaco",
+    "san vicente del caguán",
+    "bajo cauca",
+    "magdalena medio",
+    "sur de bolívar",
+    "eln",
+    "ejército de liberación nacional",
+    "calarcá",
+    "antonio garcía",
+    "estado mayor central",
+    "emc",
+    "segunda marquetalia",
+    "clan del golfo",
+    "agc",
+    "autodefensas gaitanistas",
+    "disidencias farc",
+    "farc-ep",
+    "comandos de la frontera",
+    "los pachencas",
+    "frente carlos patiño",
+    "frente 33",
+    "frente adán izquierdo",
+    "paz total",
+    "petro",
+    "abelardo de la espriella",
+    "adle",
+    "iván cepeda",
+    "josé manuel restrepo",
+    "honorio miguel henríquez",
+    "cantón militar pichincha",
+    "ataque armado",
+    "atentado",
+    "masacre",
+    "combate",
+    "enfrentamiento armado",
+    "toma guerrillera",
+    "secuestro",
+    "extorsión",
+    "desplazamiento forzado",
+    "minas antipersona",
+    "artefacto explosivo",
+    "hostigamiento armado",
+    "asesinato selectivo",
+    "líder social asesinado",
+    "ataque a oleoducto",
+    "incursión armada",
+    "confinamiento",
+    "mesa de negociación eln",
+    "curules de paz",
+    "circunscripciones especiales",
+    "acuerdo de paz 2016",
+    "jep",
+    "jurisdicción especial para la paz",
+    "ruptura de negociaciones",
+    "cese al fuego",
+    "listado narcoterroristas",
+    "mega cárceles",
+    "caño limón",
+    "oleoducto",
+    "ecopetrol",
+    "fedegán",
+    "andi",
+    "cultivos de coca",
+    "erradicación forzada",
+    "minería ilegal",
+    "organismos de verificación",
+    "cicr colombia",
+    "defensoría del pueblo",
+    "acnur colombia",
+    "human rights watch colombia",
     # Venezuela política/economía/sociedad
     "dolar",
     "dólar",
@@ -386,7 +507,10 @@ ALERT_CRITICAL_KEYWORDS = [
     "toque de queda", "ley marcial", "golpe de estado", "golpe militar", "evacuación diplomática",
     "cierre de fronteras", "restricción de espacio aéreo", "muertos", "fallecidos", "masacre",
     "ejecución", "bomba", "atentado", "explosión", "0-day", "zero-day", "vulnerabilidad crítica",
-    "ransomware", "shell upload", "admin access"
+    "ransomware", "shell upload", "admin access",
+    "toma guerrillera", "ataque a oleoducto", "confinamiento", "hostigamiento armado",
+    "líder social asesinado", "desplazamiento forzado", "incursión armada", "paro armado",
+    "ataque a estación de policía", "bombardeo", "minas antipersona"
 ]
 ALERT_URGENT_KEYWORDS = [
     "decreto presidencial", "providencia administrativa", "expropiación", "intervención",
@@ -396,7 +520,10 @@ ALERT_URGENT_KEYWORDS = [
     "sanciones ofac", "embargo comercial", "congelación de activos", "lista negra", "evasión de sanciones",
     "data breach", "exfiltración", "ataque ddos", "leak", "database dump", "credenciales expuestas",
     "protestas", "manifestación", "represión", "gas lacrimógeno", "incendio forestal", "anomalía térmica",
-    "fuego masivo", "punto de calor"
+    "fuego masivo", "punto de calor",
+    "paz total", "mesa de negociación eln", "cese al fuego", "segunda marquetalia",
+    "clan del golfo", "estado mayor central", "calarcá", "antonio garcía",
+    "caño limón", "cierre jep", "listado narcoterroristas", "adle"
 ]
 
 # ── Configuración de Análisis de Sentimiento ──
@@ -623,6 +750,29 @@ ALLOWED_DOMAINS = {
     # Análisis
     "insightcrime.org",
     "venezuelanalysis.com",
+    # Colombia / Frontera
+    "eltiempo.com",
+    "elespectador.com",
+    "semana.com",
+    "caracol.com.co",
+    "rcnradio.com",
+    "caracoltv.com",
+    "lasillavacia.com",
+    "larepublica.co",
+    "portafolio.co",
+    "laopinion.com.co",
+    "elheraldo.co",
+    "elcolombiano.com",
+    "cuestionpublica.com",
+    "wradio.com.co",
+    "rtvcnoticias.com",
+    "vanguardia.com",
+    "elpais.com.co",
+    "lafm.com.co",
+    "bluradio.com",
+    "cambiocolombia.com",
+    "verdadabierta.com",
+    "pares.com.co",
     # Energía
     "energialatina.com",
 }
@@ -913,11 +1063,16 @@ def load_dynamic_config():
             ASN_DROP_THRESHOLD = float(data["ASN_DROP_THRESHOLD"])
 
         # ── OSIRIS Engine dynamic config ──
-        if "OSIRIS_RECON_ENABLED" in data: OSIRIS_RECON_ENABLED = bool(data["OSIRIS_RECON_ENABLED"])
-        if "OSIRIS_INTEL_ENABLED" in data: OSIRIS_INTEL_ENABLED = bool(data["OSIRIS_INTEL_ENABLED"])
-        if "OSIRIS_MAP_ENABLED" in data: OSIRIS_MAP_ENABLED = bool(data["OSIRIS_MAP_ENABLED"])
-        if "OSIRIS_CCTV_ENABLED" in data: OSIRIS_CCTV_ENABLED = bool(data["OSIRIS_CCTV_ENABLED"])
-        if "OSIRIS_FEED_ENABLED" in data: OSIRIS_FEED_ENABLED = bool(data["OSIRIS_FEED_ENABLED"])
+        if "OSIRIS_RECON_ENABLED" in data:
+            OSIRIS_RECON_ENABLED = bool(data["OSIRIS_RECON_ENABLED"])
+        if "OSIRIS_INTEL_ENABLED" in data:
+            OSIRIS_INTEL_ENABLED = bool(data["OSIRIS_INTEL_ENABLED"])
+        if "OSIRIS_MAP_ENABLED" in data:
+            OSIRIS_MAP_ENABLED = bool(data["OSIRIS_MAP_ENABLED"])
+        if "OSIRIS_CCTV_ENABLED" in data:
+            OSIRIS_CCTV_ENABLED = bool(data["OSIRIS_CCTV_ENABLED"])
+        if "OSIRIS_FEED_ENABLED" in data:
+            OSIRIS_FEED_ENABLED = bool(data["OSIRIS_FEED_ENABLED"])
         if "OSIRIS_SANCTIONS_REFRESH_HOURS" in data:
             OSIRIS_SANCTIONS_REFRESH_HOURS = int(data["OSIRIS_SANCTIONS_REFRESH_HOURS"])
         if "OSIRIS_CCTV_INTERVAL_SEC" in data:

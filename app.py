@@ -2187,6 +2187,13 @@ async def health_sources():
     return get_feeds_health()
 
 
+@app.get("/api/theaters")
+async def get_theaters_api():
+    """Retorna la lista de teatros/vectores regionales de inteligencia activos."""
+    import theaters_config
+    return JSONResponse(theaters_config.get_active_theaters())
+
+
 @app.post("/api/extractor/run")
 async def trigger_extractor_run():
     """Ejecuta el ciclo de extracción manual de noticias e inteligencia en segundo plano."""

@@ -50,7 +50,7 @@ window.UnifiedMap = {
         this.state.map = L.map('unified-map-container', {
             zoomControl: true,
             attributionControl: true,
-        }).setView([7.0, -66.0], 4);
+        }).setView([6.5, -70.0], 5);
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
             maxZoom: 19,

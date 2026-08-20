@@ -7,6 +7,20 @@
                 <button id="sidebar-collapse-btn" class="btn-icon" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); color: var(--primary); font-size: 1rem; border: 1px solid rgba(0, 229, 255, 0.2); background: rgba(10, 11, 16, 0.6); border-radius: 6px; padding: 4px 8px; font-family: 'Roboto Mono', monospace;" title="Ocultar panel lateral">◀</button>
             </div>
             
+            <!-- THEATER / COUNTRY VECTOR SELECTOR -->
+            <div class="theater-selector-wrapper" style="padding: 8px 12px; border-bottom: 1px solid rgba(0, 229, 255, 0.15); background: rgba(0, 229, 255, 0.03); margin-bottom: 6px;">
+                <div style="display: flex; align-items: center; justify-content: space-between; font-size: 0.68rem; font-family: 'Roboto Mono', monospace; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">
+                    <span><span style="margin-right:3px;">🌐</span> Teatro Táctico</span>
+                    <span id="theater-active-badge" style="background: rgba(0, 229, 255, 0.2); color: #00E5FF; padding: 1px 6px; border-radius: 4px; font-size: 0.6rem;">ALL</span>
+                </div>
+                <select id="global-theater-select" onchange="window.switchTheater(this.value)" style="width: 100%; background: #0A0B10; color: #00E5FF; border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 6px; padding: 6px 8px; font-size: 0.8rem; font-family: 'Inter', sans-serif; cursor: pointer; outline: none;">
+                    <option value="ALL" selected>🌐 Todos los Vectores (Global)</option>
+                    <option value="COL">🇨🇴 Colombia (Conflicto & Transición)</option>
+                    <option value="VEN">🇻🇪 Venezuela (Seguridad & FANB)</option>
+                    <option value="GLOBAL">🌐 Noticias Internacionales</option>
+                </select>
+            </div>
+            
             <nav>
                 <button class="nav-button active mobile-primary" data-tab="tab-news">
                     <span style="font-size:1.2rem">📰</span> SitRep
