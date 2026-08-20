@@ -139,15 +139,16 @@
                                 <span class="news-time">{{ item.published }}</span>
                             </div>
                             {% if item.image %}
-                            <img src="{{ item.image }}" class="card-image" style="margin-bottom: 0.8rem; border-radius: 8px;" alt="" loading="lazy">
+                            <img src="{{ item.image }}" class="card-image" style="margin-bottom: 0.8rem; border-radius: 8px; cursor:pointer;" alt="" loading="lazy" onclick="window.openSitrepReader(this.closest('.news-card'))">
                             {% endif %}
-                            <a href="{{ item.link }}" target="_blank" rel="noopener noreferrer" class="news-title">{{ item.title }}</a>
+                            <a href="javascript:void(0)" onclick="window.openSitrepReader(this.closest('.news-card'))" class="news-title" title="Clic para maximizar e inspeccionar la noticia">{{ item.title }}</a>
                             <p class="news-summary">{{ item.summary }}</p>
                         </div>
                         <div class="news-card-actions">
-                            <div class="flex gap-05">
+                            <div class="flex gap-05 flex-wrap">
+                                <button type="button" class="news-action-btn" onclick="window.openSitrepReader(this.closest('.news-card'))" title="Maximizar noticia y analizar con IA">🔍 Maximizar</button>
                                 <button type="button" class="news-action-btn" onclick="window.sitrepFocusMap('{{ country_tag }}', '{{ item.title|replace('\'', '\\\'') }}')" title="Ver ubicación en Mapa Táctico">📍 Mapa</button>
-                                <button type="button" class="news-action-btn" onclick="window.sitrepInvestigateRAG('{{ item.title|replace('\'', '\\\'') }}')" title="Investigar hipótesis con IA RAG Local">🎯 Intel RAG</button>
+                                <button type="button" class="news-action-btn" onclick="window.sitrepInvestigateRAG('{{ item.title|replace('\'', '\\\'') }}')" title="Investigar hipótesis con IA RAG Local">🎯 RAG</button>
                                 <button type="button" class="news-action-btn" onclick="if(window.CobaltoNotes)window.CobaltoNotes._toggleNote(this.closest('.news-card'))" title="Añadir Nota Táctica Operativa">📝 Nota</button>
                             </div>
                             <button type="button" class="news-action-btn" onclick="window.sitrepCopyLink('{{ item.link }}')" title="Copiar enlace canónico">🔗 Copiar</button>
@@ -157,6 +158,68 @@
                     {% endif %}
                 </div>
                 <div id="news-loader" style="text-align:center; padding:1.5rem; color:var(--text-muted); font-size:0.8rem; font-family:'Roboto Mono', monospace;">⬇ Desplázate para más noticias</div>
+            </div>
+
+            <!-- MODAL DE INSPECCIÓN TÁCTICA Y LECTURA PROFUNDA DE NOTICIAS -->
+            <div id="sitrep-reader-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(5,7,12,0.92); backdrop-filter:blur(15px); -webkit-backdrop-filter:blur(15px); z-index:200000; align-items:center; justify-content:center; padding:1.5rem;">
+                <div class="sitrep-modal-container panel-glass" style="width:100%; max-width:850px; max-height:90vh; display:flex; flex-direction:column; border:1px solid rgba(0,229,255,0.4); border-radius:16px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(0,229,255,0.15);">
+                    
+                    <!-- Header del Modal -->
+                    <div class="sitrep-modal-header p-2 flex-between" style="background:rgba(15,20,30,0.85); border-bottom:1px solid rgba(255,255,255,0.08);">
+                        <div class="flex items-center gap-1">
+                            <span class="news-country-tag" id="sitrep-modal-country">🇨🇴 COL</span>
+                            <span class="news-severity-tag" id="sitrep-modal-severity">🔴 CRÍTICO</span>
+                            <span class="text-muted font-mono text-xs" id="sitrep-modal-source">FUENTE OSINT</span>
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <span class="text-muted font-mono text-xs" id="sitrep-modal-time">--:-- UTC</span>
+                            <button type="button" class="btn-icon text-muted text-lg" onclick="window.closeSitrepReader()" title="Cerrar (Esc)">✕</button>
+                        </div>
+                    </div>
+
+                    <!-- Cuerpo del Modal -->
+                    <div class="sitrep-modal-body p-3" style="overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:1.2rem;">
+                        <!-- Imagen Ampliada -->
+                        <div id="sitrep-modal-img-wrapper" style="display:none; text-align:center;">
+                            <img id="sitrep-modal-img" src="" style="max-height:280px; width:100%; object-fit:cover; border-radius:10px; border:1px solid rgba(0,229,255,0.2);" alt="Imagen táctica">
+                        </div>
+
+                        <!-- Título Principal -->
+                        <h2 id="sitrep-modal-title" class="text-white font-bold" style="font-size:1.35rem; line-height:1.4; margin:0; color:#fff;"></h2>
+
+                        <!-- Entidades Detectadas -->
+                        <div class="sitrep-entities-panel p-2 rounded-lg" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06);">
+                            <div class="text-muted font-mono text-xs mb-1" style="color:var(--primary);">🏷️ ENTIDADES & CONTEXTO RECONOCIDO:</div>
+                            <div id="sitrep-modal-entities" class="flex flex-wrap gap-05"></div>
+                        </div>
+
+                        <!-- Resumen Completo -->
+                        <div>
+                            <div class="text-muted font-mono text-xs mb-1">📄 RESUMEN FÁCTICO DE INTELIGENCIA:</div>
+                            <p id="sitrep-modal-summary" class="text-main text-base" style="line-height:1.7; color:#E2E8F0; white-space:pre-wrap;"></p>
+                        </div>
+
+                        <!-- Desglose de Análisis IA (Bajo Demanda) -->
+                        <div id="sitrep-modal-ai-box" style="display:none;" class="panel-tactical p-2 border-primary">
+                            <div class="flex items-center gap-05 mb-1">
+                                <span class="ai-status-dot"></span>
+                                <span class="text-primary font-mono text-xs font-bold">DESGLOSE PROFUNDO IA (MINERVA / ARES):</span>
+                            </div>
+                            <div id="sitrep-modal-ai-content" class="text-xs font-mono text-muted" style="line-height:1.6; white-space:pre-wrap;"></div>
+                        </div>
+                    </div>
+
+                    <!-- Footer / Acciones Rápidas -->
+                    <div class="sitrep-modal-footer p-2 flex-between flex-wrap gap-1" style="background:rgba(10,12,18,0.9); border-top:1px solid rgba(255,255,255,0.08);">
+                        <div class="flex gap-05 flex-wrap">
+                            <button type="button" class="btn-tactical" id="btn-sitrep-modal-ai" onclick="window.analyzeSitrepModalAI()">⚡ Analizar con IA</button>
+                            <button type="button" class="btn-tactical" id="btn-sitrep-modal-map" onclick="window.sitrepFocusMap(window._activeSitrepModalData.countryTag, window._activeSitrepModalData.title); window.closeSitrepReader();">📍 Ver en Mapa</button>
+                            <button type="button" class="btn-tactical" onclick="window.sitrepInvestigateRAG(window._activeSitrepModalData.title); window.closeSitrepReader();">🎯 Investigar RAG</button>
+                            <button type="button" class="btn-tactical" onclick="if(window.CobaltoNotes && window._activeSitrepModalCard) window.CobaltoNotes._toggleNote(window._activeSitrepModalCard);">📝 Nota</button>
+                        </div>
+                        <a id="sitrep-modal-link" href="#" target="_blank" rel="noopener noreferrer" class="btn-tactical" style="background:rgba(0,229,255,0.2); color:#fff; border-color:var(--primary);">🔗 Fuente Original ↗</a>
+                    </div>
+                </div>
             </div>
 
             <script>

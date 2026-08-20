@@ -726,7 +726,7 @@ window.CobaltoCore = {
             else if (/gobierno|presidente|cancillería|congreso|asamblea|política/i.test(textCombined)) category = 'POLITICS';
             else if (/dólar|sanción|economía|petróleo|inflación|banca/i.test(textCombined)) category = 'ECONOMY';
             
-            var imgHtml = item.image ? `<img src="${this.utils.escapeHTML(item.image)}" class="card-image" style="margin-bottom: 0.8rem; border-radius: 8px;" alt="" loading="lazy">` : '';
+            var imgHtml = item.image ? `<img src="${this.utils.escapeHTML(item.image)}" class="card-image" style="margin-bottom: 0.8rem; border-radius: 8px; cursor:pointer;" alt="" loading="lazy" onclick="window.openSitrepReader(this.closest('.news-card'))">` : '';
             var titleClean = (item.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
             var linkEsc = this.utils.escapeHTML(item.link || '#');
 
@@ -742,13 +742,14 @@ window.CobaltoCore = {
                             <span class="news-time">${this.utils.escapeHTML(item.published || '')}</span>
                         </div>
                         ${imgHtml}
-                        <a href="${linkEsc}" target="_blank" rel="noopener noreferrer" class="news-title">${this.utils.escapeHTML(item.title || '')}</a>
+                        <a href="javascript:void(0)" onclick="window.openSitrepReader(this.closest('.news-card'))" class="news-title" title="Clic para maximizar e inspeccionar la noticia">${this.utils.escapeHTML(item.title || '')}</a>
                         <p class="news-summary">${this.utils.escapeHTML(item.summary || '')}</p>
                     </div>
                     <div class="news-card-actions">
-                        <div class="flex gap-05">
+                        <div class="flex gap-05 flex-wrap">
+                            <button type="button" class="news-action-btn" onclick="window.openSitrepReader(this.closest('.news-card'))" title="Maximizar noticia y analizar con IA">🔍 Maximizar</button>
                             <button type="button" class="news-action-btn" onclick="window.sitrepFocusMap('${countryTag}', '${titleClean}')" title="Ver ubicación en Mapa Táctico">📍 Mapa</button>
-                            <button type="button" class="news-action-btn" onclick="window.sitrepInvestigateRAG('${titleClean}')" title="Investigar hipótesis con IA RAG Local">🎯 Intel RAG</button>
+                            <button type="button" class="news-action-btn" onclick="window.sitrepInvestigateRAG('${titleClean}')" title="Investigar hipótesis con IA RAG Local">🎯 RAG</button>
                             <button type="button" class="news-action-btn" onclick="if(window.CobaltoNotes)window.CobaltoNotes._toggleNote(this.closest('.news-card'))" title="Añadir Nota Táctica Operativa">📝 Nota</button>
                         </div>
                         <button type="button" class="news-action-btn" onclick="window.sitrepCopyLink('${linkEsc}')" title="Copiar enlace canónico">🔗 Copiar</button>
@@ -2678,4 +2679,131 @@ window.sitrepCopyLink = function(url) {
         }
     }
 };
+
+/* ── SITREP TACTICAL READER MODAL HANDLERS ───────────────────────────────── */
+window._activeSitrepModalData = null;
+window._activeSitrepModalCard = null;
+
+window.openSitrepReader = function(card) {
+    if (!card) return;
+    var modal = document.getElementById('sitrep-reader-modal');
+    if (!modal) return;
+
+    var title = card.getAttribute('data-title') || card.querySelector('.news-title')?.textContent || '';
+    var summary = card.getAttribute('data-summary') || card.querySelector('.news-summary')?.textContent || '';
+    var countryTag = card.getAttribute('data-country') || 'GLOBAL';
+    var severity = card.getAttribute('data-severity') || 'INFO';
+    var source = card.querySelector('.news-source')?.textContent || 'OSINT SOURCE';
+    var time = card.querySelector('.news-time')?.textContent || '';
+    var img = card.querySelector('.card-image')?.src || '';
+    var link = card.querySelector('.news-card-actions .news-action-btn[onclick*="sitrepCopyLink"]')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1] || card.querySelector('.news-title')?.href || '#';
+
+    window._activeSitrepModalCard = card;
+    window._activeSitrepModalData = {
+        title: title,
+        summary: summary,
+        countryTag: countryTag,
+        severity: severity,
+        source: source,
+        time: time,
+        img: img,
+        link: link
+    };
+
+    var titleEl = document.getElementById('sitrep-modal-title');
+    if (titleEl) titleEl.textContent = card.querySelector('.news-title')?.textContent || title;
+
+    var summaryEl = document.getElementById('sitrep-modal-summary');
+    if (summaryEl) summaryEl.textContent = card.querySelector('.news-summary')?.textContent || summary;
+
+    var sourceEl = document.getElementById('sitrep-modal-source');
+    if (sourceEl) sourceEl.textContent = source.toUpperCase();
+
+    var timeEl = document.getElementById('sitrep-modal-time');
+    if (timeEl) timeEl.textContent = time;
+
+    var linkEl = document.getElementById('sitrep-modal-link');
+    if (linkEl) linkEl.href = link;
+
+    var countryEl = document.getElementById('sitrep-modal-country');
+    if (countryEl) {
+        countryEl.className = 'news-country-tag ' + countryTag.toLowerCase();
+        countryEl.textContent = countryTag === 'COL' ? '🇨🇴 COL' : (countryTag === 'VEN' ? '🇻🇪 VEN' : '🌐 INTL');
+    }
+
+    var sevEl = document.getElementById('sitrep-modal-severity');
+    if (sevEl) {
+        sevEl.className = 'news-severity-tag ' + severity.toLowerCase();
+        sevEl.textContent = severity === 'CRITICAL' ? '🔴 CRÍTICO' : (severity === 'HIGH' ? '🟠 ALTO' : (severity === 'MEDIUM' ? '🟡 MEDIO' : '🔵 INFO'));
+    }
+
+    var imgWrapper = document.getElementById('sitrep-modal-img-wrapper');
+    var imgEl = document.getElementById('sitrep-modal-img');
+    if (img && imgWrapper && imgEl) {
+        imgEl.src = img;
+        imgWrapper.style.display = 'block';
+    } else if (imgWrapper) {
+        imgWrapper.style.display = 'none';
+    }
+
+    var entitiesContainer = document.getElementById('sitrep-modal-entities');
+    if (entitiesContainer) {
+        var textCombined = ((card.querySelector('.news-title')?.textContent || title) + ' ' + (card.querySelector('.news-summary')?.textContent || summary)).toLowerCase();
+        var knownEntities = ['FANB', 'ELN', 'EMC', 'CLAN DEL GOLFO', 'PETRO', 'MADURO', 'BOGOTÁ', 'CARACAS', 'CÚCUTA', 'ARAUCA', 'APURE', 'SANCIÓN', 'PAGO', 'FRONTERA', 'DRONES'];
+        var found = [];
+        knownEntities.forEach(function(e) {
+            if (textCombined.includes(e.toLowerCase())) found.push(e);
+        });
+        if (!found.length) found = ['OSINT FEED', 'COBALTO INTELLIGENCE'];
+
+        entitiesContainer.innerHTML = found.map(function(e) {
+            return `<span class="config-chip" style="font-size:0.7rem; background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.2); color:var(--primary);">${e}</span>`;
+        }).join('');
+    }
+
+    var aiBox = document.getElementById('sitrep-modal-ai-box');
+    if (aiBox) aiBox.style.display = 'none';
+
+    modal.style.display = 'flex';
+};
+
+window.closeSitrepReader = function() {
+    var modal = document.getElementById('sitrep-reader-modal');
+    if (modal) modal.style.display = 'none';
+};
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') window.closeSitrepReader();
+});
+
+window.analyzeSitrepModalAI = function() {
+    if (!window._activeSitrepModalData) return;
+    var aiBox = document.getElementById('sitrep-modal-ai-box');
+    var aiContent = document.getElementById('sitrep-modal-ai-content');
+    var btn = document.getElementById('btn-sitrep-modal-ai');
+    if (!aiBox || !aiContent) return;
+
+    aiBox.style.display = 'block';
+    aiContent.textContent = '⏳ Analizando contexto operacional con IA...';
+    if (btn) btn.disabled = true;
+
+    fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            message: 'Genera un desglose operacional táctico breve (1. Antecedentes, 2. Impacto Operativo en el Teatro, 3. Recomendación) para esta noticia: ' + window._activeSitrepModalData.title + ' — Resumen: ' + window._activeSitrepModalData.summary
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        aiContent.textContent = data.response || data.reply || 'Análisis completado sin observaciones adicionales.';
+    })
+    .catch(err => {
+        aiContent.textContent = '⚠️ Error conectando con el motor IA: ' + err.message;
+    })
+    .finally(() => {
+        if (btn) btn.disabled = false;
+    });
+};
+
 
