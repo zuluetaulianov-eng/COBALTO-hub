@@ -146,9 +146,16 @@ def detect_country_tags(text: str = "", domain: str = "", source: str = "") -> L
         "noticias rcn", "rcn", "blu radio colombia", "blu radio", "pulzo",
         "vanguardia", "el país (colombia)", "el colombiano", "el heraldo",
         "cambio colombia", "verdad abierta", "fundación pares", "pares",
-        "infopresidencia", "fuerzasmilcol", "policiacolombia", "mindefensa",
+        "caracol radio", "caracol radio oficial", "w radio", "w radio colombia",
+        "radio nacional de colombia", "cuestión pública", "cuestion publica",
+        "vorágine", "voragine", "la opinión", "la opinion", "la opinión cúcuta",
+        "periódico del meta", "periodicodelmeta", "la nación", "la nacion",
+        "rcn radio", "infopresidencia", "fuerzasmilcol", "policiacolombia", "mindefensa",
+        "ejército nacional", "ejercito_col", "armada de colombia", "armadacolombia",
+        "fuerza aeroespacial", "fuerzaaereacol", "fiscalía general", "fiscaliacol",
+        "defensoriacol", "unpcolombia", "petrogustavo", "franciamarquezm", "laurisarabia",
         "arielavilaanaliza", "leonvalenciaa", "fip_col", "indepaz", "danielmejial",
-        "defensoriacol"
+        "mariafdacabal", "palomavalencial", "vickydavilah", "alvarouribevel", "ficogutierrez"
     }
 
     for s_name in VEN_SOURCES:

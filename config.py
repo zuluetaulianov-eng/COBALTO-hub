@@ -118,6 +118,8 @@ TELEGRAM_SOURCES = {
     "Noticias RCN": "https://t.me/s/NoticiasRCN",
     "El Espectador": "https://t.me/s/elespectadorcom",
     "Blu Radio Colombia": "https://t.me/s/bluradioco",
+    "Caracol Radio Oficial": "https://t.me/s/CaracolRadio",
+    "W Radio Colombia": "https://t.me/s/WRadioColombia",
 }
 
 # ── Fuentes Prioritarias (para carga rápida inicial) ──
@@ -187,6 +189,7 @@ REGIONAL_BBOX = {"lat_min": -5.0, "lat_max": 18.0, "lon_min": -82.0, "lon_max": 
 
 # Usuarios de alto perfil y hacktivistas para monitoreo
 TARGET_USERS = [
+    # Venezuela
     "VenteVenezuela",
     "PresidencialVen",
     "padrinovladimir",
@@ -196,17 +199,34 @@ TARGET_USERS = [
     "TeamHDP",  # Grupo Hacker Team HDP
     "AnonymousVene",  # Anonymous Venezuela
     "CyberHuntersVen",  # Rastreadores cibernéticos locales
+    # Colombia - Institucional & Defensa
     "infopresidencia",  # Presidencia de Colombia
     "FuerzasMilCol",  # Fuerzas Militares de Colombia
     "PoliciaColombia",  # Policía Nacional Colombia
     "mindefensa",  # Ministerio de Defensa Colombia
+    "Ejercito_Col",  # Ejército Nacional Colombia
+    "ArmadaColombia",  # Armada de Colombia
+    "FuerzaAereaCol",  # Fuerza Aeroespacial Colombiana
+    "FiscaliaCol",  # Fiscalía General de la Nación
+    "DefensoriaCol",  # Defensoría del Pueblo (Alertas SAT)
+    "UNPColombia",  # Unidad Nacional de Protección
+    # Colombia - Políticos & Ejecutivos
+    "petrogustavo",  # Presidente Gustavo Petro
+    "FranciaMarquezM",  # Vicepresidenta Francia Márquez
+    "laurisarabia",  # Dirección DAPRE
+    # Colombia - Analistas & Conflicto
     "ArielAvilaAnaliza",  # Senador / Analista Conflicto
     "LeonVaLenciaA",  # Dir. Fundación Pares
     "FIP_Col",  # Fundación Ideas para la Paz
     "Indepaz",  # Indepaz Colombia
     "DanielMejiaL",  # Analista Seguridad
     "lasillavacia",  # La Silla Vacía
-    "DefensoriaCol",  # Defensoría del Pueblo
+    # Colombia - Actores Políticos & Opinión
+    "MariaFdaCabal",  # Senadora María Fernanda Cabal
+    "PalomaValenciaL",  # Senadora Paloma Valencia
+    "VickyDavilaH",  # Dir. Revista Semana
+    "AlvaroUribeVel",  # Ex-Presidente Álvaro Uribe
+    "FicoGutierrez",  # Alcalde de Medellín
 ]
 
 # ── Feeds con problemas conocidos ──

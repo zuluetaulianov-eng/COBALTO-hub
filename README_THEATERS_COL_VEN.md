@@ -31,26 +31,47 @@ El motor **Multi-Theater OSINT** de COBALTO HUB opera mediante una arquitectura 
 ### 🏢 2.1 Instituciones y Objetivos Tácticos de Interés (`target_users` / `institutions`)
 
 #### Figuras Políticas e Instituciones Clave:
+- **Presidencia de la República de Colombia** (`@infopresidencia`, `@petrogustavo`)
+- **Vicepresidencia de la República** (`@FranciaMarquezM`)
+- **Dirección DAPRE** (`@laurisarabia`)
+- **Ministerio de Defensa Nacional** (`@mindefensa`)
+- **Fuerzas Militares de Colombia** (`@FuerzasMilCol`)
+- **Ejército Nacional de Colombia** (`@Ejercito_Col`)
+- **Armada de Colombia** (`@ArmadaColombia`)
+- **Fuerza Aeroespacial Colombiana** (`@FuerzaAereaCol`)
+- **Policía Nacional de Colombia** (`@PoliciaColombia`)
+- **Fiscalía General de la Nación** (`@FiscaliaCol`)
+- **Defensoría del Pueblo de Colombia** (`@DefensoriaCol` - Alertas SAT)
+- **Unidad Nacional de Protección** (`@UNPColombia`)
 - **Abelardo de la Espriella (ADLE)**
-- **Gustavo Petro** (Presidencia de la República)
 - **Iván Cepeda**
-- **Presidencia de la República de Colombia** (Casa de Nariño)
-- **Ministerio de Defensa Colombia** (FFMM, Cantón Militar Pichincha, GAULA)
-- **Ministerio del Interior Colombia**
-- **Congreso de la República de Colombia**
-- **Fiscalía General de la Nación**
-- **Defensoría del Pueblo de Colombia** (`DefensoriaCol`)
 
 #### Cuentas y Censores OSINT Monitoreados:
 | Usuario / Handle | Nombre / Organización | Enfoque Táctico |
 |---|---|---|
-| `@ArielAvilaAnaliza` | Ariel Ávila | Análisis de conflicto y política |
-| `@LeonVaLenciaA` | León Valencia | Fundación Paz & Reconciliación (Pares) |
-| `@FIP_Col` | Fundación Ideas para la Paz | Dinámicas de violencia y conflicto |
-| `@Indepaz` | INDEPAZ | Masacres, líderes sociales, pactos |
-| `@DanielMejiaL` | Daniel Mejía | Seguridad urbana y criminología |
-| `@lasillavacia` | La Silla Vacía | Redes de poder y política |
-| `@DefensoriaCol` | Defensoría del Pueblo | Alertas tempranas de riesgo de DDHH |
+| `@infopresidencia` | Presidencia de Colombia | Comunicados oficiales / Decretos |
+| `@FuerzasMilCol` | Fuerzas Militares | Operaciones conjuntas |
+| `@PoliciaColombia` | Policía Nacional | Seguridad ciudadana / Capturas |
+| `@mindefensa` | MinDefensa Colombia | Política de seguridad |
+| `@Ejercito_Col` | Ejército Nacional | Despliegue en terreno / Combate |
+| `@ArmadaColombia` | Armada de Colombia | Interdicción marítima y fluvial |
+| `@FuerzaAereaCol` | Fuerza Aeroespacial | Vigilancia y transporte aéreo |
+| `@FiscaliaCol` | Fiscalía General | Judicialización / Crimen organizado |
+| `@DefensoriaCol` | Defensoría del Pueblo | **Alertas Tempranas (SAT)** |
+| `@UNPColombia` | Unidad Nac. Protección | Protección a vulnerables |
+| `@petrogustavo` | Gustavo Petro | Declaraciones / Política Exterior |
+| `@FranciaMarquezM` | Francia Márquez | Gobierno / Comunidades |
+| `@ArielAvilaAnaliza` | Ariel Ávila | Análisis de conflicto y violencia |
+| `@LeonVaLenciaA` | León Valencia | Fundación Pares / Crimen organizado |
+| `@FIP_Col` | Fundación Ideas Paz | Dinámicas de conflicto armado |
+| `@Indepaz` | INDEPAZ | Masacres / Homicidios de líderes |
+| `@DanielMejiaL` | Daniel Mejía | Datos de criminología y seguridad |
+| `@lasillavacia` | La Silla Vacía | Redes de poder y análisis político |
+| `@MariaFdaCabal` | María Fernanda Cabal | Oposición / Debates de defensa |
+| `@PalomaValenciaL` | Paloma Valencia | Senadora / Control político |
+| `@VickyDavilaH` | Vicky Dávila | Directora Revista Semana |
+| `@AlvaroUribeVel` | Álvaro Uribe Vélez | Ex-Presidente / Opinión |
+| `@FicoGutierrez` | Federico Gutiérrez | Alcalde de Medellín |
 
 ---
 
@@ -59,37 +80,47 @@ El motor **Multi-Theater OSINT** de COBALTO HUB opera mediante una arquitectura 
 Las entradas que contengan cualquiera de estos términos se clasifican y etiquetan automáticamente dentro del teatro **Colombia**:
 
 ```text
-colombia, bogotá, bogota, medellín, medellin, cali, cauca, catatumbo, arauca,
-tumaco, putumayo, chocó, eln, emc, marquetalia, clan del golfo, gaitanistas,
-petro, caño limón, paz total, gaula, ffmm colombia, abelardo de la espriella,
-adle, presidencia de la república, ministerio de defensa colombia, ministerio del interior,
-iván cepeda, casa de nariño, cantón militar pichincha, congreso de la república,
-fiscalía general de la nación
+colombia, bogotá, bogota, medellín, medellin, cali, barranquilla, bucaramanga, cúcuta,
+cucuta, arauca, catatumbo, cauca, nariño, chocó, putumayo, guaviare, meta, maicao, tumaco,
+urabá, bajo cauca, eln, ejército de liberación nacional, frente de guerra oriental,
+estado mayor central, emc, frente 33, dagoberto ramos, jaime martínez, segunda marquetalia,
+clan del golfo, gaitanistas, chiquito malo, disidencias farc, tren de aragua, paz total,
+sat defensoría, alerta temprana, petro, abelardo de la espriella, adle, iván cepeda,
+ffmm colombia, casa de nariño, fiscalía colombia
 ```
 
 ---
 
 ### 🌐 2.3 Medios de Comunicación, Portales y Canales de Extracción (`domains`)
 
-El sistema monitorea y extrae contenidos de forma continua a través de 16 medios colombianos abiertos y especializados:
+El sistema monitorea y extrae contenidos de forma continua a través de 25 medios colombianos abiertos y especializados:
 
 | Portal / Medio | Dominio | Tipo de Fuente |
 |---|---|---|
-| **Noticias RCN** | `noticiasrcn.com` | Medio masivo / TV |
-| **Noticias Caracol** | `noticias.caracoltv.com` | Medio masivo / TV |
-| **Semana** | `semana.com` | Revista / Investigación |
-| **El Tiempo** | `eltiempo.com` | Prensa nacional |
-| **El Espectador** | `elespectador.com` | Prensa nacional |
+| **Noticias RCN** | `noticiasrcn.com` | Medio masivo / TV / Telegram |
+| **Noticias Caracol** | `noticias.caracoltv.com` | Medio masivo / TV / Telegram |
+| **Caracol Radio** | `caracol.com.co` | Radio / Noticias / Telegram |
+| **W Radio Colombia** | `wradio.com.co` | Radio / Investigaciones / Telegram |
+| **Radio Nacional** | `radionacional.co` | Emisora institucional estatal |
+| **RCN Radio** | `rcnradio.com` | Radio nacional |
+| **Semana** | `semana.com` | Revista / Exclusivas / Telegram |
+| **El Tiempo** | `eltiempo.com` | Prensa nacional / Telegram |
+| **El Espectador** | `elespectador.com` | Prensa nacional / Telegram |
 | **La FM** | `lafm.com.co` | Radio / Noticias |
-| **Blu Radio** | `bluradio.com` | Radio / Noticias |
+| **Blu Radio** | `bluradio.com` | Radio / Movilidad / Telegram |
 | **Cambio Colombia** | `cambiocolombia.com` | Periodismo de investigación |
 | **La Silla Vacía** | `lasillavacia.com` | Análisis político |
-| **Verdad Abierta** | `verdadabierta.com` | Conflicto armado y DDHH |
+| **Cuestión Pública** | `cuestionpublica.com` | Investigaciones de poder |
+| **Vorágine** | `voragine.co` | Periodismo DDHH y orden público |
+| **Verdad Abierta** | `verdadabierta.com` | Conflicto armado y paramilitarismo |
 | **Fundación Pares** | `pares.com.co` | Paz & Reconciliación |
+| **La Opinión (Cúcuta)** | `laopinion.com.co` | Prensa fronteriza (N. Santander / Táchira) |
 | **Vanguardia** | `vanguardia.com` | Prensa regional (Santanderes) |
-| **El Colombiano** | `elcolombiano.com` | Prensa regional (Antioquia) |
-| **El País (Cali)** | `elpais.com.co` | Prensa regional (Valle del Cauca) |
+| **El Colombiano** | `elcolombiano.com` | Prensa regional (Antioquia / Urabá) |
+| **El País (Cali)** | `elpais.com.co` | Prensa regional (Valle / Cauca / Nariño) |
 | **El Heraldo** | `elheraldo.co` | Prensa regional (Caribe) |
+| **Periódico del Meta** | `periodicodelmeta.com` | Prensa regional (Llanos Orientales) |
+| **La Nación (Huila)** | `lanacion.com.co` | Prensa regional (Sur de Colombia) |
 | **France 24 (Colombia)** | `france24.com` | Cobertura internacional dedicada |
 
 ---
