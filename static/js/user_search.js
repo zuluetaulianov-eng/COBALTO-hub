@@ -168,6 +168,7 @@ window.CobaltoSearch = {
                     var resultId = 'cobalto-eval-' + Math.random().toString(36).substr(2, 9);
                     
                     html += `<button class="btn-cyan" style="margin-top:15px; padding:10px; width:100%; border-radius:6px; font-weight:bold; font-family:'Roboto Mono';" onclick="if(window.CobaltoSearch)CobaltoSearch.analyzeWithCobalto('${safeName}', '${safeBio}', '${escapeFn(result.platform)}', '${resultId}')">🤖 EVALUAR AMENAZA (COBALTO)</button>
+                             <button class="btn-tactical" style="margin-top:8px; padding:10px; width:100%; border-radius:6px; font-weight:bold; font-family:'Roboto Mono'; border-color:#00E5FF; color:#00E5FF;" onclick="if(window.CobaltoSearch)CobaltoSearch.loadDossier('${safeName}')">📜 VER DOSSIER TÁCTICO 360°</button>
                              <div id="${resultId}" style="margin-top:10px;"></div>`;
 
                     html += `</div>`;
@@ -179,5 +180,104 @@ window.CobaltoSearch = {
         });
         
         resultsContainer.innerHTML = html;
+    },
+
+    loadDossier: function(targetName) {
+        const resultsContainer = document.getElementById('user-search-results');
+        const escapeFn = (window.CobaltoCore && window.CobaltoCore.utils.escapeHTML) || (s => String(s));
+        
+        resultsContainer.innerHTML = `
+            <div style="padding:2rem; font-family:'Roboto Mono',monospace; color:#00E5FF; background:rgba(10,11,16,0.9); border:1px solid #00E5FF; border-radius:8px;">
+                <div>> CONSULTANDO HISTÓRICO Y FININT...</div>
+                <div>> GENERANDO EXPEDIENTE TÁCTICO 360° PARA: ${escapeFn(targetName)}</div>
+                <div class="blinking-cursor" style="display:inline-block; width:10px; height:15px; background:#00E5FF; margin-top:10px;"></div>
+            </div>`;
+
+        fetch('/api/dossier?target=' + encodeURIComponent(targetName))
+            .then(res => res.json())
+            .then(d => {
+                if (d.error) {
+                    resultsContainer.innerHTML = '<div style="color:#FF2D55; padding:2rem;">⚠️ ' + escapeFn(d.error) + '</div>';
+                    return;
+                }
+                this.displayDossier(d);
+            })
+            .catch(err => {
+                console.error(err);
+                resultsContainer.innerHTML = '<div style="color:#FF2D55; padding:2rem;">⚠️ Error cargando expediente táctico</div>';
+            });
+    },
+
+    displayDossier: function(d) {
+        const resultsContainer = document.getElementById('user-search-results');
+        const escapeFn = (window.CobaltoCore && window.CobaltoCore.utils.escapeHTML) || (s => String(s));
+        const prof = d.profile || {};
+        const met = d.metrics || {};
+        
+        let riskColor = '#3291FF';
+        if (prof.risk_level === 'CRÍTICO') riskColor = '#FF2D55';
+        else if (prof.risk_level === 'ALERTA') riskColor = '#FF9500';
+        else if (prof.risk_level === 'ELEVADO') riskColor = '#FFCC00';
+
+        let html = `
+            <div class="panel-glass" style="padding:1.5rem; border-top:4px solid ${riskColor}; margin-bottom:1.5rem;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">
+                    <div>
+                        <div style="font-size:0.75rem; color:#94A3B8; font-family:'Roboto Mono';">EXPEDIENTE TÁCTICO 360°</div>
+                        <h2 style="margin:0.2rem 0; color:#FFF; font-size:1.5rem;">${escapeFn(prof.name)}</h2>
+                        <div style="font-size:0.8rem; color:#00E5FF;">TIPO: ${escapeFn(prof.entity_type)} | TEATRO: ${(prof.country_tags||[]).join(', ')}</div>
+                    </div>
+                    <div style="text-align:right;">
+                        <div style="background:${riskColor}; color:#000; padding:4px 12px; border-radius:4px; font-weight:bold; font-size:0.85rem; font-family:'Roboto Mono';">
+                            RIESGO ${escapeFn(prof.risk_level)} (${prof.risk_score}/10)
+                        </div>
+                        ${prof.ofac_flag ? '<div style="background:#FF2D55; color:#FFF; margin-top:4px; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold;">🚨 SANCIÓN OFAC SDN</div>' : ''}
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:1rem; margin-bottom:1.5rem; background:rgba(0,0,0,0.3); padding:1rem; border-radius:8px;">
+                    <div>
+                        <div style="font-size:0.7rem; color:#94A3B8;">MENCIONES TOTALES</div>
+                        <div style="font-size:1.2rem; color:#FFF; font-weight:bold;">${met.total_mentions}</div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.7rem; color:#94A3B8;">ACTIVIDAD 24H</div>
+                        <div style="font-size:1.2rem; color:#00E5FF; font-weight:bold;">${met.recent_24h_mentions}</div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.7rem; color:#94A3B8;">PRESIÓN MEDIÁTICA</div>
+                        <div style="font-size:1.2rem; color:#FFF; font-weight:bold;">${met.media_pressure}</div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.7rem; color:#94A3B8;">REPORTES HUMINT</div>
+                        <div style="font-size:1.2rem; color:#FFF; font-weight:bold;">${met.humint_reports_count}</div>
+                    </div>
+                </div>
+
+                <h3 style="color:#00E5FF; font-size:1rem; margin-bottom:0.8rem; font-family:'Roboto Mono';">📅 LÍNEA DE TIEMPO Y SUCESOS RECIENTES</h3>
+                <div style="display:flex; flex-direction:column; gap:0.6rem; margin-bottom:1.5rem;">`;
+
+        if (d.timeline && d.timeline.length) {
+            d.timeline.forEach(t => {
+                html += `
+                    <div style="background:rgba(255,255,255,0.03); border-left:3px solid #00E5FF; padding:0.8rem; border-radius:0 6px 6px 0;">
+                        <div style="display:flex; justify-content:space-between; font-size:0.75rem; color:#94A3B8; margin-bottom:4px;">
+                            <span>${escapeFn(t.source)}</span>
+                            <span>${escapeFn(t.timestamp)}</span>
+                        </div>
+                        <div style="color:#FFF; font-size:0.85rem; font-weight:600; margin-bottom:4px;">${escapeFn(t.title)}</div>
+                        <div style="color:#CBD5E1; font-size:0.78rem;">${escapeFn(t.summary)}</div>
+                    </div>`;
+            });
+        } else {
+            html += `<div style="color:#94A3B8; font-size:0.85rem;">No hay sucesos registrados en la línea de tiempo.</div>`;
+        }
+
+        html += `</div>
+                <button class="btn-tactical" style="width:100%; border-color:#666; color:#AAA;" onclick="if(window.CobaltoSearch)CobaltoSearch.clearSearch()">← VOLVER A BÚSQUEDA</button>
+            </div>`;
+
+        resultsContainer.innerHTML = html;
     }
 };
+

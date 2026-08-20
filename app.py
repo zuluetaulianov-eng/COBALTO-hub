@@ -2194,6 +2194,24 @@ async def get_theaters_api():
     return JSONResponse(theaters_config.get_active_theaters())
 
 
+@app.get("/api/dossier")
+async def get_target_dossier_api(target: str, theater: Optional[str] = "ALL"):
+    """Retorna el expediente táctico 360° para una persona o institución."""
+    import dossier_engine
+    if not target or not target.strip():
+        return JSONResponse({"error": "Parámetro 'target' requerido"}, status_code=400)
+    dossier = dossier_engine.build_target_dossier(target, theater_filter=theater)
+    return JSONResponse(dossier)
+
+
+@app.get("/api/dossier/targets")
+async def get_dossier_targets_api():
+    """Retorna la lista de objetivos e instituciones precargadas por teatro."""
+    import dossier_engine
+    return JSONResponse(dossier_engine.get_preloaded_tactical_targets())
+
+
+
 @app.post("/api/extractor/run")
 async def trigger_extractor_run():
     """Ejecuta el ciclo de extracción manual de noticias e inteligencia en segundo plano."""
