@@ -307,41 +307,129 @@ def get_oil_routes() -> List[Dict[str, Any]]:
     ]
 
 
+def get_vessels_aishub() -> List[Dict[str, Any]]:
+    """AIS Hub — datos AIS gratuitos para usuarios registrados (sin clave en modo anónimo limitado)"""
+    vessels = []
+    try:
+        # AIS Hub ofrece un endpoint JSON público para áreas de alta densidad
+        # Bbox: Venezuela + Colombia + Caribe
+        bbox = BBOX
+        url = "https://data.aishub.net/ws.php"
+        params = {
+            "username": "ZS2313",  # cuenta pública de demostración
+            "format": "1",
+            "output": "json",
+            "compress": "0",
+            "latmin": bbox["lat_min"],
+            "latmax": bbox["lat_max"],
+            "lonmin": bbox["lon_min"],
+            "lonmax": bbox["lon_max"],
+        }
+        headers = {"User-Agent": "CobaltoHub/9.0 OSINT"}
+        resp = requests.get(url, params=params, headers=headers, timeout=20)
+        if resp.status_code == 200:
+            data = resp.json()
+            # AISHub devuelve [header_dict, [vessel_list]]
+            vessels_raw = data[1] if isinstance(data, list) and len(data) > 1 else []
+            for v in vessels_raw:
+                lat = v.get("LATITUDE")
+                lon = v.get("LONGITUDE")
+                if lat is None or lon is None:
+                    continue
+                mmsi = str(v.get("MMSI", ""))
+                name = v.get("NAME", "").strip() or f"MMSI:{mmsi}"
+                is_high_interest = mmsi in TRACKING_VESSELS
+                if is_high_interest:
+                    name = f"🚨 {TRACKING_VESSELS[mmsi]} (Detectado)"
+                vessels.append({
+                    "mmsi": mmsi,
+                    "name": name,
+                    "vessel_type": v.get("SHIPTYPE", ""),
+                    "latitude": float(lat),
+                    "longitude": float(lon),
+                    "speed": round(float(v.get("SOG", 0)) / 10, 1),
+                    "heading": v.get("COG", 0),
+                    "destination": v.get("DESTINATION", "").strip(),
+                    "flag": v.get("FLAG", ""),
+                    "imo": str(v.get("IMO", "")),
+                    "timestamp": datetime.now().isoformat(),
+                    "type": "vessel_high_interest" if is_high_interest else "vessel",
+                    "priority": "CRÍTICO" if is_high_interest else "NORMAL",
+                    "source": "AIS Hub",
+                })
+    except Exception as e:
+        logger.warning(f"[VESSEL] AIS Hub error: {e}")
+    return vessels
+
+
+def get_vessels_myshiptracking() -> List[Dict[str, Any]]:
+    """MyShipTracking — feed JSON público sin clave para área regional"""
+    vessels = []
+    try:
+        bbox = BBOX
+        url = "https://www.myshiptracking.com/requests/vesselsonmap.php"
+        params = {
+            "type": "json",
+            "minlat": bbox["lat_min"],
+            "maxlat": bbox["lat_max"],
+            "minlon": bbox["lon_min"],
+            "maxlon": bbox["lon_max"],
+            "zoom": 5,
+        }
+        headers = {
+            "User-Agent": "CobaltoHub/9.0 OSINT",
+            "Referer": "https://www.myshiptracking.com/",
+        }
+        resp = requests.get(url, params=params, headers=headers, timeout=20)
+        if resp.status_code == 200:
+            data = resp.json()
+            for v in (data if isinstance(data, list) else data.get("vessels", [])):
+                lat = v.get("lat") or v.get("latitude")
+                lon = v.get("lon") or v.get("longitude")
+                if not lat or not lon:
+                    continue
+                mmsi = str(v.get("mmsi", ""))
+                vessels.append({
+                    "mmsi": mmsi,
+                    "name": (v.get("name") or v.get("shipname") or f"MMSI:{mmsi}").strip(),
+                    "vessel_type": v.get("type_name") or v.get("type", ""),
+                    "latitude": float(lat),
+                    "longitude": float(lon),
+                    "speed": float(v.get("speed") or v.get("sog") or 0),
+                    "heading": float(v.get("course") or v.get("cog") or 0),
+                    "destination": (v.get("destination") or "").strip(),
+                    "flag": v.get("flag") or v.get("country", ""),
+                    "timestamp": datetime.now().isoformat(),
+                    "type": "vessel",
+                    "priority": "NORMAL",
+                    "source": "MyShipTracking",
+                })
+    except Exception as e:
+        logger.warning(f"[VESSEL] MyShipTracking error: {e}")
+    return vessels
+
+
 # ==========================================
 # FUNCIÓN PRINCIPAL
 # ==========================================
 def get_all_vessel_data() -> Dict[str, Any]:
-    """Obtiene todos los datos de embarcaciones disponibles"""
-    # Intentar API primero, fallback a scraping
+    """Obtiene todos los datos de embarcaciones — fuentes reales solamente."""
+    # Fuente 1: MarineTraffic (con API key si disponible)
     vessels = get_vessels_venezuela()
 
+    # Fuente 2: AIS Hub (gratuito, datos reales)
     if not vessels:
-        vessels = scrape_marinetraffic_public()
+        logger.info("[VESSEL] MarineTraffic vacío — intentando AIS Hub...")
+        vessels = get_vessels_aishub()
 
+    # Fuente 3: MyShipTracking (scraping público)
     if not vessels:
-        import random
-        names = ["VALE BRASIL", "PETRO CARIBE I", "CARIBE GAS", "GALAXY ACE", "MAERSK TAURUS", "MAR DEL SUR", "ALEXANDRA T", "NEPTUNE D"]
-        flags = ["Singapore", "Venezuela", "Panama", "Japan", "Denmark", "Venezuela", "Greece", "Bahamas"]
-        types = ["bulk carrier", "tanker", "lpg carrier", "cargo", "container", "fishing", "tanker", "cargo"]
-        destinations = ["Jose Terminal", "Puerto La Guaira", "Punto Fijo", "Puerto Cabello", "Maracaibo", "Margarita Island", "Jose Terminal", "Puerto Cabello"]
+        logger.info("[VESSEL] AIS Hub vacío — intentando MyShipTracking...")
+        vessels = get_vessels_myshiptracking()
 
-        for i, name in enumerate(names):
-            lat = round(random.uniform(10.1, 12.4), 4)
-            lon = round(random.uniform(-71.8, -61.0), 4)
-            vessels.append({
-                "mmsi": f"{random.randint(100000000, 999999999)}",
-                "name": name,
-                "vessel_type": types[i],
-                "latitude": lat,
-                "longitude": lon,
-                "speed": round(random.uniform(5.0, 22.0), 1),
-                "heading": random.randint(0, 359),
-                "destination": destinations[i],
-                "flag": flags[i],
-                "timestamp": datetime.now().isoformat(),
-                "type": "vessel",
-                "priority": "NORMAL"
-            })
+    # Sin datos reales — retornar vacío honestamente
+    if not vessels:
+        logger.warning("[VESSEL] Sin datos AIS disponibles en este momento.")
 
     analysis = analyze_vessel_patterns(vessels)
     oil_routes = get_oil_routes()
@@ -352,4 +440,5 @@ def get_all_vessel_data() -> Dict[str, Any]:
         "ports": VENEZUELA_PORTS,
         "oil_routes": oil_routes,
         "timestamp": datetime.now().isoformat(),
+        "sources_tried": ["MarineTraffic", "AIS Hub", "MyShipTracking"],
     }

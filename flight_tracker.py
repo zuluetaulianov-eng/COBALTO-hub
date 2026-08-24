@@ -337,39 +337,70 @@ def analyze_flight_patterns(flights: List[Dict[str, Any]]) -> Dict[str, Any]:
     return analysis
 
 
-# ==========================================
-# FUNCIÓN PRINCIPAL
-# ==========================================
-def get_all_flight_data() -> Dict[str, Any]:
-    """Obtiene todos los datos de vuelos disponibles"""
-    flights = get_flights_over_venezuela()
-    if not flights:
-        import random
-        callsigns = ["VOI3507", "LAS4402", "CMP284", "LAV1102", "TCU774", "AAL903", "IBE6485", "S3-305"]
-        origins = ["Venezuela", "Colombia", "Panama", "Venezuela", "Brasil", "EE.UU.", "Espana", "Venezuela"]
-        destinations = ["Maiquetia", "Bogota", "Panama City", "Porlamar", "Manaus", "Miami", "Maiquetia", "Maracaibo"]
-        models = ["Embraer 190", "Boeing 737-800", "Boeing 737-800", "MD-80", "ATR 72", "Boeing 777-200", "Airbus A350-900", "Boeing 737-200"]
+def get_flights_adsbexchange() -> List[Dict[str, Any]]:
+    """Fuente alternativa ADS-B real: ADS-B Exchange (público, sin API key)"""
+    flights = []
+    try:
+        # API pública de ADS-B Exchange — bounding box regional
+        bbox = VENEZUELA_BBOX
+        url = (
+            f"https://globe.adsbexchange.com/globeRates.json"
+        )
+        # Endpoint real de datos en bbox para región Venezuela/Colombia/Caribe
+        data_url = (
+            f"https://globe.adsbexchange.com/re-api/?bounds="
+            f"{bbox['south']:.1f},{bbox['north']:.1f},"
+            f"{bbox['west']:.1f},{bbox['east']:.1f}"
+        )
+        headers = {
+            "User-Agent": "CobaltoHub/9.0 OSINT",
+            "Referer": "https://globe.adsbexchange.com/",
+        }
+        resp = requests.get(data_url, headers=headers, timeout=20)
+        if resp.status_code == 200:
+            data = resp.json()
+            for ac in data.get("ac", []):
+                lat = ac.get("lat")
+                lon = ac.get("lon")
+                if lat is None or lon is None:
+                    continue
+                flights.append({
+                    "icao24": ac.get("hex", ""),
+                    "callsign": (ac.get("flight") or ac.get("r") or "N/A").strip(),
+                    "origin_country": ac.get("cou", ""),
+                    "latitude": lat,
+                    "longitude": lon,
+                    "altitude": ac.get("alt_baro") or ac.get("alt_geom") or 0,
+                    "on_ground": ac.get("alt_baro") == "ground",
+                    "velocity": ac.get("gs", 0),
+                    "heading": ac.get("track", 0),
+                    "squawk": str(ac.get("squawk") or ""),
+                    "model": ac.get("t", ""),
+                    "registration": ac.get("r", ""),
+                    "is_emergency": str(ac.get("squawk") or "") in SQUAWK_EMERGENCY,
+                    "emergency_label": SQUAWK_EMERGENCY_LABEL.get(str(ac.get("squawk") or ""), ""),
+                    "type": "flight",
+                    "source": "ADS-B Exchange",
+                    "timestamp": datetime.now().isoformat(),
+                })
+    except Exception as e:
+        logger.warning(f"[FLIGHT] ADS-B Exchange error: {e}")
+    return flights
 
-        for i, callsign in enumerate(callsigns):
-            lat = round(random.uniform(5.0, 11.0), 4)
-            lon = round(random.uniform(-72.0, -61.0), 4)
-            alt = random.randint(3000, 38000)
-            vel = random.randint(150, 480)
-            flights.append({
-                "icao24": f"a{random.randint(100000, 999999)}",
-                "callsign": callsign,
-                "origin_country": origins[i],
-                "latitude": lat,
-                "longitude": lon,
-                "altitude": alt,
-                "on_ground": False,
-                "velocity": vel,
-                "heading": random.randint(0, 359),
-                "type": "flight",
-                "timestamp": datetime.now().isoformat(),
-                "model": models[i],
-                "destination": destinations[i]
-            })
+
+def get_all_flight_data() -> Dict[str, Any]:
+    """Obtiene todos los datos de vuelos disponibles — fuentes reales solamente."""
+    # Fuente 1: OpenSky Network (más confiable, soporta auth)
+    flights = get_flights_over_venezuela()
+
+    # Fuente 2: ADS-B Exchange (fallback real, sin auth)
+    if not flights:
+        logger.info("[FLIGHT] OpenSky vacío — intentando ADS-B Exchange...")
+        flights = get_flights_adsbexchange()
+
+    # Sin datos reales — retornar vacío honestamente
+    if not flights:
+        logger.warning("[FLIGHT] Sin datos ADS-B disponibles en este momento.")
 
     analysis = analyze_flight_patterns(flights)
 
@@ -378,4 +409,5 @@ def get_all_flight_data() -> Dict[str, Any]:
         "analysis": analysis,
         "airports": VENEZUELA_AIRPORTS,
         "timestamp": datetime.now().isoformat(),
+        "sources_tried": ["OpenSky Network", "ADS-B Exchange"],
     }
