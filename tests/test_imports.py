@@ -44,6 +44,7 @@ def test_core_imports():
         "incidents_manager",
         "dashboard_sensors",
         "osint_deep_scraper",
+        "osint_playwright",
         "routers.rt_agents",
         "routers.rt_analytics",
         "routers.rt_entities",

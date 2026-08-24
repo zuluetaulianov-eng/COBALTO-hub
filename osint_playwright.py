@@ -3,7 +3,10 @@ import logging
 import random
 from urllib.parse import urlparse
 
-from playwright.async_api import async_playwright
+try:
+    from playwright.async_api import async_playwright
+except ImportError:
+    async_playwright = None
 
 # ── Browser Pool: Reutiliza instancias Chrome entre llamadas ──
 _browser_instance = None
@@ -16,6 +19,8 @@ _playwright_attempted_install = False
 
 async def _get_playwright():
     global _playwright_instance
+    if async_playwright is None:
+        return None
     if _playwright_instance is None:
         _playwright_instance = await async_playwright().start()
     return _playwright_instance
@@ -23,7 +28,7 @@ async def _get_playwright():
 
 async def _get_browser():
     global _browser_instance, _playwright_disabled, _playwright_attempted_install
-    if _playwright_disabled:
+    if _playwright_disabled or async_playwright is None:
         return None
     async with _browser_lock:
         if _browser_instance is None or not _browser_instance.is_connected():
