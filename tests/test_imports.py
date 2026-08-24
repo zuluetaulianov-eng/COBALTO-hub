@@ -43,6 +43,7 @@ def test_core_imports():
         "open_data_apis",
         "incidents_manager",
         "dashboard_sensors",
+        "osint_deep_scraper",
         "routers.rt_agents",
         "routers.rt_analytics",
         "routers.rt_entities",

@@ -37,6 +37,7 @@ networkx==3.6.1
 python-louvain==0.16
 python-dateutil==2.9.0.post0
 phonenumbers==8.13.0
+fake-useragent>=2.0.0
 
 # Automatización / Bot
 python-telegram-bot==22.7

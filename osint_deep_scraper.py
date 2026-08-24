@@ -9,7 +9,10 @@ import re
 from typing import Any, Dict, List
 
 import aiohttp
-import fake_useragent
+try:
+    import fake_useragent
+except ImportError:
+    fake_useragent = None
 import tls_client
 from bs4 import BeautifulSoup
 
@@ -27,7 +30,10 @@ class DeepScraper:
 
     def __init__(self):
         try:
-            self.ua = fake_useragent.UserAgent()
+            if fake_useragent:
+                self.ua = fake_useragent.UserAgent()
+            else:
+                self.ua = None
         except Exception:
             self.ua = None
 
