@@ -42,10 +42,12 @@ def silent_loop_exception_handler(loop, context):
 
 
 def get_uvicorn_kwargs() -> dict:
-    """Retorna kwargs óptimos para uvicorn según la plataforma."""
+    """Retorna kwargs óptimos para uvicorn según la plataforma y variables de entorno."""
+    import os
+    port = int(os.environ.get("PORT", 8083))
     kwargs = {
         "host": "0.0.0.0",
-        "port": 8083,
+        "port": port,
         "http": "h11",
     }
     if sys.platform == "win32":

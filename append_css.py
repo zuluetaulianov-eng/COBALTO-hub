@@ -559,5 +559,10 @@ css_code = """
 }
 """
 
-with open("c:\\Users\\Ulianov\\Documents\\COBALTO\\COBALTO\\static\\css\\dashboard.css", "a", encoding="utf-8") as f:
-    f.write("\n" + css_code)
+if __name__ == "__main__":
+    import os
+    css_path = os.path.join(os.path.dirname(__file__), "static", "css", "dashboard.css")
+    if os.path.exists(css_path):
+        with open(css_path, "a", encoding="utf-8") as f:
+            f.write("\n" + css_code)
+

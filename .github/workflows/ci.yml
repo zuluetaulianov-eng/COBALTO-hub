@@ -111,13 +111,21 @@ jobs:
               'osint_narrative', 'osint_fakenews', 'feed_repair', 'user_search',
               'osint_onion', 'osint_social_dorks', 'entity_registry', 'event_bus',
               'historical_store', 'osiris_bridge', 'osiris_recon', 'osiris_intel',
-              'agent_memory', 'agent_tools', 'rag_retriever', 'intel_reports'
+              'finint_blockchain', 'finint_darkweb', 'finint_entity_linker', 'humint_bot',
+              'network_discovery_daemon', 'theaters_config', 'open_data_apis', 'incidents_manager',
+              'dashboard_sensors', 'agent_memory', 'agent_tools', 'rag_retriever', 'intel_reports',
+              'routers.rt_agents', 'routers.rt_analytics', 'routers.rt_entities',
+              'routers.rt_export', 'routers.rt_finint', 'routers.rt_humint', 'routers.rt_predictive'
           ]
+          failed = False
           for m in modules:
               try:
                   importlib.import_module(m)
                   print(f'OK: {m}')
               except Exception as e:
                   print(f'FAIL: {m} -> {e}')
+                  failed = True
+          if failed:
+              sys.exit(1)
           "
         continue-on-error: true
