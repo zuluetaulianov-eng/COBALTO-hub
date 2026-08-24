@@ -1,22 +1,22 @@
-# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v14.2
+# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v14.3
 
 > **Sistema de Mando y Control de Inteligencia (C4I)** en tiempo real con **Arquitectura Multipaís (Multi-Theater OSINT)**,  
 > **Target Dossier Engine (360° Risk Score)**, **Pipeline de Ingestión Autónoma y Cosecha de Keywords** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
 > Consolida fuentes RSS, canales de Telegram, redes sociales, ciberseguridad, rastreo de aeronaves/buques, telemetría de campo en vivo y análisis geopolítico multiagente con IA.  
-> **v14.2** — Integración Marco DGAE Colombia 2026 (164+ Keywords, 26 Targets, 5 Feeds Estratégicos COL), Depuración y Parcheo Dinámico de Feeds Caídos, Optimización de Rate-Limiters Sociales y Circuit Breakers de Red en Tiempo Real.
+> **v14.3** — Migración del pipeline social de Nitter (obsoleto) a Bluesky AT Protocol + Mastodon REST API. Estabilización del launcher desktop (timeout 45s). Limpieza de código muerto.
 
 ---
 
-## 🔄 Últimas Actualizaciones (Agosto 2026 — Marco DGAE Colombia & Hardening v14.2)
+## 🔄 Últimas Actualizaciones (Agosto 2026 — Social Pipeline v14.3)
 
-- **🇨🇴 Integración Set DGAE Colombia 2026 (`config.py` & `col.json`):** Carga completa del set de términos de vigilancia táctica DGAE para Colombia (164+ palabras clave, 26 actores de alto perfil, 5 nuevas fuentes RSS estratégicas: *Colombia+20*, *InSight Crime ES*, *Infobae Colombia*, *Indepaz*, *FIP Colombia*). Refinamiento de alertas `CRITICAL` y `URGENT` para monitoreo del conflicto y transición política.
-- **🛡️ Parcheo y Depuración Dinámica de Feeds (`feed_patches.json`):** Aislamiento de feeds caídos o con bloqueos agresivos (*VenCERT Alertas/Boletines/General*, *DolarToday*, *Banca y Negocios*, *Apuntes de Seguridad*, *Pulzo*) para evitar cuellos de botella en el worker; actualización de URLs para *El Espectador* y *El Tiempo*.
-- **⚡ Optimización de Rate-Limiters Sociales (`humanization_ratelimit.py`):** Ajuste de ventanas de tiempo y reducción de `max_delay` de 120s a 45s para prevenir pausas excesivas en la extracción de Twitter, Instagram, TikTok y YouTube durante el ciclo completo.
-- **📡 Circuit Breakers y Conectividad en Tiempo Real (`osiris_realtime.py` & `open_data_apis.py`):** Fallback inmediato ante errores DNS/conexión en BGPView y Gaceta Oficial, ajuste de timeouts a 8-12s y bypass de verificación SSL para el portal del BCV.
-- **👤 Target Dossier Engine (`dossier_engine.py`):** Motor de inteligencia 360° para personas e instituciones de interés táctico. Modela expedientes integrados con cálculo de *Risk Score* (0.0 - 10.0), *Presión Mediática*, vinculación a listas OFAC SDN e historial de eventos.
-- **🌱 Cosechador de Palabras Clave Emergiendo (`keyword_harvester.py`):** Sistema automático de minería de tendencias que extrae hashtags, palabras clave compuestas y términos emergentes a partir del flujo de noticias.
-- **🔄 Auto-Tracker e Ingestión Autónoma (`auto_tracker.py`):** Motor proactivo que auto-registra nuevos objetivos y entidades descubiertas en reportes de alta severidad.
-- **🌐 Arquitectura Multipaís (Multi-Theater Engine):** Escalado modular de la plataforma mediante perfiles regionales JSON bajo `data/theaters/` (`col.json`, `ven.json`, `global.json`) y auto-etiquetado inteligente `country_tags` (`COL`, `VEN`, `GLOBAL`).
+- **🦋 Migración Social: Nitter → Bluesky + Mastodon (`social_hub.py`):** Nitter está oficialmente discontinuado (X eliminó los guest accounts en 2024). Se eliminó completamente `fetch_nitter()` y la lista `NITTER_INSTANCES`. Reemplazado por dos fuentes con APIs públicas reales y sin autenticación: **Bluesky** (AT Protocol, `public.api.bsky.app`) y **Mastodon** (REST API, `mastodon.social` → `fosstodon.org` → `infosec.exchange`). El pipeline social ahora extrae 4 flujos nuevos: `Bluesky #venezuela`, `Bluesky #ciberseguridad`, `Mastodon #venezuela`, `Mastodon #infosec`.
+- **⏱️ Estabilización del Launcher Desktop (`cobalto_desktop.py`):** Timeout de espera del backend FastAPI ampliado de 15s a **45s** (`range(60)` → `range(180)`), eliminando el falso positivo `[!] Backend did not respond` que se producía en arranques normales con carga inicial alta (Playwright, DoH, SQLite).
+- **🧹 Limpieza de Código Muerto:** Eliminación del código legacy de Nitter (`fetch_nitter`, `NITTER_INSTANCES`). Log de fallos sociales degradado de `ERROR` a `WARNING` para reducir ruido en logs de producción.
+- **🇨🇴 Integración Set DGAE Colombia 2026 (`config.py` & `col.json`):** Carga completa del set de términos de vigilancia táctica DGAE para Colombia (164+ palabras clave, 26 actores de alto perfil, 5 nuevas fuentes RSS estratégicas: *Colombia+20*, *InSight Crime ES*, *Infobae Colombia*, *Indepaz*, *FIP Colombia*).
+- **🛡️ Parcheo y Depuración Dinámica de Feeds (`feed_patches.json`):** Aislamiento de feeds caídos o con bloqueos agresivos (*VenCERT Alertas/Boletines/General*, *DolarToday*, *Banca y Negocios*, *Apuntes de Seguridad*, *Pulzo*).
+- **⚡ Optimización de Rate-Limiters Sociales (`humanization_ratelimit.py`):** Ajuste de ventanas de tiempo y reducción de `max_delay` de 120s a 45s.
+- **👤 Target Dossier Engine (`dossier_engine.py`):** Motor de inteligencia 360° con *Risk Score* (0.0–10.0), vinculación OFAC SDN e historial de eventos.
+- **🌐 Arquitectura Multipaís (Multi-Theater Engine):** Perfiles regionales JSON (`col.json`, `ven.json`, `global.json`) con auto-etiquetado `country_tags` (`COL`, `VEN`, `GLOBAL`).
 
 ---
 
@@ -697,7 +697,8 @@ Cobalto Hub es instalable como aplicación de escritorio:
 
 | Versión | Fecha | Cambios clave |
 |---|---|---|
-| **v14.2** | 2026-08-24 | **Marco DGAE Colombia 2026 & Hardening**: Integración completa del set de inteligencia DGAE 2026 para Colombia (164+ keywords, 26 targets de alto perfil, 5 fuentes RSS estratégicas: *Colombia+20*, *InSight Crime*, *Infobae*, *Indepaz*, *FIP*). Parcheo dinámico de fuentes caídas (`feed_patches.json`), aceleración del rate-limiter de redes sociales (`humanization_ratelimit.py`), circuit breakers optimizados en OSINT tiempo real y bypass SSL en scraping BCV. |
+| **v14.3** | 2026-08-24 | **Migración Social Nitter → Bluesky + Mastodon & Estabilización Launcher**: Eliminación completa de Nitter (discontinuado desde 2024). `social_hub.py` reemplaza `fetch_nitter()` por `fetch_bluesky()` (AT Protocol, sin auth) y `fetch_mastodon()` (REST API, 3 instancias fallback). 4 nuevas fuentes de datos sociales en tiempo real: `#venezuela` y `#ciberseguridad` en ambas plataformas. Timeout del launcher desktop ampliado de 15s a 45s. Logs sociales degradados a WARNING. |
+| **v14.2** | 2026-08-24 | **Marco DGAE Colombia 2026 & Hardening**: Integración completa del set de inteligencia DGAE 2026 para Colombia (164+ keywords, 26 targets de alto perfil, 5 fuentes RSS estratégicas: *Colombia+20*, *InSight Crime*, *Infobae*, *Indepaz*, *FIP*). Parcheo dinámico de fuentes caídas (`feed_patches.json`), aceleración del rate-limiter de redes sociales, circuit breakers optimizados en OSINT tiempo real y bypass SSL en scraping BCV. |
 | **v13.0** | 2026-08-20 | **Arquitectura Multipaís (Multi-Theater OSINT)**: Escalado del sistema a un motor multi-teatro modular mediante perfiles JSON (`data/theaters/`), registro `theaters_config.py`, auto-etiquetado de noticias (`country_tags`), selector de teatro en la barra lateral con navegación suave (`flyTo`) en el mapa Leaflet, endpoint `GET /api/theaters` y geocercas sísmicas multipaís. 132/132 tests aprobados. |
 | **v12.6** | 2026-08-19 | **Arquitectura Nativa PyQt6 & Bandeja de Sistema**: Migración a `PyQt6/QWebEngineView` en `cobalto_desktop.py` con System Tray icon, Windows Mutex monoinstancia, WebSocket continuous rehydration en `main.js`, retención TTL de noticias en config UI y compilación PyInstaller `build_exe.py`. |
 | **v12.5** | 2026-08-19 | **Blue Force Tracking (BFT)**: Monitoreo de operadores en terreno con ingesta de telemetría en tiempo real (`/api/telemetry/heartbeat`), almacenamiento en `operator_registry` y `operator_telemetry`, métricas de fuerza táctica (activos, sin señal, SOS), rastro histórico GPS (breadcrumbs), nivel de batería con código de color y tipo de red (`4G`/`Wi-Fi`/`AEGIS Mesh`). 8va capa de operadores en el Mapa Unificado Leaflet (`map-unified.js`), pestaña táctica dedicada `_tab_operators.html` + `operators-manager.js`, integración de alertas de Hombre Muerto y Pánico Manual SOS con aviso sonoro y visual prioritario en el HUB. Suite de 132 tests pasando al 100%. |

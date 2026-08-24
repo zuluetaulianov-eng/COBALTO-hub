@@ -197,7 +197,7 @@ def launch_desktop(with_worker=True, dev_mode=False):
 
     print(" [*] Waiting for backend to be ready...")
     ready = False
-    for _ in range(60):
+    for _ in range(180):  # 45s max (180 × 0.25s)
         if is_server_ready():
             print(" [OK] Backend ready.")
             ready = True

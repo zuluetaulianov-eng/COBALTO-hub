@@ -170,8 +170,90 @@ def is_duplicate(item: Dict) -> bool:
         return False
 
 
-# ── Extractores: Scrapers Públicos (v3) ──────────────────────────
-NITTER_INSTANCES = ["https://nitter.projectsegfau.lt", "https://nitter.cz"]
+# ── Extractores: Redes Sociales Abiertas (Bluesky + Mastodon) ────
+BLUESKY_API = "https://public.api.bsky.app/xrpc/app.bsky.feed.searchPosts"
+MASTODON_INSTANCES = [
+    "https://mastodon.social",
+    "https://fosstodon.org",
+    "https://infosec.exchange",
+]
+
+
+def fetch_bluesky(hashtag: str, max_items: int = 6) -> List[Dict]:
+    """Extrae posts de Bluesky via AT Protocol public API (sin autenticación)."""
+    try:
+        params = {"q": f"#{hashtag}", "limit": max_items, "sort": "latest"}
+        headers = {"User-Agent": "CobaltoHub/9.0 OSINT (+https://github.com/cobalto)"}
+        resp = _session.get(BLUESKY_API, params=params, headers=headers, timeout=10)
+        if not resp or resp.status_code != 200:
+            return []
+        data = resp.json()
+        results = []
+        for post in data.get("posts", [])[:max_items]:
+            record = post.get("record", {})
+            author = post.get("author", {})
+            text = record.get("text", "").strip()
+            if not text:
+                continue
+            handle = author.get("handle", "bsky")
+            uri = post.get("uri", "")
+            post_id = uri.split("/")[-1] if uri else ""
+            link = f"https://bsky.app/profile/{handle}/post/{post_id}" if post_id else "https://bsky.app"
+            item = {
+                "title": text[:140],
+                "summary": text,
+                "link": link,
+                "published": record.get("createdAt", "Reciente")[:16].replace("T", " "),
+                "source": f"Bluesky #{hashtag}",
+                "image": None,
+            }
+            if not is_duplicate(item):
+                results.append(item)
+        return results
+    except Exception:
+        return []
+
+
+def fetch_mastodon(hashtag: str, max_items: int = 6) -> List[Dict]:
+    """Extrae posts de Mastodon via API pública REST (sin autenticación)."""
+    for instance in MASTODON_INSTANCES:
+        try:
+            url = f"{instance}/api/v1/timelines/tag/{hashtag}"
+            params = {"limit": max_items}
+            headers = {"User-Agent": "CobaltoHub/9.0 OSINT"}
+            resp = _session.get(url, params=params, headers=headers, timeout=10)
+            if not resp or resp.status_code != 200:
+                continue
+            posts = resp.json()
+            if not isinstance(posts, list) or not posts:
+                continue
+            results = []
+            for post in posts[:max_items]:
+                content_html = post.get("content", "")
+                text = clean_html(content_html)
+                if not text:
+                    continue
+                account = post.get("account", {})
+                acct = account.get("acct", "mastodon")
+                link = post.get("url") or f"{instance}/@{acct}"
+                published = (post.get("created_at") or "Reciente")[:16].replace("T", " ")
+                media = post.get("media_attachments", [])
+                image = media[0].get("preview_url") if media else None
+                item = {
+                    "title": text[:140],
+                    "summary": text,
+                    "link": link,
+                    "published": published,
+                    "source": f"Mastodon #{hashtag} ({instance.split('//')[1]})",
+                    "image": image,
+                }
+                if not is_duplicate(item):
+                    results.append(item)
+            if results:
+                return results
+        except Exception:
+            continue
+    return []
 
 
 def fetch_rss(name: str, url: str, max_items: int = 5) -> List[Dict]:
@@ -195,36 +277,6 @@ def fetch_rss(name: str, url: str, max_items: int = 5) -> List[Dict]:
         if not is_duplicate(item):
             results.append(item)
     return results
-
-
-def fetch_nitter(hashtag: str) -> List[Dict]:
-    """Scrapea Twitter vía Nitter usando estrategia adaptativa."""
-    for base in NITTER_INSTANCES:
-        url = f"{base}/search?q=%23{hashtag}&f=recent"
-        # Usar la lógica síncrona de smart_scrape si es posible, o una versión simplificada
-        resp = safe_get(url)
-        if resp and resp.status_code == 200:
-            # ... lógica de BS4 ...
-            soup = BeautifulSoup(resp.content, "html.parser")
-            posts = soup.select(".timeline-item")[:5]
-            results = []
-            for p in posts:
-                try:
-                    txt = p.select_one(".tweet-content").get_text().strip()
-                    item = {
-                        "title": txt[:140],
-                        "summary": txt,
-                        "link": p.select_one(".tweet-link").get("href", "#"),
-                        "published": "Reciente",
-                        "source": f"X #{hashtag}",
-                    }
-                    if not is_duplicate(item):
-                        results.append(item)
-                except Exception:
-                    continue
-            if results:
-                return results
-    return []
 
 
 # ── Extractores: APIs con Credenciales ───────────────────────────
@@ -296,7 +348,10 @@ def get_social_hub_data() -> Dict[str, Any]:
             lambda: fetch_rss("Telegram @notivenezuelaarma", "https://rsshub.app/telegram/channel/notivenezuelaarma"),
         ),
         ("Hacker News", lambda: fetch_rss("Hacker News", "https://hnrss.org/frontpage")),
-        ("Nitter Vzla", lambda: fetch_nitter("venezuela")),
+        ("Bluesky Venezuela", lambda: fetch_bluesky("venezuela")),
+        ("Bluesky CiberSeg", lambda: fetch_bluesky("ciberseguridad")),
+        ("Mastodon Venezuela", lambda: fetch_mastodon("venezuela")),
+        ("Mastodon InfoSec", lambda: fetch_mastodon("infosec")),
         ("TikTok Hashtags", get_tiktok_all),
         ("TikTok Perfiles", get_tiktok_profiles),
         ("Crypto", fetch_crypto),
@@ -325,7 +380,7 @@ def get_social_hub_data() -> Dict[str, Any]:
                     social_data["sources"][name] = items
                     social_data["count"] += len(items)
             except Exception as e:
-                logger.error(f"{name}: {e}")
+                logger.warning(f"{name}: sin datos ({type(e).__name__})")
 
     logger.info(f"Completado en {time.time() - start_time:.2f}s. Total: {social_data['count']} items.")
     return social_data
