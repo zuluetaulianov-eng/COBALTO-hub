@@ -80,9 +80,12 @@ def _check_rate_limit(client_ip: str) -> bool:
     return True
 
 
-def _get_client_ip(request: Request) -> str:
+def _get_client_ip(request: Request | None) -> str:
+    if not request:
+        return "127.0.0.1"
     ip = request.headers.get("X-Forwarded-For", request.client.host if request.client else "127.0.0.1")
     return ip.split(",")[0].strip()
+
 
 
 # ── Health ──

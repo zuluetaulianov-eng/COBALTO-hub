@@ -98,8 +98,11 @@ RSS_FEEDS = {
     "Verdad Abierta": "https://verdadabierta.com/feed/",
     "Fundación Pares": "https://pares.com.co/feed/",
     "France 24 Colombia": "https://www.france24.com/es/am%C3%A9rica-latina/colombia/rss",
-    # Tech en Español
-    "Apuntes de Seguridad": "https://www.apuntesdeseguridad.com/feed/",
+    "Colombia+20 (El Espectador)": "https://www.elespectador.com/colombia-20/feed/",
+    "InSight Crime ES": "https://es.insightcrime.org/feed/",
+    "Infobae Colombia": "https://www.infobae.com/feeds/rss/america/colombia.xml",
+    "Indepaz": "https://indepaz.org.co/feed/",
+    "FIP Colombia": "https://ideaspaz.org/feed/",
 }
 
 # ── Fuentes Telegram (NO son RSS - requieren scraper especial) ──
@@ -271,11 +274,12 @@ PROBLEM_FEEDS = {
     },
 }
 
-# ── Palabras clave refinadas ──
+# ── Palabras clave refinadas — set DGAE Colombia 2026 integrado ──
 KEYWORDS = [
-    # Colombia / Conflicto / Transición / Seguridad / Cobertura Binacional
+    # ── COLOMBIA: Zonas geográficas críticas ──
     "colombia",
     "cúcuta",
+    "cucuta",
     "arauca",
     "norte de santander",
     "catatumbo",
@@ -287,15 +291,20 @@ KEYWORDS = [
     "meta",
     "maicao",
     "tibú",
+    "tibu",
     "tumaco",
     "san vicente del caguán",
     "bajo cauca",
     "magdalena medio",
     "sur de bolívar",
+    "antioquia",
+    "frontera colombia-venezuela",
+    "táchira",
+    # ── COLOMBIA: Grupos armados / irregulares ──
     "eln",
     "ejército de liberación nacional",
     "calarcá",
-    "antonio garcía",
+    "antonio garcía eln",
     "estado mayor central",
     "emc",
     "segunda marquetalia",
@@ -309,14 +318,31 @@ KEYWORDS = [
     "frente carlos patiño",
     "frente 33",
     "frente adán izquierdo",
-    "paz total",
+    # ── COLOMBIA: Gobierno / figuras políticas ──
+    "gustavo petro",
     "petro",
     "abelardo de la espriella",
     "adle",
     "iván cepeda",
     "josé manuel restrepo",
     "honorio miguel henríquez",
+    "casa de nariño",
     "cantón militar pichincha",
+    "ministerio de defensa colombia",
+    "ministerio del interior colombia",
+    "congreso de la república colombia",
+    "fiscalía general de la nación",
+    "presidencia de la república colombia",
+    # ── COLOMBIA: Fuerza pública ──
+    "fuerzas militares de colombia",
+    "ejército nacional de colombia",
+    "policía nacional de colombia",
+    "fuerza aérea colombiana",
+    "armada nacional de colombia",
+    "gaula",
+    "comando conjunto colombia",
+    "ffmm colombia",
+    # ── COLOMBIA: Tipos de evento ──
     "ataque armado",
     "atentado",
     "masacre",
@@ -331,12 +357,17 @@ KEYWORDS = [
     "hostigamiento armado",
     "asesinato selectivo",
     "líder social asesinado",
+    "líderes sociales asesinados",
+    "ataque a estación de policía",
     "ataque a oleoducto",
     "incursión armada",
     "confinamiento",
+    "paro armado",
+    # ── COLOMBIA: Marco político/jurídico ──
+    "paz total",
     "mesa de negociación eln",
     "curules de paz",
-    "circunscripciones especiales",
+    "circunscripciones especiales de paz",
     "acuerdo de paz 2016",
     "jep",
     "jurisdicción especial para la paz",
@@ -344,19 +375,68 @@ KEYWORDS = [
     "cese al fuego",
     "listado narcoterroristas",
     "mega cárceles",
-    "caño limón",
-    "oleoducto",
-    "ecopetrol",
-    "fedegán",
-    "andi",
+    "cierre jep",
+    "exguerrilleros jep",
+    "reincorporación",
+    "listado de organizaciones narcoterroristas",
+    # ── COLOMBIA: Analistas / periodistas / voces clave ──
+    "ariel ávila",
+    "león valencia",
+    "maría victoria llorente",
+    "camilo gonzález posso",
+    "daniel mejía londoño",
+    "juanita león",
+    "jeremy mcdermott",
+    "eduardo pizarro",
+    "indepaz",
+    "fundación pares",
+    "insight crime",
+    "la silla vacía",
+    # ── COLOMBIA: Relaciones internacionales ──
+    "donald trump colombia",
+    "departamento de estado eeuu colombia",
+    "extradición colombia",
+    "oea colombia",
+    "onu colombia",
+    "unión europea colombia",
+    "international crisis group colombia",
+    # ── COLOMBIA: Narcotráfico ──
     "cultivos de coca",
     "erradicación forzada",
+    "laboratorios de procesamiento",
+    "rutas de narcotráfico",
+    "clan del golfo narcotráfico",
+    "incautación de cocaína",
+    "economías ilegales",
     "minería ilegal",
-    "organismos de verificación",
+    # ── COLOMBIA: Petro post-presidencia ──
+    "milicias populares",
+    "huelga general colombia",
+    "oposición a adle",
+    "judicialización de petro",
+    # ── COLOMBIA: Derechos humanos ──
     "cicr colombia",
     "defensoría del pueblo",
     "acnur colombia",
     "human rights watch colombia",
+    "masacre de firmantes de paz",
+    "organismos de verificación",
+    # ── COLOMBIA: Términos operacionales/militares ──
+    "operación militar conjunta",
+    "bombardeo fuerzas militares",
+    "dron ataque colombia",
+    "ofensiva militar catatumbo",
+    "plan de guerra colombia",
+    "orden público colombia",
+    "zona de rehabilitación",
+    # ── COLOMBIA: Empresarial / sectores afectados ──
+    "caño limón",
+    "oleoducto",
+    "ecopetrol",
+    "fedegán",
+    "andi colombia",
+    "gremios ganaderos extorsión",
+    "transportadores paro armado",
     # Venezuela política/economía/sociedad
     "dolar",
     "dólar",
@@ -533,7 +613,11 @@ ALERT_CRITICAL_KEYWORDS = [
     "ransomware", "shell upload", "admin access",
     "toma guerrillera", "ataque a oleoducto", "confinamiento", "hostigamiento armado",
     "líder social asesinado", "desplazamiento forzado", "incursión armada", "paro armado",
-    "ataque a estación de policía", "bombardeo", "minas antipersona"
+    "ataque a estación de policía", "bombardeo", "minas antipersona",
+    # DGAE Colombia — críticos
+    "masacre de firmantes de paz", "artefacto explosivo", "combate catatumbo",
+    "ataque a ecopetrol", "dron ataque colombia", "ofensiva militar catatumbo",
+    "ruptura de negociaciones eln", "ataque oleoducto caño limón"
 ]
 ALERT_URGENT_KEYWORDS = [
     "decreto presidencial", "providencia administrativa", "expropiación", "intervención",
@@ -546,7 +630,15 @@ ALERT_URGENT_KEYWORDS = [
     "fuego masivo", "punto de calor",
     "paz total", "mesa de negociación eln", "cese al fuego", "segunda marquetalia",
     "clan del golfo", "estado mayor central", "calarcá", "antonio garcía",
-    "caño limón", "cierre jep", "listado narcoterroristas", "adle"
+    "caño limón", "cierre jep", "listado narcoterroristas", "adle",
+    # DGAE Colombia — urgentes
+    "frente 33", "frente adán izquierdo", "comandos de la frontera", "los pachencas",
+    "frente carlos patiño", "agc", "autodefensas gaitanistas", "farc-ep",
+    "extradición colombia", "judicialización de petro", "huelga general colombia",
+    "curules de paz", "circunscripciones especiales de paz", "mega cárceles",
+    "erradicación forzada", "cultivos de coca", "minería ilegal", "economías ilegales",
+    "transportadores paro armado", "gremios ganaderos extorsión", "asesinato selectivo",
+    "acnur colombia", "cicr colombia", "defensoría del pueblo colombia"
 ]
 
 # ── Configuración de Análisis de Sentimiento ──
@@ -796,6 +888,10 @@ ALLOWED_DOMAINS = {
     "cambiocolombia.com",
     "verdadabierta.com",
     "pares.com.co",
+    "es.insightcrime.org",
+    "indepaz.org.co",
+    "ideaspaz.org",
+    "infobae.com",
     # Energía
     "energialatina.com",
 }

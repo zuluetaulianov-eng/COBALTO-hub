@@ -209,6 +209,7 @@ window.CobaltoSearch = {
     },
 
     displayDossier: function(d) {
+        this.currentDossierData = d;
         const resultsContainer = document.getElementById('user-search-results');
         const escapeFn = (window.CobaltoCore && window.CobaltoCore.utils.escapeHTML) || (s => String(s));
         const prof = d.profile || {};
@@ -221,17 +222,25 @@ window.CobaltoSearch = {
 
         let html = `
             <div class="panel-glass" style="padding:1.5rem; border-top:4px solid ${riskColor}; margin-bottom:1.5rem;">
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem;">
+                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:1rem; flex-wrap:wrap; gap:1rem;">
                     <div>
                         <div style="font-size:0.75rem; color:#94A3B8; font-family:'Roboto Mono';">EXPEDIENTE TÁCTICO 360°</div>
                         <h2 style="margin:0.2rem 0; color:#FFF; font-size:1.5rem;">${escapeFn(prof.name)}</h2>
                         <div style="font-size:0.8rem; color:#00E5FF;">TIPO: ${escapeFn(prof.entity_type)} | TEATRO: ${(prof.country_tags||[]).join(', ')}</div>
                     </div>
-                    <div style="text-align:right;">
+                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:0.4rem;">
                         <div style="background:${riskColor}; color:#000; padding:4px 12px; border-radius:4px; font-weight:bold; font-size:0.85rem; font-family:'Roboto Mono';">
                             RIESGO ${escapeFn(prof.risk_level)} (${prof.risk_score}/10)
                         </div>
-                        ${prof.ofac_flag ? '<div style="background:#FF2D55; color:#FFF; margin-top:4px; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold;">🚨 SANCIÓN OFAC SDN</div>' : ''}
+                        ${prof.ofac_flag ? '<div style="background:#FF2D55; color:#FFF; padding:2px 8px; border-radius:4px; font-size:0.7rem; font-weight:bold;">🚨 SANCIÓN OFAC SDN</div>' : ''}
+                        <div style="display:flex; gap:0.4rem; margin-top:0.4rem;">
+                            <button onclick="CobaltoSearch.exportDossierJSON()" class="btn-tactical" style="font-size:0.7rem; padding:3px 8px; border-color:#00E5FF; color:#00E5FF;">
+                                📥 EXPORTAR JSON
+                            </button>
+                            <button onclick="CobaltoSearch.printDossierPDF()" class="btn-tactical" style="font-size:0.7rem; padding:3px 8px; border-color:#00FFAA; color:#00FFAA;">
+                                🖨️ IMPRIMIR / PDF
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -278,6 +287,23 @@ window.CobaltoSearch = {
             </div>`;
 
         resultsContainer.innerHTML = html;
+    },
+
+    exportDossierJSON: function() {
+        if (!this.currentDossierData) return;
+        var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.currentDossierData, null, 2));
+        var downloadAnchor = document.createElement('a');
+        var name = (this.currentDossierData.profile && this.currentDossierData.profile.name) ? this.currentDossierData.profile.name : 'dossier';
+        downloadAnchor.setAttribute("href", dataStr);
+        downloadAnchor.setAttribute("download", `dossier_tactico_${name.replace(/\s+/g, '_').toLowerCase()}.json`);
+        document.body.appendChild(downloadAnchor);
+        downloadAnchor.click();
+        downloadAnchor.remove();
+    },
+
+    printDossierPDF: function() {
+        window.print();
     }
 };
+
 

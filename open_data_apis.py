@@ -21,13 +21,10 @@ BCV_API_BASE = "https://www.bcv.org.ve"
 def get_bcv_exchange_rate() -> Dict[str, Any]:
     """Obtiene tasa de cambio oficial del BCV"""
     try:
-        # El BCV no tiene API pública oficial, scraping del sitio
         url = f"{BCV_API_BASE}/"
-
-        resp = safe_get(url)
-        if resp.status_code == 200:
+        resp = safe_get(url, timeout=12, verify=False)
+        if resp and resp.status_code == 200:
             import re
-
             patterns = [
                 r"dólar\s*estadounidense.*?(\d+,\d+)",
                 r"dollar.*?(\d+[.,]\d{2})",
@@ -53,7 +50,6 @@ def get_bcv_exchange_rate() -> Dict[str, Any]:
                 }
     except Exception as e:
         logger.warning(f"BCV API error: {e}")
-
     return {}
 
 
@@ -61,15 +57,11 @@ def get_bcv_reserves() -> Dict[str, Any]:
     """Obtiene reservas internacionales del BCV"""
     try:
         url = f"{BCV_API_BASE}/estadisticas/reservas-internacionales"
-
-        resp = safe_get(url)
-        if resp.status_code == 200:
-            # Extraer datos de reservas del HTML
+        resp = safe_get(url, timeout=12, verify=False)
+        if resp and resp.status_code == 200:
             import re
-
             reserves_pattern = r"reservas.*?(\d+,\d+)\s*mil"
             matches = re.findall(reserves_pattern, resp.text, re.IGNORECASE)
-
             if matches:
                 reserves = matches[0].replace(",", ".")
                 return {
@@ -84,7 +76,6 @@ def get_bcv_reserves() -> Dict[str, Any]:
                 }
     except Exception as e:
         logger.warning(f"BCV reserves error: {e}")
-
     return {}
 
 

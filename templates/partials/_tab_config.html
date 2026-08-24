@@ -265,7 +265,16 @@
                         <h2 class="font-mono text-primary ls-2" style="font-size: 1.1rem; text-transform: uppercase;">PANEL DE CONFIGURACIÓN DEL SISTEMA</h2>
                         <p class="text-muted" style="font-size: 0.75rem; margin-top: 0.3rem;">Administre y sintonice las fuentes de OSINT, palabras clave y parámetros de conectividad.</p>
                     </div>
-                    <div class="flex gap-1">
+                    <div class="flex gap-1" style="flex-wrap: wrap;">
+                        <button class="btn-tactical" style="color: #FF2D55; border-color: rgba(255, 45, 85, 0.4); background: rgba(255, 45, 85, 0.08);" onclick="if(window.CobaltoConfig)CobaltoConfig.applyPreset('DEFCON_1')" title="Máxima Frecuencia e Ingesta">
+                            ⚡ DEFCON 1
+                        </button>
+                        <button class="btn-tactical" style="color: #00FFAA; border-color: rgba(0, 255, 170, 0.4); background: rgba(0, 255, 170, 0.08);" onclick="if(window.CobaltoConfig)CobaltoConfig.applyPreset('DEFCON_5')" title="Modo Sigilo / Ahorro Ancho Banda">
+                            🛡️ DEFCON 5
+                        </button>
+                        <button class="btn-tactical" style="color: #B388FF; border-color: rgba(179, 136, 255, 0.4); background: rgba(179, 136, 255, 0.08);" onclick="if(window.CobaltoConfig)CobaltoConfig.applyPreset('AIR_GAPPED')" title="Fuerza LLM Local Ollama Air-Gapped">
+                            🔒 AIR-GAPPED
+                        </button>
                         <button class="btn-tactical border-accent" id="btn-force-refresh" style="color: var(--secondary); background: rgba(179, 136, 255, 0.05); border-color: rgba(179, 136, 255, 0.3);" onclick="if(window.CobaltoConfig)CobaltoConfig.forceRefresh()">
                             ⚡ FORZAR RASTREO
                         </button>
@@ -276,6 +285,7 @@
                             💾 GUARDAR CONFIGURACIÓN
                         </button>
                     </div>
+
                 </div>
 
                 <!-- Loading Console HUD style -->
@@ -577,7 +587,7 @@
                                 </div>
                                 <div class="config-input-group">
                                     <label>Sensibilidad Anti-Eco (Clonación de Noticias) <span id="sim-val-display" style="color: var(--primary);">0.85</span></label>
-                                    <input type="range" id="cfg-similarity" min="0.5" max="0.99" step="0.01" class="config-input-field" style="padding: 0.2rem; cursor: pointer;" >
+                                    <input type="range" id="cfg-similarity" aria-label="Sensibilidad anti-eco para clonación de noticias" min="0.5" max="0.99" step="0.01" class="config-input-field" style="padding: 0.2rem; cursor: pointer;" >
                                     <span style="font-size: 0.65rem; color: var(--text-muted);">Menos % = Agrupa noticias bajo temas generales. Más % = Exige que sean idénticas.</span>
                                 </div>
                             </div>
@@ -904,7 +914,7 @@
                                 <div class="config-input-group">
                                     <label>Temperatura de Respuesta (<span id="temp-val-display" style="color: var(--primary); font-weight: bold;">0.55</span>)</label>
                                     <div style="display: flex; align-items: center; gap: 1rem; margin-top: 0.2rem;">
-                                        <input type="range" id="cfg-ai-temperature" min="0.0" max="1.0" step="0.05" class="config-input-field" style="flex: 1; padding: 0.2rem; cursor: pointer;" >
+                                        <input type="range" id="cfg-ai-temperature" aria-label="Temperatura de respuesta de la inteligencia artificial" min="0.0" max="1.0" step="0.05" class="config-input-field" style="flex: 1; padding: 0.2rem; cursor: pointer;" >
                                     </div>
                                     <span style="font-size: 0.65rem; color: var(--text-muted);">Valores bajos aumentan la exactitud fáctica. Valores altos aumentan la fluidez narrativa.</span>
                                 </div>
@@ -973,14 +983,14 @@
                                 <div class="config-input-group">
                                     <label>Umbral Positivo (<span id="sent-thr-pos-display" style="color:#00ffaa;font-weight:bold;">0.15</span>)</label>
                                     <div style="display:flex;align-items:center;gap:1rem;margin-top:0.2rem;">
-                                        <input type="range" id="cfg-sent-threshold-positivo" min="0.05" max="0.5" step="0.01" class="config-input-field" style="flex:1;padding:0.2rem;cursor:pointer;" >
+                                        <input type="range" id="cfg-sent-threshold-positivo" aria-label="Umbral de sentimiento positivo" min="0.05" max="0.5" step="0.01" class="config-input-field" style="flex:1;padding:0.2rem;cursor:pointer;" >
                                     </div>
                                     <span style="font-size:0.65rem;color:var(--text-muted);">Score mínimo para clasificar una entrada como Positiva.</span>
                                 </div>
                                 <div class="config-input-group">
                                     <label>Umbral Negativo (<span id="sent-thr-neg-display" style="color:#FF2D55;font-weight:bold;">-0.15</span>)</label>
                                     <div style="display:flex;align-items:center;gap:1rem;margin-top:0.2rem;">
-                                        <input type="range" id="cfg-sent-threshold-negativo" min="-0.5" max="-0.05" step="0.01" class="config-input-field" style="flex:1;padding:0.2rem;cursor:pointer;" >
+                                        <input type="range" id="cfg-sent-threshold-negativo" aria-label="Umbral de sentimiento negativo" min="-0.5" max="-0.05" step="0.01" class="config-input-field" style="flex:1;padding:0.2rem;cursor:pointer;" >
                                     </div>
                                     <span style="font-size:0.65rem;color:var(--text-muted);">Score máximo para clasificar una entrada como Negativa.</span>
                                 </div>
@@ -1011,12 +1021,12 @@
                             <div class="config-grid-form" style="margin-bottom: 2rem;">
                                 <div class="config-input-group">
                                     <label>Score CRÍTICO (<span id="sent-thr-crit-display" style="color:#FF2D55;font-weight:bold;">-0.50</span>)</label>
-                                    <input type="range" id="cfg-sent-crisis-score" min="-1.0" max="-0.2" step="0.05" class="config-input-field" style="padding:0.2rem;cursor:pointer;" >
+                                    <input type="range" id="cfg-sent-crisis-score" aria-label="Score de crisis crítico" min="-1.0" max="-0.2" step="0.05" class="config-input-field" style="padding:0.2rem;cursor:pointer;" >
                                     <span style="font-size:0.65rem;color:var(--text-muted);">Score mínimo para detonar una alerta CRÍTICO.</span>
                                 </div>
                                 <div class="config-input-group">
                                     <label>Score ALERTA (<span id="sent-thr-alert-display" style="color:#FF9500;font-weight:bold;">-0.30</span>)</label>
-                                    <input type="range" id="cfg-sent-alerta-score" min="-0.8" max="-0.1" step="0.05" class="config-input-field" style="padding:0.2rem;cursor:pointer;" >
+                                    <input type="range" id="cfg-sent-alerta-score" aria-label="Score de nivel de alerta" min="-0.8" max="-0.1" step="0.05" class="config-input-field" style="padding:0.2rem;cursor:pointer;" >
                                     <span style="font-size:0.65rem;color:var(--text-muted);">Score para activar nivel de alerta ALERTA.</span>
                                 </div>
                                 <div class="config-input-group">
@@ -1083,12 +1093,12 @@
                                 </div>
                                 <div class="config-input-group">
                                     <label>Umbral Atención (<span id="sent-thr-atencion-display" style="color:#FF9500;font-weight:bold;">-0.15</span>)</label>
-                                    <input type="range" id="cfg-sent-atencion-score" min="-0.5" max="-0.05" step="0.01" class="config-input-field" style="padding:0.2rem;cursor:pointer;" >
+                                    <input type="range" id="cfg-sent-atencion-score" aria-label="Score de atención para alerta temprana" min="-0.5" max="-0.05" step="0.01" class="config-input-field" style="padding:0.2rem;cursor:pointer;" >
                                     <span style="font-size:0.65rem;color:var(--text-muted);">ATENCION_SCORE_THRESHOLD — Score mínimo para alerta temprana.</span>
                                 </div>
                                 <div class="config-input-group">
                                     <label>Denominador Normalización (<span id="sent-norm-denom-display" style="color:var(--primary);font-weight:bold;">0.50</span>)</label>
-                                    <input type="range" id="cfg-sent-norm-denom" min="0.1" max="1.0" step="0.05" class="config-input-field" style="padding:0.2rem;cursor:pointer;" >
+                                    <input type="range" id="cfg-sent-norm-denom" aria-label="Denominador de normalización" min="0.1" max="1.0" step="0.05" class="config-input-field" style="padding:0.2rem;cursor:pointer;" >
                                     <span style="font-size:0.65rem;color:var(--text-muted);">NORMALIZACION_DENOM — Factor de normalización del score compuesto.</span>
                                 </div>
                             </div>
@@ -1132,8 +1142,11 @@
                             <div class="config-grid-form" style="margin-bottom: 2rem;">
                                 <div class="config-input-group">
                                     <label>Groq API Key (Pipeline General)</label>
-                                    <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-GROQ_API_KEY" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
-                                    <button class="config-btn btn-toggle-password" data-target="env-GROQ_API_KEY" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem;">👁️</button>
+                                    <div style="display:flex;">
+                                        <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-GROQ_API_KEY" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
+                                        <button class="config-btn btn-toggle-password" data-target="env-GROQ_API_KEY" style="border-radius:0; padding: 0.5rem;">👁️</button>
+                                        <button class="config-btn" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem; background: rgba(0, 229, 255, 0.1); border-color: var(--primary); color: var(--primary);" onclick="if(window.CobaltoConfig)CobaltoConfig.testTokenConnection('GROQ', 'env-GROQ_API_KEY')">⚡ PROBAR</button>
+                                    </div>
                                 </div>
                                 <div class="config-input-group">
                                     <label>Groq API Key (C4i / Sentimientos)</label>
@@ -1181,9 +1194,13 @@
                                 </div>
                                 <div class="config-input-group">
                                     <label>OpenWeather API Key</label>
-                                    <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-OPENWEATHER_API_KEY" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
-                                    <button class="config-btn btn-toggle-password" data-target="env-OPENWEATHER_API_KEY" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem;">👁️</button>
+                                    <div style="display:flex;">
+                                        <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-OPENWEATHER_API_KEY" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>
+                                        <button class="config-btn btn-toggle-password" data-target="env-OPENWEATHER_API_KEY" style="border-radius:0; padding: 0.5rem;">👁️</button>
+                                        <button class="config-btn" style="border-top-left-radius: 0; border-bottom-left-radius: 0; padding: 0.5rem; background: rgba(0, 229, 255, 0.1); border-color: var(--primary); color: var(--primary);" onclick="if(window.CobaltoConfig)CobaltoConfig.testTokenConnection('OPENWEATHER', 'env-OPENWEATHER_API_KEY')">⚡ PROBAR</button>
+                                    </div>
                                 </div>
+
                                 <div class="config-input-group">
                                     <label>Shodan API Key (OSIRIS Recon)</label>
                                     <form style="display:contents;" autocomplete="off" onsubmit="return false;"><input type="password" id="env-SHODAN_API_KEY" class="config-input-field mono" style="border-right: none; border-top-right-radius: 0; border-bottom-right-radius: 0;"></form>

@@ -453,14 +453,41 @@ window.UnifiedMap = {
     },
 
     flyToCoordinates: function(lat, lng, zoom, label) {
-        if (!this.map) return;
+        var mapObj = this.state.map || this.map;
+        if (!mapObj) return;
         var z = zoom || 12;
-        this.map.flyTo([lat, lng], z, { animate: true, duration: 1.5 });
+        mapObj.flyTo([lat, lng], z, { animate: true, duration: 1.5 });
         if (label) {
             L.popup()
                 .setLatLng([lat, lng])
                 .setContent('<div class="font-mono" style="padding:4px;font-size:11px;color:#00e5ff;">📍 <strong>' + label + '</strong><br><span style="color:#aaa;">' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '</span></div>')
-                .openOn(this.map);
+                .openOn(mapObj);
         }
     },
+
+    focusLocation: function(lat, lng, label) {
+        var self = this;
+        if (window.CobaltoCore && window.CobaltoCore.switchTab) {
+            window.CobaltoCore.switchTab('tab-map');
+        }
+        setTimeout(function() {
+            if (!self.state.active && typeof self.init === 'function') {
+                self.init();
+            }
+            var mapObj = self.state.map || self.map;
+            if (mapObj) {
+                mapObj.flyTo([lat, lng], 14, { animate: true, duration: 1.5 });
+                setTimeout(function() {
+                    L.popup()
+                        .setLatLng([lat, lng])
+                        .setContent('<div style="font-family:\'Roboto Mono\',monospace;padding:6px;font-size:11px;color:#00E5FF;background:rgba(10,11,16,0.95);border-radius:4px;border:1px solid #00E5FF;">📍 <strong>' + (label || 'Ubicación Táctica') + '</strong><br><span style="color:#aaa;">' + lat.toFixed(4) + ', ' + lng.toFixed(4) + '</span></div>')
+                        .openOn(mapObj);
+                }, 1600);
+                if (typeof window.showTacticalToast === 'function') {
+                    window.showTacticalToast('📍 Posicionando vector en Mapa Unificado: ' + (label || ''), 'info');
+                }
+            }
+        }, 200);
+    },
 };
+

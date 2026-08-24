@@ -765,10 +765,91 @@ window.CobaltoSlash = (function() {
             }
         });
 
+        register({
+            name: 'cctv',
+            description: 'Abre el visor global de cámaras CCTV',
+            usage: '/cctv',
+            category: 'OSIRIS',
+            color: '#FFD700',
+            paramLabel: '',
+            requiresParam: false,
+            handler: function() {
+                if (window.CobaltoCore && window.CobaltoCore.switchTab) {
+                    window.CobaltoCore.switchTab('tab-osiris-global');
+                }
+                hideResults();
+                hideDropdown();
+            }
+        });
+
+        register({
+            name: 'recon',
+            description: 'Ejecuta consulta en OSIRIS RECON Toolkit',
+            usage: '/recon <tool> <target>',
+            category: 'OSIRIS',
+            color: '#00FFAA',
+            paramLabel: 'objetivo',
+            requiresParam: true,
+            handler: function(args) {
+                if (window.CobaltoCore && window.CobaltoCore.switchTab) {
+                    window.CobaltoCore.switchTab('tab-osiris-recon');
+                }
+                var reconInput = document.getElementById('or-query');
+                if (reconInput) {
+                    reconInput.value = args;
+                    reconInput.focus();
+                }
+                hideResults();
+                hideDropdown();
+            }
+        });
+
+        register({
+            name: 'dossier',
+            description: 'Abre el perfilador táctico de actores (Dossier 360°)',
+            usage: '/dossier <nombre>',
+            category: 'Inteligencia',
+            color: '#B388FF',
+            paramLabel: 'actor',
+            requiresParam: true,
+            handler: function(args) {
+                if (window.CobaltoCore && window.CobaltoCore.switchTab) {
+                    window.CobaltoCore.switchTab('tab-user-search');
+                }
+                var searchInput = document.getElementById('user-search-input');
+                if (searchInput) {
+                    searchInput.value = args;
+                    var btn = document.getElementById('user-search-btn');
+                    if (btn) btn.click();
+                }
+                hideResults();
+                hideDropdown();
+            }
+        });
+
         if (searchInput) {
             searchInput.addEventListener('input', onInput);
             searchInput.addEventListener('keydown', onKeyDown);
         }
+
+        // Global Ctrl+K / Cmd+K listener for Omnibox activation
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+                e.preventDefault();
+                var sInput = document.getElementById('search-input');
+                if (sInput) {
+                    sInput.focus();
+                    if (!sInput.value.startsWith('/')) {
+                        sInput.value = '/';
+                    }
+                    var evt = new Event('input', { bubbles: true });
+                    sInput.dispatchEvent(evt);
+                    if (typeof window.showTacticalToast === 'function') {
+                        window.showTacticalToast('⚡ Omnibox Táctico Activado (Comandos Slash)', 'info');
+                    }
+                }
+            }
+        });
 
         console.log('[SLASH] Sistema de comandos slash inicializado. ' + commands.length + ' comandos registrados.');
     }
@@ -787,3 +868,4 @@ document.addEventListener('DOMContentLoaded', function() {
         window.CobaltoSlash.init();
     }
 });
+

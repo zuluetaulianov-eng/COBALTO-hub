@@ -289,8 +289,12 @@ window.OsirisGlobal = {
             '<div class="cctv-meta-row"><span class="cctv-meta-label">Lng</span><span>' + (typeof cam.lng === 'number' ? cam.lng.toFixed(4) : cam.lng) + '</span></div>' +
             '<div class="cctv-meta-row"><span class="cctv-meta-label">Stream</span><span style="color:#76FF03;">' + (cam.stream_type || 'jpg').toUpperCase() + '</span></div>' +
             (cam.feed_url ? '<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.04);"><div style="color:#64748B;font-size:7px;margin-bottom:2px;">FEED URL</div><div style="font-size:7px;color:#555;word-break:break-all;">' + this._esc(cam.feed_url) + '</div></div>' : '') +
-            '<div style="margin-top:8px;"><button onclick="if(window.OsirisGlobal)window.OsirisGlobal.expandCamera(window.OsirisGlobal.state.cctvSelected)" style="width:100%;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:4px;color:#00E5FF;padding:4px;font-size:8px;font-family:monospace;cursor:pointer;">🔍 EXPAND VIEW</button></div>';
+            '<div style="margin-top:8px;display:flex;gap:6px;">' +
+            '<button onclick="if(window.OsirisGlobal)window.OsirisGlobal.expandCamera(window.OsirisGlobal.state.cctvSelected)" style="flex:1;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:4px;color:#00E5FF;padding:5px;font-size:8px;font-family:monospace;cursor:pointer;">🔍 EXPAND VIEW</button>' +
+            '<button onclick="if(window.OsirisGlobal&&window.OsirisGlobal.state.cctvSelected){var c=window.OsirisGlobal.state.cctvSelected;if(window.UnifiedMap&&window.UnifiedMap.focusLocation)window.UnifiedMap.focusLocation(c.lat,c.lng,c.name);}" style="flex:1;background:rgba(0,255,170,0.08);border:1px solid rgba(0,255,170,0.2);border-radius:4px;color:#00FFAA;padding:5px;font-size:8px;font-family:monospace;cursor:pointer;">📍 VER EN MAPA</button>' +
+            '</div>';
     },
+
 
     // ── SIGINT Feed ──────────────────────────────────────────
 

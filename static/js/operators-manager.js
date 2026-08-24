@@ -74,6 +74,80 @@ window.OperatorsManager = {
                 badge.style.display = 'none';
             }
         }
+
+        this.checkEmergencySOS();
+    },
+
+    checkEmergencySOS: function() {
+        var emergencyOp = this.operators.find(function(op) {
+            return op.status === 'EMERGENCY_SOS' || op.status === 'DEAD_MAN_TRIGGERED';
+        });
+
+        var banner = document.getElementById('bft-emergency-banner');
+        var title = document.getElementById('bft-banner-title');
+        var desc = document.getElementById('bft-banner-desc');
+        var ackBtn = document.getElementById('bft-banner-ack-btn');
+
+        if (emergencyOp && banner) {
+            banner.style.display = 'block';
+            if (title) title.textContent = `🚨 ALERTA SOS DETECTADA: ${emergencyOp.operator_name || 'OPERADOR'}`;
+            if (desc) desc.textContent = `ID: ${emergencyOp.operator_id} | Posición: ${emergencyOp.latitude.toFixed(4)}, ${emergencyOp.longitude.toFixed(4)} | Batería: ${emergencyOp.battery_level}% | Red: ${emergencyOp.network_type}`;
+            if (ackBtn) {
+                ackBtn.onclick = function() {
+                    window.OperatorsManager.acknowledgeSOS(emergencyOp.operator_id);
+                };
+            }
+            this.playSirenSound();
+        } else if (banner) {
+            banner.style.display = 'none';
+        }
+    },
+
+    playSirenSound: function() {
+        try {
+            var AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            var ctx = new AudioCtx();
+            var osc = ctx.createOscillator();
+            var gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(880, ctx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.5);
+            gain.gain.setValueAtTime(0.15, ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.5);
+        } catch (e) {
+            console.warn('[BFT] Audio siren notification suppressed:', e);
+        }
+    },
+
+    acknowledgeSOS: function(operatorId) {
+        var self = this;
+        fetch('/api/telemetry/operators/' + encodeURIComponent(operatorId) + '/acknowledge-sos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data.status === 'acknowledged') {
+                self.refresh();
+            }
+        })
+        .catch(function(err) {
+            console.error('[BFT] Error reconociendo SOS:', err);
+        });
+    },
+
+    showProvisioningModal: function() {
+        var modal = document.getElementById('bft-provision-modal');
+        var hostSpan = document.getElementById('bft-host-url');
+        if (hostSpan) {
+            hostSpan.textContent = window.location.origin + '/api/telemetry/heartbeat';
+        }
+        if (modal) modal.style.display = 'flex';
     },
 
     filter: function(text) {
@@ -162,7 +236,7 @@ window.OperatorsManager = {
 
                 <!-- BOTONES DE ACCIÓN -->
                 <div style="display:flex; gap:0.5rem;">
-                    <button onclick="OperatorsManager.focusOnMap(${op.latitude}, ${op.longitude}, '${self.escapeHTML(op.operator_name)}')" class="btn-tactical" style="flex:1; font-size:0.7rem; padding:4px 8px; border-color:#00E5FF; color:#00E5FF;">
+                    <button onclick="OperatorsManager.focusOnMap(${op.latitude}, ${op.longitude}, '${self.escapeHTML(op.operator_name)}', '${self.escapeHTML(op.operator_id)}')" class="btn-tactical" style="flex:1; font-size:0.7rem; padding:4px 8px; border-color:#00E5FF; color:#00E5FF;">
                         🗺️ MAPA
                     </button>
                     <button onclick="OperatorsManager.showDetail('${self.escapeHTML(op.operator_id)}')" class="btn-tactical" style="flex:1; font-size:0.7rem; padding:4px 8px;">
@@ -175,13 +249,34 @@ window.OperatorsManager = {
         grid.innerHTML = html;
     },
 
-    focusOnMap: function(lat, lon, name) {
+    focusOnMap: function(lat, lon, name, operatorId) {
         if (window.CobaltoCore) {
             window.CobaltoCore.switchTab('tab-map');
         }
         setTimeout(function() {
             if (window.UnifiedMap && window.UnifiedMap.map) {
                 window.UnifiedMap.map.setView([lat, lon], 14);
+                if (operatorId) {
+                    fetch('/api/telemetry/operators/' + encodeURIComponent(operatorId) + '/trail')
+                        .then(function(r) { return r.json(); })
+                        .then(function(data) {
+                            if (data.trail && data.trail.length > 1) {
+                                var latlngs = data.trail.map(function(t) { return [t.latitude, t.longitude]; });
+                                if (window.bftCurrentPolyline) {
+                                    window.UnifiedMap.map.removeLayer(window.bftCurrentPolyline);
+                                }
+                                window.bftCurrentPolyline = L.polyline(latlngs, {
+                                    color: '#00E5FF',
+                                    weight: 3,
+                                    opacity: 0.8,
+                                    dashArray: '5, 10'
+                                }).addTo(window.UnifiedMap.map);
+                            }
+                        })
+                        .catch(function(err) {
+                            console.warn('[BFT] Error obteniendo polilínea:', err);
+                        });
+                }
             }
         }, 300);
     },
@@ -230,7 +325,7 @@ window.OperatorsManager = {
                     </div>
 
                     <div style="display:flex; justify-content:flex-end; gap:0.5rem; margin-top:0.8rem;">
-                        <button onclick="OperatorsManager.focusOnMap(${op.latitude}, ${op.longitude}, '${self.escapeHTML(op.operator_name)}')" class="btn-tactical" style="padding:6px 12px; border-color:#00E5FF; color:#00E5FF;">
+                        <button onclick="OperatorsManager.focusOnMap(${op.latitude}, ${op.longitude}, '${self.escapeHTML(op.operator_name)}', '${self.escapeHTML(op.operator_id)}')" class="btn-tactical" style="padding:6px 12px; border-color:#00E5FF; color:#00E5FF;">
                             🗺️ CENTRAR EN MAPA UNIFICADO
                         </button>
                     </div>
@@ -251,3 +346,4 @@ window.OperatorsManager = {
             .replace(/'/g, '&#039;');
     }
 };
+

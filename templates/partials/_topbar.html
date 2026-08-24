@@ -1,4 +1,4 @@
-﻿        <!-- MAIN CONTENT -->
+        <!-- MAIN CONTENT -->
         <main class="main-content">
             
             <div class="top-bar">
@@ -11,10 +11,11 @@
                         <div id="radar-wave" style="position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; border-radius: 50%; border: 1px solid #00ffaa; transform: translate(-50%, -50%) scale(0.1); opacity: 0; pointer-events: none;"></div>
                     </div>
                     <button class="btn-tactical btn-neo4j-graph" style="border-color: #B388FF; color: #B388FF; box-shadow: 0 0 10px rgba(179, 136, 255, 0.2);">🕸️ CIBER-GRAFO NEO4J</button>
-                    <button onclick="window.showExportModal()" class="btn-tactical" style="border-color: #af52de; color: #af52de;">⎙ EXPORTAR</button>
-                    <button id="btn-mute-alerts" onclick="window.toggleMuteAlert()" class="btn-tactical" style="border-color:#FF2D55; color:#FF2D55; font-size:0.7rem;" title="Silenciar alertas sonoras críticas">🔊 AUDIO</button>
-                    <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" class="search-box" id="search-input" placeholder="Filtrar datos tácticos...">
-                    <button id="btn-clear-filters" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 0.5rem 0.7rem; border-radius: 8px; cursor: pointer; font-size: 0.7rem; font-family: 'Roboto Mono', monospace;">✕ LIMPIAR</button>
+                    <button onclick="window.showExportModal()" class="btn-tactical" style="border-color: #d494f7; color: #d494f7;" aria-label="Exportar reporte SITREP">⎙ EXPORTAR</button>
+                    <button id="btn-mute-alerts" onclick="window.toggleMuteAlert()" class="btn-tactical" style="border-color:#FF2D55; color:#FF2D55; font-size:0.7rem;" title="Silenciar alertas sonoras críticas" aria-label="Silenciar alertas sonoras">🔊 AUDIO</button>
+                    <button id="btn-voice-toggle" onclick="if(window.CobaltoVoice)window.CobaltoVoice.toggleListening()" class="btn-tactical" style="border-color:#00E5FF; color:#00E5FF; font-size:0.7rem;" title="Comando de voz (Ctrl+Shift+V)" aria-label="Activar comandos de voz"><span id="voice-mic-icon">🎙️</span> <span id="voice-status-text">VOZ</span></button>
+                    <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" class="search-box" id="search-input" placeholder="Filtrar datos tácticos..." aria-label="Filtrar datos tácticos">
+                    <button id="btn-clear-filters" style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); color: var(--text-muted); padding: 0.5rem 0.7rem; border-radius: 8px; cursor: pointer; font-size: 0.7rem; font-family: 'Roboto Mono', monospace;" aria-label="Limpiar filtros tácticos">✕ LIMPIAR</button>
                 </div>
             </div>
 
@@ -60,7 +61,7 @@
                     <div class="modal-section" id="export-entries-config">
                         <label>Entradas máximas a incluir</label>
                         <div class="slider-row">
-                            <input type="range" id="export-max-entries" min="5" max="100" value="25" step="5" oninput="document.getElementById('export-entries-value').textContent=this.value">
+                            <input type="range" id="export-max-entries" aria-label="Cantidad máxima de entradas a exportar" min="5" max="100" value="25" step="5" oninput="document.getElementById('export-entries-value').textContent=this.value">
                             <span class="slider-value" id="export-entries-value">25</span>
                         </div>
                     </div>

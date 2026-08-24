@@ -1,9 +1,18 @@
 {
     "_comment": "Parches manuales de feeds. URL alternativa o null para deshabilitar temporalmente.",
-    "_updated": "2026-05-27",
+    "_updated": "2026-08-24",
     "AVN": "https://www.avn.info.ve/rss",
     "2001 Online": "https://2001online.com/feed/",
     "La Iguana TV": null,
     "Dolar Venezuela": null,
-    "VTV Canal 8": null
+    "VTV Canal 8": null,
+    "VenCERT Alertas": null,
+    "VenCERT Boletines": null,
+    "VenCERT General": null,
+    "DolarToday": null,
+    "Banca y Negocios": null,
+    "Apuntes de Seguridad": null,
+    "Pulzo": null,
+    "El Espectador": "https://www.elespectador.com/arc/outboundfeeds/rss/?outputType=xml",
+    "El Tiempo (Colombia)": "https://www.eltiempo.com/arc/outboundfeeds/rss/?outputType=xml"
 }

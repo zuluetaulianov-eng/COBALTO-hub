@@ -9,6 +9,7 @@ window.CobaltoTimeline = {
     _historyData: [],
     _incidentsData: [],
     _activeFilter: "ALL",
+    _viewMode: "CARDS",
     _searchQuery: "",
     _isScrubbing: false,
     _scrubberTimeout: null,
@@ -110,6 +111,22 @@ window.CobaltoTimeline = {
         document.body.removeChild(link);
     },
 
+    setViewMode: function(mode) {
+        this._viewMode = mode;
+        const btnCards = document.getElementById("btn-view-cards");
+        const btnTimeline = document.getElementById("btn-view-timeline");
+        if (btnCards && btnTimeline) {
+            if (mode === "TIMELINE") {
+                btnCards.classList.remove("active");
+                btnTimeline.classList.add("active");
+            } else {
+                btnCards.classList.add("active");
+                btnTimeline.classList.remove("active");
+            }
+        }
+        this.renderIncidents();
+    },
+
     setFilter: function(filterName) {
         this._activeFilter = filterName;
 
@@ -170,6 +187,45 @@ window.CobaltoTimeline = {
                     <div class="empty-desc">No se encontraron eventos coincidentes con los criterios de filtro seleccionados.</div>
                 </div>
             `;
+            return;
+        }
+
+        // RENDER MODO LÍNEA DE TIEMPO (TIMELINE)
+        if (this._viewMode === "TIMELINE") {
+            let timelineHtml = `<div style="position: relative; padding-left: 1.5rem; border-left: 2px dashed rgba(0, 229, 255, 0.4); margin-left: 0.8rem; margin-top: 0.5rem;">`;
+            filtered.forEach(inc => {
+                const sevColor = inc.severity === "CRITICAL" ? "#ff4444" : (inc.severity === "HIGH" ? "#ffaa00" : (inc.severity === "MEDIUM" ? "#00e5ff" : "#888"));
+                const lat = parseFloat(inc.latitude || inc.lat || 0);
+                const lng = parseFloat(inc.longitude || inc.lng || 0);
+                const hasLocation = lat !== 0 && lng !== 0;
+                const safeTitle = (inc.title || "").replace(/'/g, "\\'");
+                const safeSummary = (inc.summary || "").replace(/'/g, "\\'");
+
+                timelineHtml += `
+                    <div style="position: relative; margin-bottom: 1.2rem; background: rgba(10,11,16,0.5); padding: 0.7rem; border-radius: 6px; border: 1px solid rgba(255,255,255,0.05);">
+                        <div style="position: absolute; left: -2.05rem; top: 0.8rem; width: 12px; height: 12px; border-radius: 50%; background: ${sevColor}; border: 2px solid #0a0b10; box-shadow: 0 0 8px ${sevColor};"></div>
+                        <div class="flex-between items-center" style="margin-bottom: 0.3rem;">
+                            <span style="font-size: 0.7rem; color: #00e5ff; font-family: monospace; font-weight: bold;">
+                                ⏱️ ${this._fmtDateStr(inc.timestamp)}
+                            </span>
+                            <span style="background: rgba(255,255,255,0.05); color: ${sevColor}; padding: 1px 5px; border-radius: 3px; font-size: 0.65rem; font-family: monospace; font-weight: bold; border: 1px solid ${sevColor};">
+                                ${inc.severity || 'HIGH'}
+                            </span>
+                        </div>
+                        <div class="font-mono" style="font-weight: bold; color: #fff; font-size: 0.85rem; margin-bottom: 0.3rem;">${inc.title}</div>
+                        <div style="font-size: 0.78rem; color: #94a3b8; line-height: 1.3;">${inc.summary || 'Sin descripción registrada.'}</div>
+                        <div class="flex-between items-center" style="margin-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 0.4rem;">
+                            <span class="font-mono text-muted" style="font-size: 0.68rem;">📡 ${inc.source || 'Monitor OSINT'} • ${inc.theater}</span>
+                            <div class="flex items-center" style="gap: 0.4rem;">
+                                ${hasLocation ? `<button class="btn-tactical" style="padding: 1px 6px; font-size: 0.65rem;" onclick="CobaltoTimeline.focusIncidentOnMap(${lat}, ${lng}, '${safeTitle}')">📍 MAPA</button>` : ''}
+                                <button class="btn-tactical" style="padding: 1px 6px; font-size: 0.65rem;" onclick="CobaltoTimeline.triggerRagAnalysis('${safeTitle}', '${safeSummary}')">🎯 RAG</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            timelineHtml += `</div>`;
+            container.innerHTML = timelineHtml;
             return;
         }
 

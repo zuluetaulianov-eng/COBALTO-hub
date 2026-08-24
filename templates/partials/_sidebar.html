@@ -13,7 +13,7 @@
                     <span><span style="margin-right:3px;">🌐</span> Teatro Táctico</span>
                     <span id="theater-active-badge" style="background: rgba(0, 229, 255, 0.2); color: #00E5FF; padding: 1px 6px; border-radius: 4px; font-size: 0.6rem;">ALL</span>
                 </div>
-                <select id="global-theater-select" onchange="window.switchTheater(this.value)" style="width: 100%; background: #0A0B10; color: #00E5FF; border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 6px; padding: 6px 8px; font-size: 0.8rem; font-family: 'Inter', sans-serif; cursor: pointer; outline: none;">
+                <select id="global-theater-select" aria-label="Seleccionar teatro táctico de operaciones" onchange="window.switchTheater(this.value)" style="width: 100%; background: #0A0B10; color: #00E5FF; border: 1px solid rgba(0, 229, 255, 0.3); border-radius: 6px; padding: 6px 8px; font-size: 0.8rem; font-family: 'Inter', sans-serif; cursor: pointer; outline: none;">
                     <option value="ALL" selected>🌐 Todos los Vectores (Global)</option>
                     <option value="COL">🇨🇴 Colombia (Conflicto & Transición)</option>
                     <option value="VEN">🇻🇪 Venezuela (Seguridad & FANB)</option>
@@ -149,6 +149,7 @@
                             <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-predictive');window.toggleMobileNavDrawer()"><span>⚠️</span> Alertas Predictivas</button>
                             <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-finint');window.toggleMobileNavDrawer()"><span>💳</span> FININT / DarkWeb</button>
                             <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-humint');window.toggleMobileNavDrawer()"><span>🕵️</span> HUMINT Campo</button>
+                            <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-operators');window.toggleMobileNavDrawer()"><span>👥</span> Operadores BFT</button>
                             <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-user-search');window.toggleMobileNavDrawer()"><span>👤</span> Perfil Actores</button>
                             <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-osiris-recon');window.toggleMobileNavDrawer()"><span>🔍</span> OSIRIS RECON</button>
                             <button class="mobile-drawer-btn" onclick="CobaltoCore.switchTab('tab-osiris-global');window.toggleMobileNavDrawer()"><span>📡</span> Live Feeds CCTV</button>

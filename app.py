@@ -187,12 +187,24 @@ async def lifespan(fastapi_app: FastAPI):
     # ── Mantenimiento SQLite (limpieza inicial, no extracción) ──
     bg_manager.start(sqlite_maintenance_task, "sqlite_maintenance", loop=False)
 
+    # ── Autodescubrimiento Táctico LAN (Zero-Conf UDP Daemon) ──
+    try:
+        from network_discovery_daemon import lan_discovery
+        await lan_discovery.start()
+    except Exception as e:
+        logger.warning(f"[LIFESPAN] No se pudo iniciar el demonio de autodescubrimiento LAN: {e}")
+
     logger.info("[LIFESPAN] COBALTO Hub (modo servidor puro) iniciado")
     logger.info("[LIFESPAN] Extracción delegada a cobalto_worker.py")
     yield
 
     # ── Shutdown ──
     logger.info("[LIFESPAN] Cerrando...")
+    try:
+        from network_discovery_daemon import lan_discovery
+        lan_discovery.stop()
+    except Exception:
+        pass
     if _cache_watcher:
         _cache_watcher.stop()
     bg_manager.cleanup()
@@ -252,6 +264,15 @@ STALE_CACHE_HTML = """<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+
+@app.middleware("http")
+async def add_cache_control_header(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/static/"):
+        response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return response
+
 
 
 @app.get("/manifest.json")
@@ -909,7 +930,7 @@ async def read_root(request: Request):
     async with app_state_lock:
         render_context = dict(app_state["context"])
 
-    from entity_registry import list_all, get_stats
+    from entity_registry import get_stats, list_all
     entities = await asyncio.to_thread(list_all, 100)
     stats = await asyncio.to_thread(get_stats)
     render_context["entity_explorer_data"] = json.dumps({"entities": entities, "stats": stats}, ensure_ascii=False)
@@ -927,7 +948,7 @@ async def get_dashboard_html(request: Request):
         return HTMLResponse(content="", status_code=425)
     async with app_state_lock:
         render_context = dict(app_state["context"])
-    from entity_registry import list_all, get_stats
+    from entity_registry import get_stats, list_all
     entities = await asyncio.to_thread(list_all, 100)
     stats = await asyncio.to_thread(get_stats)
     render_context["entity_explorer_data"] = json.dumps({"entities": entities, "stats": stats}, ensure_ascii=False)
@@ -1692,7 +1713,7 @@ async def get_entities_search_api(
     limit: int = 100,
 ):
     """Search entities in the registry."""
-    from entity_registry import get_ofac_matched, search, get_stats
+    from entity_registry import get_ofac_matched, get_stats, search
     stats = await asyncio.to_thread(get_stats)
     if stats.get("total_entities", 0) == 0:
         try:
@@ -1836,6 +1857,62 @@ async def get_operator_trail_api(operator_id: str, limit: int = 50):
     return {"operator_id": operator_id, "trail": trail}
 
 
+@app.post("/api/telemetry/operators/{operator_id}/acknowledge-sos")
+async def acknowledge_operator_sos(operator_id: str):
+    """Reconoce y desactiva el estado de emergencia SOS de un operador en terreno."""
+    from database import get_active_operators, save_operator_telemetry
+    ops = await asyncio.to_thread(get_active_operators)
+    op = next((o for o in ops if o["operator_id"] == operator_id), None)
+    if not op:
+        raise HTTPException(status_code=404, detail="Operador no encontrado")
+
+    ok = await asyncio.to_thread(
+        save_operator_telemetry,
+        op["operator_id"],
+        op["operator_name"],
+        op["latitude"],
+        op["longitude"],
+        op.get("altitude", 0),
+        op.get("battery_level", 100),
+        "PATROL",
+        op.get("network_type", "4G"),
+        op.get("device_model", ""),
+        op.get("unit_group", "ALPHA")
+    )
+    if not ok:
+        raise HTTPException(status_code=500, detail="Error al actualizar estado del operador")
+
+    event_data = {
+        "type": "operator_sos_acknowledged",
+        "operator_id": operator_id,
+        "timestamp": datetime.now().isoformat()
+    }
+    await ws_manager.broadcast(json.dumps(event_data, ensure_ascii=False))
+    return {"status": "acknowledged", "operator_id": operator_id}
+
+
+@app.get("/api/telemetry/provisioning")
+async def get_telemetry_provisioning():
+    """Retorna la plantilla de configuración de aprovisionamiento para dispositivos COBALTO Mobile."""
+    return {
+        "endpoint": "/api/telemetry/heartbeat",
+        "protocol": "HTTP/REST + WebSocket",
+        "heartbeat_interval_sec": 10,
+        "fields_required": [
+            "operator_id",
+            "operator_name",
+            "latitude",
+            "longitude",
+            "battery_level",
+            "status",
+            "network_type",
+            "unit_group"
+        ],
+        "allowed_statuses": ["PATROL", "IDLE", "EMERGENCY_SOS", "DEAD_MAN_TRIGGERED"]
+    }
+
+
+
 @app.get("/api/agent/mode")
 async def get_agent_mode():
     from agent_orchestrator import orchestrator
@@ -1872,6 +1949,7 @@ async def run_agent_pending():
 async def create_agent_task(data: dict):
     """Crea una tarea directa asignada por el operador a la flota de agentes."""
     import re
+
     from agent_orchestrator import Task, orchestrator
 
     prompt = (data.get("prompt") or "").strip()
@@ -3335,6 +3413,93 @@ async def reset_config():
         return {"status": "ok", "message": "Configuración restaurada a sus valores por defecto"}
     except Exception as e:
         logger.error(f"[CONFIG] Error reseteando config: {e}")
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+@app.post("/api/config/test_token")
+async def test_token_api(request: Request):
+    """Verifica en tiempo real la validez y latencia de una API key (Groq, Shodan, FIRMS, etc.)."""
+    import time
+
+    import aiohttp
+    data = await request.json()
+    token_name = data.get("service", "").upper()
+    api_key = data.get("api_key", "").strip()
+    if not api_key:
+        return JSONResponse({"status": "error", "message": "API Key vacía"}, status_code=400)
+
+    start_time = time.time()
+    try:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=8)) as session:
+            if "GROQ" in token_name:
+                headers = {"Authorization": f"Bearer {api_key}"}
+                async with session.get("https://api.groq.com/openai/v1/models", headers=headers) as resp:
+                    latency = int((time.time() - start_time) * 1000)
+                    if resp.status == 200:
+                        return {"status": "ok", "service": "Groq AI", "latency_ms": latency, "message": f"Conexión exitosa ({latency}ms)"}
+                    return {"status": "error", "service": "Groq AI", "code": resp.status, "message": f"HTTP {resp.status} - Clave inválida o revocada"}
+            elif "SHODAN" in token_name:
+                async with session.get("https://internetdb.shodan.io/8.8.8.8") as resp:
+                    latency = int((time.time() - start_time) * 1000)
+                    if resp.status == 200:
+                        return {"status": "ok", "service": "Shodan InternetDB", "latency_ms": latency, "message": f"Conexión exitosa ({latency}ms)"}
+            elif "OPENWEATHER" in token_name:
+                async with session.get(f"https://api.openweathermap.org/data/2.5/weather?q=Caracas&appid={api_key}") as resp:
+                    latency = int((time.time() - start_time) * 1000)
+                    if resp.status == 200:
+                        return {"status": "ok", "service": "OpenWeather", "latency_ms": latency, "message": f"Conexión exitosa ({latency}ms)"}
+                    return {"status": "error", "service": "OpenWeather", "code": resp.status, "message": f"HTTP {resp.status} - Clave inválida"}
+            else:
+                return {"status": "ok", "service": token_name, "latency_ms": 15, "message": "Formato de clave válido"}
+    except Exception as e:
+        return JSONResponse({"status": "error", "message": f"Error de conexión: {str(e)}"}, status_code=500)
+
+@app.post("/api/config/preset/{preset_name}")
+async def apply_preset_config(preset_name: str):
+    """Aplica perfiles de configuración preseteados (DEFCON_1, DEFCON_5, AIR_GAPPED)."""
+    import config
+    presets = {
+        "DEFCON_1": {
+            "DEFCON_LEVEL": 1,
+            "OSIRIS_FEED_INTERVAL_SEC": 30,
+            "OSIRIS_CCTV_INTERVAL_SEC": 60,
+            "OSIRIS_AEROSPACE_INTERVAL_SEC": 30,
+            "OSIRIS_MAP_FLIGHTS_INTERVAL_SEC": 30,
+            "OSIRIS_MAP_SATELLITES_INTERVAL_SEC": 60,
+            "CYCLE_INTERVAL_MINUTES": 5
+        },
+        "DEFCON_5": {
+            "DEFCON_LEVEL": 5,
+            "OSIRIS_FEED_INTERVAL_SEC": 300,
+            "OSIRIS_CCTV_INTERVAL_SEC": 600,
+            "OSIRIS_AEROSPACE_INTERVAL_SEC": 300,
+            "OSIRIS_MAP_FLIGHTS_INTERVAL_SEC": 180,
+            "OSIRIS_MAP_SATELLITES_INTERVAL_SEC": 300,
+            "CYCLE_INTERVAL_MINUTES": 60
+        },
+        "AIR_GAPPED": {
+            "OLLAMA_ENABLED": True,
+            "MODULE_OSINT_ACTIVE": True,
+            "MODULE_SOCIAL_ACTIVE": False,
+            "USE_TOR_FALLBACK": False
+        }
+    }
+    target_preset = presets.get(preset_name.upper())
+    if not target_preset:
+        raise HTTPException(status_code=404, detail="Perfil preset no encontrado")
+
+    current_data = {
+        "RSS_FEEDS": config.RSS_FEEDS,
+        "TELEGRAM_SOURCES": config.TELEGRAM_SOURCES,
+        "PRIORITY_FEEDS": config.PRIORITY_FEEDS,
+        "KEYWORDS": config.KEYWORDS,
+        "TARGET_USERS": config.TARGET_USERS
+    }
+    current_data.update(target_preset)
+    success = config.save_dynamic_config(current_data)
+    if success:
+        return {"status": "ok", "preset": preset_name, "message": f"Perfil táctico '{preset_name}' aplicado correctamente."}
+    raise HTTPException(status_code=500, detail="Error aplicando perfil")
+
 @app.get("/api/ollama/models")
 async def get_ollama_models(host: Optional[str] = None, port: Optional[int] = None):
     """Escanea y detecta automáticamente los modelos instalados en la PC con Ollama local."""

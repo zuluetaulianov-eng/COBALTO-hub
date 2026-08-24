@@ -856,7 +856,11 @@ class CobaltoGUI:
             self.btn_start_server.config(state="disabled")
             self.btn_stop_server.config(state="normal")
             srv_cpu, srv_mem = self.engine.get_proc_metrics(self.engine.server_process)
-            self.lbl_srv_metrics.config(text=f"CPU: {srv_cpu:.1f}% │ RAM: {srv_mem:.1f} MB (PID: {self.engine.server_process.pid})")
+            if self.engine.server_process is not None:
+                srv_text = f"CPU: {srv_cpu:.1f}% │ RAM: {srv_mem:.1f} MB (PID: {self.engine.server_process.pid})"
+            else:
+                srv_text = f"CPU: N/A │ RAM: N/A │ EXTERNO (puerto {self.web_port} activo)"
+            self.lbl_srv_metrics.config(text=srv_text)
         else:
             self.indicator_server.config(fg=self.c_red)
             self.btn_start_server.config(state="normal")

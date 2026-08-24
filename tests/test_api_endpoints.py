@@ -44,6 +44,24 @@ async def test_api_config_get():
             data = resp.json()
             assert isinstance(data, dict)
 
+@pytest.mark.asyncio
+async def test_api_config_preset():
+    """POST /api/config/preset/DEFCON_1 debe aplicar el perfil táctico."""
+    async with _make_client() as client:
+        resp = await client.post("/api/config/preset/DEFCON_1")
+        assert resp.status_code in (200, 401, 403)
+        if resp.status_code == 200:
+            data = resp.json()
+            assert data.get("status") == "ok"
+
+@pytest.mark.asyncio
+async def test_api_config_test_token():
+    """POST /api/config/test_token debe validar la sintaxis o conectividad de claves."""
+    async with _make_client() as client:
+        resp = await client.post("/api/config/test_token", json={"service": "GROQ", "api_key": "gsk_test_ci_mock_key"})
+        assert resp.status_code in (200, 400, 401, 403, 500)
+
+
 
 @pytest.mark.asyncio
 async def test_api_status():

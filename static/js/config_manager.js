@@ -1021,6 +1021,51 @@ window.CobaltoConfig = {
         }
     },
 
+    applyPreset: async function(presetName) {
+        if (!confirm(`¿Aplicar el perfil de misión "${presetName}"?`)) return;
+        this.showLoadingState(true);
+        try {
+            const resp = await fetch(`/api/config/preset/${presetName}`, { method: 'POST' });
+            const data = await resp.json();
+            if (resp.ok) {
+                this.showToast(data.message || `Perfil ${presetName} aplicado correctamente.`, 'success');
+                await this.loadConfig();
+            } else {
+                this.showToast(data.detail || 'Error aplicando perfil', 'error');
+            }
+        } catch (e) {
+            this.showToast('Error de red al aplicar perfil', 'error');
+        } finally {
+            this.showLoadingState(false);
+        }
+    },
+
+    testTokenConnection: async function(serviceName, inputId) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        const keyVal = input.value.trim();
+        if (!keyVal || keyVal.includes('****')) {
+            this.showToast('Introduzca una clave válida para probar la conexión.', 'warning');
+            return;
+        }
+        this.showToast(`Probando conexión con ${serviceName}...`, 'info');
+        try {
+            const resp = await fetch('/api/config/test_token', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ service: serviceName, api_key: keyVal })
+            });
+            const data = await resp.json();
+            if (resp.ok && data.status === 'ok') {
+                this.showToast(`✅ ${data.service}: ${data.message}`, 'success');
+            } else {
+                this.showToast(`🚨 ${serviceName}: ${data.message || 'Error en prueba'}`, 'error');
+            }
+        } catch (e) {
+            this.showToast(`Error probando servicio ${serviceName}`, 'error');
+        }
+    },
+
     escapeHTML: function(str) {
         if (!str) return '';
         return str
@@ -1031,6 +1076,7 @@ window.CobaltoConfig = {
             .replace(/'/g, '&#039;');
     }
 };
+
 
 document.addEventListener('DOMContentLoaded', () => {
     CobaltoConfig.init();

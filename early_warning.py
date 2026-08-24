@@ -53,12 +53,12 @@ class EarlyWarningEngine:
                 continue
 
             rules_triggered = self._match_rules(sc, context)
-            
+
             # Trend calculation
             prev_score = 0
             if sid in self._active_warnings:
                 prev_score = self._active_warnings[sid].get("threat_score", 0)
-            
+
             if score > prev_score + 5:
                 trend = "up"
             elif score < prev_score - 5:
@@ -68,7 +68,7 @@ class EarlyWarningEngine:
 
             # Tactical recommendations
             recommendations = self._generate_tactical_recommendations(rules_triggered, level, sc.get("entity_type", ""))
-            
+
             # Human readable summary
             ename = sc.get("entity_name", "Desconocida")
             ofac_flag = " (Coincidencia OFAC SDN)" if sc.get("ofac_match") else ""
@@ -120,7 +120,7 @@ class EarlyWarningEngine:
             recs.append("Revisar el expediente de investigación detallado generado por el agente ARES.")
         if "recent_high_severity_activity" in rules:
             recs.append("Configurar alertas de picos noticiosos en tiempo real para el teatro de operaciones.")
-        
+
         if not recs:
             if level == "critical":
                 recs.append("Iniciar protocolo de verificación prioritaria y convocar comité de crisis.")

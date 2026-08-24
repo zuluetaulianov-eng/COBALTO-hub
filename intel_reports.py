@@ -400,7 +400,7 @@ def generar_informe_finint_deterministico(address: str, chain: str, wallet_data:
     """Genera un informe fáctico completo de Inteligencia Financiera (FININT) sin IA."""
     code_id = f"FININT-{chain.upper()}-{time.strftime('%Y')}-{int(time.time()) % 10000:04d}"
     fecha_str = time.strftime("%d/%m/%Y %H:%M")
-    
+
     sanctioned = wallet_data.get("sanctioned", False)
     risk_score = wallet_data.get("risk_score", 0)
     s_info = wallet_data.get("sanctions_info", {})
@@ -410,7 +410,7 @@ def generar_informe_finint_deterministico(address: str, chain: str, wallet_data:
     nivel = "ALERTA CRÍTICA" if sanctioned or risk_score >= 70 else ("ALERTA ELEVADA" if risk_score >= 40 else "MONITOREO NORMAL")
 
     text_lines = []
-    text_lines.append(f"INFORME DE INTELIGENCIA FINANCIERA (FININT) Y EVASIÓN DE SANCIONES")
+    text_lines.append("INFORME DE INTELIGENCIA FINANCIERA (FININT) Y EVASIÓN DE SANCIONES")
     text_lines.append(f"CÓDIGO: {code_id} | FECHA: {fecha_str} | CLASIFICACIÓN: RESERVADO")
     text_lines.append(f"OBJETIVO: Billetera {chain.upper()} - {address}")
     text_lines.append("=" * 70)

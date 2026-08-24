@@ -1,8 +1,8 @@
-﻿            <!-- TAB: ACTORES -->
+            <!-- TAB: ACTORES -->
             <div id="tab-user-search" class="tab-content">
                 <div class="user-search-container" style="padding:2rem;">
-                    <div style="display:flex; gap:1rem; margin-bottom:2rem;">
-                        <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="user-search-input" class="search-box" style="flex:1" placeholder="Nombre de usuario a investigar...">
+                    <div style="display:flex; gap:1rem; margin-bottom:1rem;">
+                        <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="user-search-input" class="search-box" style="flex:1" placeholder="Nombre de usuario o institución a investigar...">
                         <select id="platform-select" class="search-box" style="width:160px">
                             <option value="all">Todas</option>
                             <option value="twitter">X (Twitter)</option>
@@ -14,6 +14,17 @@
                         <button class="btn-tactical" style="padding:0 2rem;" onclick="if(window.CobaltoSearch)CobaltoSearch.searchUser()">INVESTIGAR</button>
                         <button class="btn-red" style="padding:0 1.5rem; font-family:'Roboto Mono'; font-weight:bold; border-radius:8px; border:1px solid #FF2D55; background:transparent; color:#FF2D55; cursor:pointer;" onclick="if(window.CobaltoSearch)CobaltoSearch.clearSearch()">LIMPIAR</button>
                     </div>
+
+                    <!-- CHIPS DE OBJETIVOS DESTACADOS (EXPEDIENTES RÁPIDOS 360°) -->
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap; align-items:center; margin-bottom:1.5rem; background:rgba(0,0,0,0.3); padding:0.8rem; border-radius:6px; border:1px solid rgba(0,229,255,0.15);">
+                        <span style="font-size:0.75rem; font-family:'Roboto Mono',monospace; color:var(--primary); font-weight:bold; margin-right:0.4rem;">🎯 DOSSIER 360° RÁPIDO:</span>
+                        <button onclick="if(window.CobaltoSearch)CobaltoSearch.loadDossier('Gustavo Petro')" class="btn-tactical" style="font-size:0.7rem; padding:3px 8px; border-color:rgba(0,229,255,0.3);">👤 Gustavo Petro</button>
+                        <button onclick="if(window.CobaltoSearch)CobaltoSearch.loadDossier('Abelardo de la Espriella')" class="btn-tactical" style="font-size:0.7rem; padding:3px 8px; border-color:rgba(0,229,255,0.3);">👤 Abelardo de la Espriella</button>
+                        <button onclick="if(window.CobaltoSearch)CobaltoSearch.loadDossier('Ministerio de Defensa Colombia')" class="btn-tactical" style="font-size:0.7rem; padding:3px 8px; border-color:rgba(0,229,255,0.3);">🏛️ MinDefensa COL</button>
+                        <button onclick="if(window.CobaltoSearch)CobaltoSearch.loadDossier('Fiscalía General de la Nación')" class="btn-tactical" style="font-size:0.7rem; padding:3px 8px; border-color:rgba(0,229,255,0.3);">⚖️ Fiscalía General</button>
+                        <button onclick="if(window.CobaltoSearch)CobaltoSearch.loadDossier('Vladimir Padrino López')" class="btn-tactical" style="font-size:0.7rem; padding:3px 8px; border-color:rgba(0,229,255,0.3);">👤 Padrino López</button>
+                    </div>
+
                     <div id="profile-changes-container" style="margin-bottom:1rem; display:none;">
                         <div class="news-card" style="border-left:3px solid #ffaa00; padding:0.8rem;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
@@ -27,4 +38,5 @@
                     <div id="user-search-results"></div>
                 </div>
             </div>
+
 

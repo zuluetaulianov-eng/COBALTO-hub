@@ -63,21 +63,21 @@ def cluster_similar_entries(entries: List[Dict]) -> List[Dict]:
         title = entry.get("title", "")
         summary = entry.get("summary", "")
         entry_kw = extract_keywords(title + " " + summary[:100])
-        
+
         matched_cluster = None
         for existing in clustered:
             ex_kw = existing.get("_keywords")
             if not ex_kw or not entry_kw:
                 continue
-            
+
             intersection = entry_kw.intersection(ex_kw)
             union = entry_kw.union(ex_kw)
             jaccard = len(intersection) / len(union) if union else 0.0
-            
+
             if jaccard >= 0.38 or (len(intersection) >= 3 and len(entry_kw) >= 3):
                 matched_cluster = existing
                 break
-        
+
         if matched_cluster:
             rel_sources = matched_cluster.setdefault("related_sources", [])
             src_info = {
@@ -95,7 +95,7 @@ def cluster_similar_entries(entries: List[Dict]) -> List[Dict]:
             entry_copy["related_sources"] = []
             entry_copy["sources_count"] = 1
             clustered.append(entry_copy)
-            
+
     for item in clustered:
         item.pop("_keywords", None)
     return clustered

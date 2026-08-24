@@ -1,8 +1,14 @@
 <div id="tab-humint" class="tab-content">
     <div class="panel-glass" style="padding: 1.5rem; margin-bottom: 1rem;">
         <div class="flex-between" style="margin-bottom: 1rem;">
-            <h2 class="heading-2">🕵️ HUMINT & Reportes de Campo</h2>
+            <div>
+                <h2 class="heading-2">🕵️ HUMINT & Reportes de Campo</h2>
+                <div class="text-muted" style="font-size: 0.75rem; margin-top: 0.2rem;">
+                    Captura táctica de terreno • Sincronización Telegram / Web • Air-Gapped Resilient
+                </div>
+            </div>
             <div class="flex" style="gap: 0.5rem; align-items: center;">
+                <span id="humint-offline-badge" class="badge" style="display:none; background:#FF9500; color:#000; font-weight:bold; font-size:0.75rem; padding: 2px 8px; border-radius: 4px;">📡 0 Pendientes Sync</span>
                 <span id="humint-count" class="kpi-value" style="font-size: 1.1rem;">0</span>
                 <span class="text-muted" style="font-size: 0.8rem;">reportes</span>
                 <button class="btn-tactical btn-sm" onclick="HumintIntel.loadReports()">🔄 Recargar</button>
@@ -18,23 +24,30 @@
 
     <!-- New report form -->
     <div class="panel-glass" style="padding: 1rem; margin-bottom: 1rem;">
-        <div class="heading-4" style="margin-bottom: 0.5rem;">📝 Nuevo Reporte de Campo</div>
+        <div class="flex-between" style="margin-bottom: 0.5rem;">
+            <div class="heading-4">📝 Nuevo Reporte de Campo</div>
+            <button class="btn-tactical btn-sm" onclick="HumintIntel.addSampleReport()" style="border-color:var(--primary); font-size:0.75rem;">⚡ Cargar Ejemplo Táctico</button>
+        </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
-            <input id="humint-title" class="config-input" placeholder="Título *">
-            <input id="humint-reporter" class="config-input" placeholder="Reportado por">
+            <input id="humint-title" class="config-input" placeholder="Título del reporte *">
+            <input id="humint-reporter" class="config-input" placeholder="Reportado por (ej: Agente-07)">
             <input id="humint-lat" class="config-input" placeholder="Latitud (ej: 10.4806)">
             <input id="humint-lon" class="config-input" placeholder="Longitud (ej: -66.9036)">
-            <input id="humint-location" class="config-input" placeholder="Nombre del lugar">
+            <input id="humint-location" class="config-input" placeholder="Nombre del lugar (ej: Sector Centro)">
             <select id="humint-severity" class="config-select">
                 <option value="info">ℹ️ Informativo</option>
                 <option value="medium">🟡 Medio</option>
                 <option value="high">🟠 Alto</option>
                 <option value="critical">🔴 Crítico</option>
             </select>
-            <input id="humint-tags" class="config-input" placeholder="Tags (coma separados)" style="grid-column: span 2;">
+            <input id="humint-photo" class="config-input" placeholder="URL de Foto / Evidencia (opcional)" style="grid-column: span 2;">
+            <input id="humint-tags" class="config-input" placeholder="Tags (ej: patrullaje, movilizacion, vehicular)" style="grid-column: span 2;">
         </div>
-        <textarea id="humint-description" class="config-input" style="width:100%;min-height:80px;margin-top:0.5rem;" placeholder="Descripción del reporte..."></textarea>
-        <button class="btn-tactical" style="margin-top:0.5rem;" onclick="HumintIntel.submitReport()">📤 Enviar Reporte</button>
+        <textarea id="humint-description" class="config-input" style="width:100%;min-height:80px;margin-top:0.5rem;" placeholder="Descripción detallada de la novedad en terreno..."></textarea>
+        <div class="flex-between" style="margin-top:0.5rem;">
+            <button class="btn-tactical" onclick="HumintIntel.submitReport()">📤 Enviar Reporte de Campo</button>
+            <span class="text-muted font-mono" style="font-size:0.7rem;">Soporta captura en modo desconectado (Offline Queue)</span>
+        </div>
     </div>
 
     <!-- Report list -->
@@ -45,3 +58,4 @@
         </div>
     </div>
 </div>
+

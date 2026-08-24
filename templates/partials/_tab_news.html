@@ -76,7 +76,7 @@
 
                         <!-- Filtros por Categoría y Severidad -->
                         <div class="flex items-center gap-05 flex-wrap">
-                            <select id="sitrep-category-select" onchange="CobaltoCore.filterNews()" class="sitrep-select">
+                            <select id="sitrep-category-select" onchange="CobaltoCore.filterNews()" class="sitrep-select" aria-label="Filtrar por categoría de noticias">
                                 <option value="ALL">🔍 Todas las Categorías</option>
                                 <option value="MILITARY">⚔️ Defensa & FANB/FFMM</option>
                                 <option value="SECURITY">🚨 Orden Público & Protestas</option>
@@ -86,7 +86,7 @@
                                 <option value="ECONOMY">💰 Economía & Sanciones</option>
                             </select>
 
-                            <select id="sitrep-severity-select" onchange="CobaltoCore.filterNews()" class="sitrep-select">
+                            <select id="sitrep-severity-select" onchange="CobaltoCore.filterNews()" class="sitrep-select" aria-label="Filtrar por severidad de evento">
                                 <option value="ALL">⚠️ Cualquier Severidad</option>
                                 <option value="CRITICAL">🔴 Crítico</option>
                                 <option value="HIGH">🟠 Alto</option>

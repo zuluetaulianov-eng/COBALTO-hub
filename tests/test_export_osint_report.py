@@ -101,7 +101,12 @@ def test_export_informe_fuentes_failover():
 
 
 async def test_ejecutar_investigacion_local_sin_ia():
-    from intel_reports import ejecutar_investigacion_local, generar_docx_informe, generar_pdf_informe, obtener_historial_informes
+    from intel_reports import (
+        ejecutar_investigacion_local,
+        generar_docx_informe,
+        generar_pdf_informe,
+        obtener_historial_informes,
+    )
 
     sample_entries = [
         {
@@ -128,7 +133,7 @@ async def test_ejecutar_investigacion_local_sin_ia():
     assert "ALERTA" in report.nivel_alerta
     assert "REGISTRO DE ENTIDADES" in report.analisis_completo
     assert "GEOLOCALIZACIÓN" in report.analisis_completo
-    
+
     hist = obtener_historial_informes()
     assert len(hist) > 0
     assert hist[0]["codigo"] == report.codigo

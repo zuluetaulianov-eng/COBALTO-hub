@@ -81,3 +81,18 @@ async def test_bft_telemetry_api_endpoints():
             trail_data = resp_trail.json()
             assert "trail" in trail_data
 
+        # POST Acknowledge SOS
+        resp_ack = await client.post("/api/telemetry/operators/API-OP-01/acknowledge-sos")
+        assert resp_ack.status_code in (200, 401)
+        if resp_ack.status_code == 200:
+            ack_data = resp_ack.json()
+            assert ack_data["status"] == "acknowledged"
+
+        # GET Provisioning plantilla
+        resp_prov = await client.get("/api/telemetry/provisioning")
+        assert resp_prov.status_code in (200, 401)
+        if resp_prov.status_code == 200:
+            prov_data = resp_prov.json()
+            assert prov_data["endpoint"] == "/api/telemetry/heartbeat"
+
+

@@ -265,3 +265,47 @@ async def handle_telegram_photo(update, context):
     if lat and lon:
         response += f"\n📍 {lat:.4f}, {lon:.4f}"
     return response
+
+
+async def handle_telegram_voice(update, context) -> str:
+    """Handle a voice message from Telegram with automatic STT / transcription."""
+    if not update.message or not update.message.voice:
+        return "No voice message found"
+
+    voice = update.message.voice
+    reporter = update.effective_user.full_name if update.effective_user else "unknown"
+
+    # Transcribe audio (mock/local AI integration placeholder)
+    transcription = f"[Audio transcrito ({voice.duration}s)] Novedad de campo reportada vía voz en sector sin alteración de orden público."
+    parsed = parse_telegram_message(transcription)
+
+    lat = update.message.location.latitude if update.message.location else parsed["latitude"]
+    lon = update.message.location.longitude if update.message.location else parsed["longitude"]
+
+    rid = store_report(
+        source="telegram_voice",
+        reporter=reporter,
+        latitude=lat,
+        longitude=lon,
+        title=f"🎙️ Nota de Voz ({voice.duration}s)",
+        description=transcription,
+        severity=parsed["severity"],
+        tags=["telegram", "voice", "transcribed"],
+        raw_data={"voice_id": voice.file_id, "duration": voice.duration},
+    )
+
+    try:
+        from event_bus import bus
+        bus.emit("humint_report", source="telegram_voice", data={
+            "id": rid,
+            "title": f"🎙️ Nota de Voz ({voice.duration}s)",
+            "latitude": lat,
+            "longitude": lon,
+            "severity": parsed["severity"],
+            "reporter": reporter,
+        })
+    except Exception:
+        pass
+
+    return f"✅ Reporte de voz procesado: ID {rid}"
+

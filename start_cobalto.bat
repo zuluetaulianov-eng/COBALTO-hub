@@ -18,12 +18,12 @@ set "PYTHON_CMD="
 
 :: Comprobar si 'python' está disponible
 where python >nul 2>nul
-if %errorlevel% equ 0 (
+if !errorlevel! equ 0 (
     set "PYTHON_CMD=python"
 ) else (
     rem Comprobar si 'python3' está disponible
     where python3 >nul 2>nul
-    if %errorlevel% equ 0 (
+    if !errorlevel! equ 0 (
         set "PYTHON_CMD=python3"
     )
 )
@@ -35,7 +35,7 @@ if "%PYTHON_CMD%"=="" (
     
     rem Descargar el instalador oficial silenciosamente usando curl - disponible en Win10 y 11
     curl -L -o python_installer.exe https://www.python.org/ftp/python/3.11.9/python-3.11.9-amd64.exe
-    if %errorlevel% neq 0 (
+    if !errorlevel! neq 0 (
         echo  [ERROR] No se pudo descargar Python automáticamente. Asegurese de tener conexion a internet o instale Python 3.10+ manualmente.
         pause
         exit /b 1
@@ -45,7 +45,7 @@ if "%PYTHON_CMD%"=="" (
     echo      * Por favor, apruebe los permisos de Administrador si Windows lo solicita.
     python_installer.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
     
-    if %errorlevel% neq 0 (
+    if !errorlevel! neq 0 (
         echo  [ERROR] La instalacion automatica de Python ha fallado.
         del python_installer.exe >nul 2>nul
         pause
@@ -90,8 +90,13 @@ echo.
 
 :: --- 4. INICIAR TÚNEL ZROK ---
 echo  [+] Levantando túnel seguro Zrok en segundo plano...
-start /min cmd /c "zrok share reserved commandereliminatedextraction --force-local --headless > zrok.log 2>&1"
-timeout /t 2 /nobreak > nul
+where zrok >nul 2>nul
+if !errorlevel! equ 0 (
+    start /min cmd /c "zrok share reserved commandereliminatedextraction --force-local --headless > zrok.log 2>&1"
+    timeout /t 2 /nobreak > nul
+) else (
+    echo  [ALERTA] Zrok no encontrado en PATH. El tunel publico no estara disponible.
+)
 echo.
 
 :: --- 5. INICIAR LANZADOR GRÁFICO (GUI) ---
@@ -103,8 +108,6 @@ echo.
 echo  [+] Cerrando túnel Zrok...
 taskkill /IM zrok.exe /F >nul 2>nul
 
-if %errorlevel% neq 0 (
-    echo.
-    echo  [!] El Lanzador ha finalizado.
-    pause
-)
+echo.
+echo  [!] El Lanzador ha finalizado.
+pause

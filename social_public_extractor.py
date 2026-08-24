@@ -393,7 +393,10 @@ def get_news_aggregators() -> List[Dict[str, Any]]:
 # ==========================================
 LATAM_NEWS = {
     "El Tiempo (Colombia)": "https://www.eltiempo.com/rss/mundo.xml",
-    "El Espectador (Colombia)": "https://www.elespectador.com/rss/mundo/",
+    "El Espectador (Colombia)": "https://www.elespectador.com/arc/outboundfeeds/rss/?outputType=xml",
+    "Verdad Abierta (Colombia)": "https://verdadabierta.com/feed/",
+    "InSight Crime ES": "https://es.insightcrime.org/feed/",
+    "Indepaz": "https://indepaz.org.co/feed/",
     "La Jornada (México)": "https://www.jornada.com.mx/rss/mundo",
     "La Prensa (Panamá)": "https://www.prensa.com/rss/mundo.xml",
     "El Mercurio (Chile)": "https://www.elmercurio.com/rss/internacional.xml",

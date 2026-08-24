@@ -1,24 +1,22 @@
-# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v14.0
+# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v14.2
 
 > **Sistema de Mando y Control de Inteligencia (C4I)** en tiempo real con **Arquitectura Multipaís (Multi-Theater OSINT)**,  
 > **Target Dossier Engine (360° Risk Score)**, **Pipeline de Ingestión Autónoma y Cosecha de Keywords** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
 > Consolida fuentes RSS, canales de Telegram, redes sociales, ciberseguridad, rastreo de aeronaves/buques, telemetría de campo en vivo y análisis geopolítico multiagente con IA.  
-> **v14.0** — Pipeline de Inteligencia Autónoma (Auto-Tracker & Keyword Harvester), Expedientes 360° de Actores (Dossier Engine),  
-> Cobertura completa Bilateral para Teatros operacionales (Colombia, Venezuela, Internacional), Panel de Configuración Táctico (12 Canales Telegram, 55 Feeds RSS, 20 Targets, 116 Keywords) y 141/141 Tests Aprobados.
+> **v14.2** — Integración Marco DGAE Colombia 2026 (164+ Keywords, 26 Targets, 5 Feeds Estratégicos COL), Depuración y Parcheo Dinámico de Feeds Caídos, Optimización de Rate-Limiters Sociales y Circuit Breakers de Red en Tiempo Real.
 
 ---
 
-## 🔄 Últimas Actualizaciones (Agosto 2026 — Pipeline de Inteligencia Autónoma & Multi-Theater v14.0)
+## 🔄 Últimas Actualizaciones (Agosto 2026 — Marco DGAE Colombia & Hardening v14.2)
 
-- **👤 Target Dossier Engine (`dossier_engine.py`):** Motor de inteligencia 360° para personas e instituciones de interés táctico. Modela expedientes integrados con cálculo de *Risk Score* (0.0 - 10.0), *Presión Mediática*, vinculación a listas OFAC SDN, historial de eventos y botón de acceso directo en la UI (`Actores/Búsqueda`).
-- **🌱 Cosechador de Palabras Clave Emergiendo (`keyword_harvester.py`):** Sistema automático de minería de tendencias que extrae hashtags, palabras clave compuestas y términos emergentes en tiempo real a partir del flujo de noticias.
-- **🔄 Auto-Tracker e Ingestión Autónoma (`auto_tracker.py`):** Motor proactivo que auto-registra nuevos objetivos y entidades descubiertas en reportes de alta severidad (HUMINT/FININT) retroalimentando los filtros de extracción de `extractor.py` sin intervención humana.
-- **🇨🇴🇻🇪 Configuración Bilateral y Cobertura Total (Colombia & Venezuela):** Integración total en el Panel de Configuración (`config_manager.js` y `_tab_config.html`) con 12 canales públicos de Telegram (6 🇻🇪 + 6 🇨🇴), 55 feeds RSS verified, 20 usuarios target de alto perfil y 116 palabras clave estratégicas.
-- **🌐 Arquitectura Multipaís (Multi-Theater Engine):** Escalado modular de la plataforma mediante perfiles regionales JSON bajo `data/theaters/` (`colombia.json`, `venezuela.json`, `global.json`). Registro centralizado en `theaters_config.py` para la carga dinámica de vectores de seguimiento y términos clave.
-- **🏷️ Auto-Etiquetado Inteligente (`country_tags`):** Integración de lógica en `extractor.py` que detecta y clasifica automáticamente las noticias y fuentes por país (`COL`, `VEN`, `GLOBAL`) en tiempo real según dominios, fuentes y contenido.
-- **🗺️ Selector Táctico de Teatros & Nav FlyTo (`window.switchTheater`):** Componente selector integrado en la barra lateral (`_sidebar.html`). Al alternar de teatro, el mapa Leaflet realiza una transición suave (`flyTo`) al centro operacional del país (ej: Colombia `[6.5, -70.0]`) y filtra dinámicamente las tarjetas de noticias en pantalla.
-- **💳 FININT & Dark Web Avanzado:** Integración de soporte para análisis de billeteras Tron (TRC-20) y Solana. Generador determinístico de Informes Ejecutivos FININT (`intel_reports.py`) con clasificación de riesgo de evasión de sanciones y vinculación automática al Grafo de Entidades.
-- **🧪 Suite de Testing & Calidad (141/141 Pass & Ruff Clean):** Verificación al 100% de la suite de pruebas `pytest` y cumplimiento del estándar de código Ruff.
+- **🇨🇴 Integración Set DGAE Colombia 2026 (`config.py` & `col.json`):** Carga completa del set de términos de vigilancia táctica DGAE para Colombia (164+ palabras clave, 26 actores de alto perfil, 5 nuevas fuentes RSS estratégicas: *Colombia+20*, *InSight Crime ES*, *Infobae Colombia*, *Indepaz*, *FIP Colombia*). Refinamiento de alertas `CRITICAL` y `URGENT` para monitoreo del conflicto y transición política.
+- **🛡️ Parcheo y Depuración Dinámica de Feeds (`feed_patches.json`):** Aislamiento de feeds caídos o con bloqueos agresivos (*VenCERT Alertas/Boletines/General*, *DolarToday*, *Banca y Negocios*, *Apuntes de Seguridad*, *Pulzo*) para evitar cuellos de botella en el worker; actualización de URLs para *El Espectador* y *El Tiempo*.
+- **⚡ Optimización de Rate-Limiters Sociales (`humanization_ratelimit.py`):** Ajuste de ventanas de tiempo y reducción de `max_delay` de 120s a 45s para prevenir pausas excesivas en la extracción de Twitter, Instagram, TikTok y YouTube durante el ciclo completo.
+- **📡 Circuit Breakers y Conectividad en Tiempo Real (`osiris_realtime.py` & `open_data_apis.py`):** Fallback inmediato ante errores DNS/conexión en BGPView y Gaceta Oficial, ajuste de timeouts a 8-12s y bypass de verificación SSL para el portal del BCV.
+- **👤 Target Dossier Engine (`dossier_engine.py`):** Motor de inteligencia 360° para personas e instituciones de interés táctico. Modela expedientes integrados con cálculo de *Risk Score* (0.0 - 10.0), *Presión Mediática*, vinculación a listas OFAC SDN e historial de eventos.
+- **🌱 Cosechador de Palabras Clave Emergiendo (`keyword_harvester.py`):** Sistema automático de minería de tendencias que extrae hashtags, palabras clave compuestas y términos emergentes a partir del flujo de noticias.
+- **🔄 Auto-Tracker e Ingestión Autónoma (`auto_tracker.py`):** Motor proactivo que auto-registra nuevos objetivos y entidades descubiertas en reportes de alta severidad.
+- **🌐 Arquitectura Multipaís (Multi-Theater Engine):** Escalado modular de la plataforma mediante perfiles regionales JSON bajo `data/theaters/` (`col.json`, `ven.json`, `global.json`) y auto-etiquetado inteligente `country_tags` (`COL`, `VEN`, `GLOBAL`).
 
 ---
 
@@ -699,6 +697,7 @@ Cobalto Hub es instalable como aplicación de escritorio:
 
 | Versión | Fecha | Cambios clave |
 |---|---|---|
+| **v14.2** | 2026-08-24 | **Marco DGAE Colombia 2026 & Hardening**: Integración completa del set de inteligencia DGAE 2026 para Colombia (164+ keywords, 26 targets de alto perfil, 5 fuentes RSS estratégicas: *Colombia+20*, *InSight Crime*, *Infobae*, *Indepaz*, *FIP*). Parcheo dinámico de fuentes caídas (`feed_patches.json`), aceleración del rate-limiter de redes sociales (`humanization_ratelimit.py`), circuit breakers optimizados en OSINT tiempo real y bypass SSL en scraping BCV. |
 | **v13.0** | 2026-08-20 | **Arquitectura Multipaís (Multi-Theater OSINT)**: Escalado del sistema a un motor multi-teatro modular mediante perfiles JSON (`data/theaters/`), registro `theaters_config.py`, auto-etiquetado de noticias (`country_tags`), selector de teatro en la barra lateral con navegación suave (`flyTo`) en el mapa Leaflet, endpoint `GET /api/theaters` y geocercas sísmicas multipaís. 132/132 tests aprobados. |
 | **v12.6** | 2026-08-19 | **Arquitectura Nativa PyQt6 & Bandeja de Sistema**: Migración a `PyQt6/QWebEngineView` en `cobalto_desktop.py` con System Tray icon, Windows Mutex monoinstancia, WebSocket continuous rehydration en `main.js`, retención TTL de noticias en config UI y compilación PyInstaller `build_exe.py`. |
 | **v12.5** | 2026-08-19 | **Blue Force Tracking (BFT)**: Monitoreo de operadores en terreno con ingesta de telemetría en tiempo real (`/api/telemetry/heartbeat`), almacenamiento en `operator_registry` y `operator_telemetry`, métricas de fuerza táctica (activos, sin señal, SOS), rastro histórico GPS (breadcrumbs), nivel de batería con código de color y tipo de red (`4G`/`Wi-Fi`/`AEGIS Mesh`). 8va capa de operadores en el Mapa Unificado Leaflet (`map-unified.js`), pestaña táctica dedicada `_tab_operators.html` + `operators-manager.js`, integración de alertas de Hombre Muerto y Pánico Manual SOS con aviso sonoro y visual prioritario en el HUB. Suite de 132 tests pasando al 100%. |

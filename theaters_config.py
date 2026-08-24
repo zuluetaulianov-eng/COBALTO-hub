@@ -28,12 +28,25 @@ DEFAULT_THEATERS: Dict[str, Dict[str, Any]] = {
             "noticiasrcn.com", "elheraldo.co", "elcolombiano.com", "lasillavacia.com"
         ],
         "keywords": [
-            "colombia", "bogotá", "bogota", "medellín", "medellin", "cali", "cauca",
-            "catatumbo", "arauca", "tumaco", "putumayo", "chocó", "eln", "emc",
-            "marquetalia", "clan del golfo", "gaitanistas", "petro", "caño limón",
-            "paz total", "gaula", "ffmm colombia"
+            "colombia", "bogot\u00e1", "bogota", "medell\u00edn", "medellin", "cali", "barranquilla",
+            "c\u00facuta", "cucuta", "arauca", "catatumbo", "norte de santander",
+            "cauca", "nari\u00f1o", "choc\u00f3", "putumayo", "guaviare", "meta",
+            "tib\u00fa", "tumaco", "san vicente del cagu\u00e1n", "bajo cauca", "magdalena medio",
+            "sur de bol\u00edvar", "antioquia", "urab\u00e1", "frontera colombia-venezuela",
+            "eln", "emc", "segunda marquetalia", "clan del golfo", "agc", "gaitanistas",
+            "farc-ep", "comandos de la frontera", "los pachencas", "frente 33",
+            "frente ad\u00e1n izquierdo", "frente carlos pati\u00f1o", "marquetalia",
+            "petro", "adle", "abelardo de la espriella", "iv\u00e1n cepeda",
+            "paz total", "jep", "cese al fuego", "gaula", "ffmm colombia",
+            "ca\u00f1o lim\u00f3n", "ecopetrol", "oleoducto", "indepaz", "fundaci\u00f3n pares"
         ],
-        "target_users": ["ArielAvilaAnaliza", "LeonVaLenciaA", "FIP_Col", "Indepaz", "DanielMejiaL", "lasillavacia", "DefensoriaCol"],
+        "target_users": [
+            "ArielAvilaAnaliza", "LeonVaLenciaA", "FIP_Col", "Indepaz", "DanielMejiaL",
+            "lasillavacia", "DefensoriaCol", "infopresidencia", "FuerzasMilCol",
+            "PoliciaColombia", "mindefensa", "Ejercito_Col", "ArmadaColombia",
+            "FuerzaAereaCol", "FiscaliaCol", "UNPColombia", "petrogustavo",
+            "MariaFdaCabal", "AlvaroUribeVel", "FicoGutierrez", "InSightCrime"
+        ],
         "seismic_geofence": {"lat": 4.711, "lon": -74.0721, "max_distance_km": 600}
     },
     "VEN": {
@@ -196,11 +209,21 @@ def detect_country_tags(text: str = "", domain: str = "", source: str = "") -> L
     ]
 
     COL_KEYWORDS = [
-        "colombia", "colombiano", "colombiana", "bogotá", "bogota", "medellín",
-        "medellin", "cali", "cauca", "catatumbo", "arauca", "tumaco", "putumayo",
-        "chocó", "choco", "eln", "emc", "marquetalia", "clan del golfo",
-        "gaitanistas", "petro", "caño limón", "paz total", "gaula",
-        "ffmm colombia", "cúcuta", "cucuta", "casa de nariño", "mindefensa"
+        "colombia", "colombiano", "colombiana", "bogot\u00e1", "bogota", "medell\u00edn",
+        "medellin", "cali", "barranquilla", "bucaramanga", "cauca", "catatumbo",
+        "arauca", "norte de santander", "tumaco", "putumayo", "guaviare", "meta",
+        "choc\u00f3", "choco", "nari\u00f1o", "tib\u00fa", "tibu", "san vicente del cagu\u00e1n",
+        "bajo cauca", "magdalena medio", "sur de bol\u00edvar", "antioquia", "urab\u00e1",
+        "c\u00facuta", "cucuta", "frontera colombia-venezuela",
+        "eln", "emc", "segunda marquetalia", "marquetalia", "clan del golfo",
+        "agc", "gaitanistas", "autodefensas gaitanistas", "farc-ep",
+        "comandos de la frontera", "los pachencas", "frente 33",
+        "frente ad\u00e1n izquierdo", "frente carlos pati\u00f1o",
+        "petro", "adle", "abelardo de la espriella", "iv\u00e1n cepeda",
+        "paz total", "jep", "cese al fuego", "gaula", "ffmm colombia",
+        "ca\u00f1o lim\u00f3n", "ecopetrol", "oleoducto", "indepaz", "fundaci\u00f3n pares",
+        "la silla vac\u00eda", "insight crime", "casa de nari\u00f1o", "mindefensa",
+        "fiscalía colombia", "tren de aragua"
     ]
 
     if "VEN" not in tags:

@@ -24,7 +24,7 @@ class RateLimiter:
         self.lock = threading.Lock()
         self.base_delay = 1.0
         self.current_delay = 0.0
-        self.max_delay = 120.0
+        self.max_delay = 45.0
         self.consecutive_errors = 0
 
     def wait_if_needed(self) -> float:
@@ -108,16 +108,16 @@ class RateLimiter:
 
 
 RATE_LIMITERS: Dict[str, RateLimiter] = {
-    "twitter": RateLimiter("twitter", max_requests=5, time_window=60),
-    "instagram": RateLimiter("instagram", max_requests=3, time_window=60),
-    "telegram": RateLimiter("telegram", max_requests=10, time_window=60),
-    "tiktok": RateLimiter("tiktok", max_requests=3, time_window=60),
-    "youtube": RateLimiter("youtube", max_requests=5, time_window=60),
-    "facebook": RateLimiter("facebook", max_requests=3, time_window=60),
-    "linkedin": RateLimiter("linkedin", max_requests=3, time_window=60),
-    "reddit": RateLimiter("reddit", max_requests=10, time_window=60),
+    "twitter": RateLimiter("twitter", max_requests=8, time_window=60),
+    "instagram": RateLimiter("instagram", max_requests=5, time_window=60),
+    "telegram": RateLimiter("telegram", max_requests=15, time_window=60),
+    "tiktok": RateLimiter("tiktok", max_requests=5, time_window=60),
+    "youtube": RateLimiter("youtube", max_requests=8, time_window=60),
+    "facebook": RateLimiter("facebook", max_requests=5, time_window=60),
+    "linkedin": RateLimiter("linkedin", max_requests=5, time_window=60),
+    "reddit": RateLimiter("reddit", max_requests=15, time_window=60),
     "ai_groq": RateLimiter("ai_groq", max_requests=30, time_window=60),
-    "default": RateLimiter("default", max_requests=10, time_window=60),
+    "default": RateLimiter("default", max_requests=15, time_window=60),
 }
 
 

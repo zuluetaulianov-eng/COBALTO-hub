@@ -4051,14 +4051,24 @@ body.ai-collapsed .telemetry-drawer {
 }
 .btn-clear-search {
     position: absolute;
-    right: 8px;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
     background: transparent;
     border: none;
     color: var(--text-muted);
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     cursor: pointer;
+    min-width: 28px;
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    padding: 0;
 }
-.btn-clear-search:hover { color: var(--primary); }
+.btn-clear-search:hover { color: var(--primary); background: rgba(0, 229, 255, 0.1); }
+
 
 .news-card {
     background: rgba(15, 18, 28, 0.75);

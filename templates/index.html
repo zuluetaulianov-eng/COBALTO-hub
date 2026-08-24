@@ -79,6 +79,7 @@ window._newsPerPage = 30;
                     <option value="NEXUS">NEXUS (OSINT)</option>
                 </select>
                 <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="chat-input" class="chat-input" placeholder="Pregúntale a Cobalto..." onkeypress="if(window.CobaltoChat)CobaltoChat.handleEnter(event)">
+                <button id="chat-mic-btn" type="button" class="btn-icon" title="Dictar por voz (Ctrl+Shift+V)" onclick="if(window.CobaltoVoice)window.CobaltoVoice.toggleListeningForInput('chat-input')" style="border-radius: 4px; padding: 0 8px; color: var(--primary); font-size: 0.9rem; background: transparent; border: none; cursor: pointer;">🎙️</button>
                 <button id="chat-send-btn" class="chat-send" onclick="if(window.CobaltoChat)CobaltoChat.sendMessage()">ENVIAR</button>
             </div>
         </div>
@@ -216,6 +217,7 @@ window._newsPerPage = 30;
 <script src="/static/js/osiris-recon.js?v={{ now|urlencode }}" defer></script>
 <script src="/static/js/osiris-global.js?v={{ now|urlencode }}" defer></script>
 <script src="/static/js/map-unified.js?v={{ now|urlencode }}" defer></script>
+<script src="/static/js/voice-system.js?v={{ now|urlencode }}" defer></script>
 
 <!-- Toast Container -->
 <div id="tactical-toast-container" style="position:fixed; bottom:20px; right:20px; z-index:99998; display:flex; flex-direction:column-reverse; gap:8px; pointer-events:none; max-width:350px;"></div>

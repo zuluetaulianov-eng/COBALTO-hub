@@ -44,6 +44,8 @@ _LEXICO_POSITIVO_DEFAULT = {
     "educación": 1, "salud": 1, "hospital": 0, "vacuna": 1, "medicina": 1,
     "libertad": 2, "democracia": 2, "elecciones": 1, "transparencia": 2,
     "justicia": 2, "derecho": 1, "igualdad": 2, "trabajo": 1,
+    "licencia ofac": 3, "alivio de sanciones": 3, "normalización": 2,
+    "renegociación": 2, "apertura comercial": 3, "transición en paz": 3,
 }
 
 _LEXICO_NEGATIVO_DEFAULT = {
@@ -58,6 +60,9 @@ _LEXICO_NEGATIVO_DEFAULT = {
     "asesinato": -3, "terrorismo": -3, "golpe": -3, "intervención": -2,
     "bulo": -2, "fake": -2, "manipulación": -3, "desinformación": -3,
     "propaganda": -2, "astroturfing": -3,
+    "dólar paralelo": -3, "brecha cambiaria": -3, "devaluación acelerada": -3,
+    "inhabilitación": -2, "alerta notam": -3, "cierre consular": -2,
+    "evasión de sanciones": -3, "lista negra": -3, "alerta de viaje": -2,
 }
 
 _LEXICO_IRA_DEFAULT = {
@@ -459,18 +464,32 @@ def analizar_entrada(entry: dict) -> dict:
 
     sentimiento = puntuar_sentimiento(tokens, texto_completo)
 
-    # ABSA: Detección Básica de Aspectos
+    # ABSA: Detección Dinámica de Aspectos (Integración con Registro de Entidades)
     entidades_objetivo = []
     texto_lower = texto_completo.lower()
-    if "gobierno" in texto_lower or "maduro" in texto_lower:
-        entidades_objetivo.append("Gobierno")
-    if "oposición" in texto_lower or "machado" in texto_lower or "edmundo" in texto_lower:
-        entidades_objetivo.append("Oposición")
-    if "pdvsa" in texto_lower or "petróleo" in texto_lower:
-        entidades_objetivo.append("PDVSA/Economía")
+    try:
+        from entity_registry import list_all
+        known_entities = list_all(50)
+        for ent in known_entities:
+            name = ent.get("name", "")
+            if name and len(name) > 2 and name.lower() in texto_lower:
+                if name not in entidades_objetivo:
+                    entidades_objetivo.append(name)
+    except Exception:
+        pass
+
+    if not entidades_objetivo:
+        if "gobierno" in texto_lower or "maduro" in texto_lower:
+            entidades_objetivo.append("Gobierno")
+        if "oposición" in texto_lower or "machado" in texto_lower or "edmundo" in texto_lower:
+            entidades_objetivo.append("Oposición")
+        if "pdvsa" in texto_lower or "petróleo" in texto_lower:
+            entidades_objetivo.append("PDVSA/Economía")
+        if "fanb" in texto_lower or "militar" in texto_lower:
+            entidades_objetivo.append("FANB/Seguridad")
 
     if entidades_objetivo:
-        sentimiento["entidades_objetivo"] = entidades_objetivo
+        sentimiento["entidades_objetivo"] = entidades_objetivo[:5]
     bot_signals = detectar_bot_signals(texto_completo, source)
     crisis = detectar_crisis(tokens, sentimiento["score"])
 
@@ -678,7 +697,9 @@ async def get_sentiment_data(entries: list[dict]) -> dict:
 
 
 def _calcular_serie_temporal(resultados: list[dict]) -> list[dict]:
-    """Agrupa resultados por hora para gráfico de tendencia (horas configurables)."""
+    """Agrupa resultados por hora para gráfico de tendencia usando parse_datetime fidedigno."""
+    from utils import parse_datetime
+
     now = datetime.now(timezone.utc)
     horas = _serie_temporal_horas()
     buckets = {}
@@ -688,15 +709,30 @@ def _calcular_serie_temporal(resultados: list[dict]) -> list[dict]:
         buckets[label] = {"positivo": 0, "neutro": 0, "negativo": 0, "count": 0, "score_sum": 0.0}
 
     bucket_list = list(buckets.keys())
+    current_label = bucket_list[-1] if bucket_list else "00:00"
 
     for r in resultados:
-        # Distribuir uniformemente si no hay timestamp confiable
-        idx = hash(r["id"]) % len(bucket_list)
-        label = bucket_list[idx]
+        pub_str = r.get("published", "")
+        mapped_label = None
+        if pub_str:
+            try:
+                dt = parse_datetime(pub_str)
+                if dt:
+                    if dt.tzinfo is None:
+                        dt = dt.replace(tzinfo=timezone.utc)
+                    hour_label = dt.strftime("%H:00")
+                    if hour_label in buckets:
+                        mapped_label = hour_label
+            except Exception:
+                pass
+
+        if not mapped_label:
+            mapped_label = current_label
+
         etiqueta = r["sentimiento"]["etiqueta"]
-        buckets[label][etiqueta] = buckets[label].get(etiqueta, 0) + 1
-        buckets[label]["count"] += 1
-        buckets[label]["score_sum"] += r["sentimiento"]["score"]
+        buckets[mapped_label][etiqueta] = buckets[mapped_label].get(etiqueta, 0) + 1
+        buckets[mapped_label]["count"] += 1
+        buckets[mapped_label]["score_sum"] += r["sentimiento"]["score"]
 
     serie = []
     for label, data in buckets.items():

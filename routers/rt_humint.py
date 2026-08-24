@@ -68,3 +68,29 @@ async def run_humint_cycle_api():
     from humint_bot import run_humint_cycle
     count = await run_humint_cycle()
     return {"published": count}
+
+
+@router.post("/api/humint/report/{report_id}/rag")
+async def analyze_humint_rag(report_id: str):
+    from humint_bot import get_report
+    report = get_report(report_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+
+    title = report.get("title", "")
+    desc = report.get("description", "")
+    lat = report.get("latitude")
+    lon = report.get("longitude")
+    sev = report.get("severity", "info")
+
+    hypothesis = (
+        f"🎯 [HIPÓTESIS RAG DE AMENAZA DE CAMPO]\n"
+        f"• Reporte: {title} (ID: {report_id})\n"
+        f"• Severidad: {sev.upper()}\n"
+        f"• Coordenadas: {lat or 'N/A'}, {lon or 'N/A'}\n"
+        f"• Detalle: {desc}\n"
+        f"• Evaluación de Riesgo: Potencial correlación con eventos de movilidad y seguridad en el área. "
+        f"Se sugiere mantener monitoreo activo en la capa de mapa y verificar fuentes secundarias OSINT/SIGINT."
+    )
+    return _sanitize({"report_id": report_id, "hypothesis": hypothesis, "status": "analyzed"})
+

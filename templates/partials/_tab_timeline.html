@@ -80,8 +80,15 @@
         <!-- PANEL IZQUIERDO: MURO DE INCIDENTES TÁCTICOS -->
         <div class="panel-tactical" style="min-height: 450px;">
             <div class="flex-between items-center" style="margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 0.6rem;">
-                <h3 class="panel-title" style="margin: 0; font-size: 1rem;">📋 MURO DE INCIDENTES Y OPERACIONES</h3>
-                <span id="incidents-count-badge" class="font-mono text-muted" style="font-size: 0.75rem;">0 cargados</span>
+                <h3 class="panel-title" style="margin: 0; font-size: 1rem;">📋 MATRIZ DE INCIDENTES & HITOS</h3>
+                <div class="flex items-center" style="gap: 0.5rem;">
+                    <!-- TOGGLE DE VISTA -->
+                    <div class="flex" style="background: rgba(0,0,0,0.5); border: 1px solid rgba(0,229,255,0.3); border-radius: 4px; padding: 2px;">
+                        <button id="btn-view-cards" class="btn-tactical active" style="padding: 2px 8px; font-size: 0.7rem; margin: 0;" onclick="CobaltoTimeline.setViewMode('CARDS')">📋 CARDS</button>
+                        <button id="btn-view-timeline" class="btn-tactical" style="padding: 2px 8px; font-size: 0.7rem; margin: 0;" onclick="CobaltoTimeline.setViewMode('TIMELINE')">⏱️ LÍNEA</button>
+                    </div>
+                    <span id="incidents-count-badge" class="font-mono text-muted" style="font-size: 0.75rem;">0 cargados</span>
+                </div>
             </div>
             <div id="incidents-feed-container" class="flex-column gap-1" style="max-height: 520px; overflow-y: auto; padding-right: 0.3rem;">
                 <div class="empty-state text-center text-muted" style="padding: 2rem;">
@@ -139,7 +146,7 @@
         <div style="display: flex; align-items: center; gap: 1rem; position: relative; margin-bottom: 1rem;">
             <span id="scrubber-label-start" class="font-mono text-muted" style="font-size: 0.75rem;"></span>
             <output id="scrubber-tooltip"></output>
-            <input type="range" id="timeline-scrubber" min="0" max="168" value="168" step="1"
+            <input type="range" id="timeline-scrubber" aria-label="Desplazador de ventana temporal de la cronología" min="0" max="168" value="168" step="1"
                    style="flex: 1; height: 6px; -webkit-appearance: none; appearance: none; 
                           background: linear-gradient(90deg, #1a1a2e, #00e5ff); 
                           border-radius: 3px; outline: none; cursor: pointer;">

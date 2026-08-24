@@ -486,6 +486,9 @@ window.CobaltoCore = {
                 window.showTacticalToast(`Nuevo ciclo completado. Se detectaron ${dataPayload.counts.alerts} posibles amenazas/alertas.`, 'warning');
             }
             if (typeof window.playTacticalBeep === 'function') window.playTacticalBeep('warning');
+            if (window.CobaltoVoice && typeof window.CobaltoVoice.announceCriticalAlert === 'function') {
+                window.CobaltoVoice.announceCriticalAlert(`Atención operador. Se detectaron ${dataPayload.counts.alerts} nuevas alertas tácticas en el sistema.`);
+            }
         } else {
             if (typeof window.showTacticalToast === 'function') {
                 window.showTacticalToast('Ciclo de extracción completado. Nodos sincronizados.', 'info');
@@ -703,16 +706,29 @@ window.CobaltoCore = {
             var countryClass = countryTag.toLowerCase();
             
             var severity = 'INFO';
-            var textCombined = t + ' ' + s;
-            if (/ataque|muerto|explosión|bomba|atentado|combate|masacre|crisis/i.test(textCombined)) {
+            if (item.level) {
+                if (item.level.includes('CRÍTICO')) severity = 'CRITICAL';
+                else if (item.level.includes('URGENTE') || item.level.includes('ALTO')) severity = 'HIGH';
+                else if (item.level.includes('CYBER')) severity = 'CYBER';
+                else if (item.level.includes('ATENCIÓN') || item.level.includes('MEDIO')) severity = 'MEDIUM';
+            } else if (item.score && item.score >= 45) {
                 severity = 'CRITICAL';
-            } else if (/fanb|eln|emc|fuerzas armadas|ejército|dron|captura|apagón|blackout/i.test(textCombined)) {
+            } else if (item.score && item.score >= 28) {
                 severity = 'HIGH';
-            } else if (/protesta|sanción|tensión|frontera|cierre|investigación/i.test(textCombined)) {
+            } else if (item.score && item.score >= 15) {
                 severity = 'MEDIUM';
+            } else {
+                var textCombined = t + ' ' + s;
+                if (/ataque|muerto|explosión|bomba|atentado|combate|masacre|crisis|0-day|ransomware|blackout|apagón/i.test(textCombined)) {
+                    severity = 'CRITICAL';
+                } else if (/fanb|eln|emc|fuerzas armadas|ejército|dron|captura|exfiltración|sanciones/i.test(textCombined)) {
+                    severity = 'HIGH';
+                } else if (/protesta|tensión|frontera|cierre|investigación|decreto/i.test(textCombined)) {
+                    severity = 'MEDIUM';
+                }
             }
             
-            var severityLabel = severity === 'CRITICAL' ? '🔴 CRÍTICO' : (severity === 'HIGH' ? '🟠 ALTO' : (severity === 'MEDIUM' ? '🟡 MEDIO' : '🔵 INFO'));
+            var severityLabel = severity === 'CRITICAL' ? '🔴 CRÍTICO' : (severity === 'HIGH' ? '🟠 URGENTE' : (severity === 'CYBER' ? '🔵 CYBER' : (severity === 'MEDIUM' ? '🟡 ATENCIÓN' : '⚪ INFO')));
             var severityClass = severity.toLowerCase();
             
             var category = 'GENERAL';
@@ -3103,5 +3119,46 @@ window.analyzeSitrepModalAI = function() {
         if (btn) btn.disabled = false;
     });
 };
+
+/* ── TACTICAL TOAST NOTIFICATION CENTER ─────────────────────────────────── */
+if (!window.showTacticalToast) {
+    window.showTacticalToast = function(msg, type, title) {
+        var container = document.getElementById('tactical-toast-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'tactical-toast-container';
+            container.style.cssText = 'position:fixed; bottom:20px; right:20px; z-index:99998; display:flex; flex-direction:column-reverse; gap:8px; pointer-events:none; max-width:360px;';
+            document.body.appendChild(container);
+        }
+        type = type || 'info';
+        var color = type === 'danger' || type === 'error' ? '#FF2D55' : type === 'success' ? '#00FFAA' : type === 'warning' ? '#FF9500' : '#00E5FF';
+        var icon = type === 'danger' || type === 'error' ? '🚨' : type === 'success' ? '✓' : type === 'warning' ? '⚠️' : 'ℹ️';
+
+        var toast = document.createElement('div');
+        toast.style.cssText = 'pointer-events:auto; background:rgba(10,11,16,0.95); border:1px solid ' + color + '; border-left:4px solid ' + color + '; padding:10px 14px; border-radius:6px; color:#FFF; font-family:\'Roboto Mono\',monospace; font-size:0.75rem; box-shadow:0 4px 20px rgba(0,0,0,0.6), 0 0 10px ' + color + '33; backdrop-filter:blur(8px); transition:all 0.3s ease; opacity:0; transform:translateY(10px); display:flex; flex-direction:column; gap:4px;';
+        
+        var headerHtml = '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+            '<span style="font-weight:bold; color:' + color + ';">' + icon + ' ' + (title || type.toUpperCase()) + '</span>' +
+            '<span style="color:#64748B; cursor:pointer; font-size:0.8rem;" onclick="this.closest(\'div\').parentElement.remove()">✕</span>' +
+            '</div>';
+        
+        toast.innerHTML = headerHtml + '<div style="color:#CBD5E1; font-size:0.75rem; line-height:1.3;">' + msg + '</div>';
+        
+        container.appendChild(toast);
+        setTimeout(function() {
+            toast.style.opacity = '1';
+            toast.style.transform = 'translateY(0)';
+        }, 10);
+        
+        setTimeout(function() {
+            if (toast.parentElement) {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(10px)';
+                setTimeout(function() { if (toast.parentElement) toast.parentElement.removeChild(toast); }, 300);
+            }
+        }, 6000);
+    };
+}
+
 
 

@@ -493,10 +493,91 @@ window.OsirisRecon = {
                 contentHtml += '<div class="or-alert-box success" style="justify-content:center;">✓ NO KNOWN BREACHES DETECTED</div>';
             }
         } 
+        // ── CERTS (Cert Transparency) ──
+        else if (tabId === 'certs') {
+            contentHtml += '<div class="or-data-grid">';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Total Certificates</div><div class="or-data-value large">' + (data.total_certs || 0) + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Unique Subdomains</div><div class="or-data-value large info">' + (data.unique_subdomains || 0) + '</div></div>';
+            contentHtml += '</div>';
+            if (data.subdomains && data.subdomains.length) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">DISCOVERED SUBDOMAINS</div><div class="or-section-count">' + data.subdomains.length + '</div></div>';
+                contentHtml += '<div style="display:flex; flex-wrap:wrap; gap:6px;">' + data.subdomains.map(function(s) { return '<span class="or-tag hostname">' + esc(s) + copy(s) + '</span>'; }).join('') + '</div></div>';
+            }
+        }
+        // ── BGP ──
+        else if (tabId === 'bgp') {
+            var asnObj = (data.asn || (data.ip && data.ip.asn)) || {};
+            contentHtml += '<div class="or-data-grid">';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">ASN</div><div class="or-data-value large info">AS' + (asnObj.asn || 'N/A') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Organization</div><div class="or-data-value">' + esc(asnObj.name || asnObj.description || 'Unknown') + copy(asnObj.name || '') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Country</div><div class="or-data-value">' + esc(asnObj.country_code || 'N/A') + '</div></div>';
+            contentHtml += '</div>';
+            if (data.ip && data.ip.ptr_record) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">REVERSE DNS (PTR)</div></div>';
+                contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(data.ip.ptr_record) + copy(data.ip.ptr_record) + '</div></div></div>';
+            }
+        }
+        // ── HTTP HEADERS ──
+        else if (tabId === 'headers') {
+            var statusColor = data.status >= 200 && data.status < 300 ? '#76FF03' : data.status >= 300 && data.status < 400 ? '#FFD700' : '#FF4444';
+            contentHtml += '<div class="or-data-grid">';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">HTTP Status</div><div class="or-data-value large" style="color:' + statusColor + '">' + (data.status || 'N/A') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Server Header</div><div class="or-data-value">' + esc(data.server || 'Undisclosed') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Content Type</div><div class="or-data-value">' + esc(data.content_type || 'N/A') + '</div></div>';
+            contentHtml += '</div>';
+            if (data.headers) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">RESPONSE HEADERS</div><div class="or-section-count">' + Object.keys(data.headers).length + '</div></div>';
+                for (var hKey in data.headers) {
+                    contentHtml += '<div class="or-record-row"><div class="or-record-data" style="color:var(--primary); font-family:\'Roboto Mono\',monospace;">' + esc(hKey) + '</div><div class="or-record-meta" style="color:#fff;">' + esc(data.headers[hKey]) + copy(data.headers[hKey]) + '</div></div>';
+                }
+                contentHtml += '</div>';
+            }
+        }
+        // ── MAC VENDOR ──
+        else if (tabId === 'mac') {
+            contentHtml += '<div class="or-data-grid">';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">MAC Address</div><div class="or-data-value large info">' + esc(data.mac || query) + copy(data.mac || query) + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Manufacturer / Vendor</div><div class="or-data-value large success">' + esc(data.vendor || 'Unknown') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">OUI Prefix</div><div class="or-data-value">' + esc(data.prefix || 'N/A') + '</div></div>';
+            contentHtml += '</div>';
+        }
+        // ── PHONE CARRIER ──
+        else if (tabId === 'phone') {
+            var validBadge = data.valid ? '<div class="or-alert-box success">✓ Valid International Phone Number</div>' : '<div class="or-alert-box danger">✕ Invalid or Unrecognized Phone Number</div>';
+            contentHtml += validBadge;
+            contentHtml += '<div class="or-data-grid">';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">International Format</div><div class="or-data-value large info">' + esc(data.international || data.number || query) + copy(data.international || data.number || query) + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Carrier / Provider</div><div class="or-data-value">' + esc(data.carrier || 'Unknown') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Region / Country</div><div class="or-data-value">' + esc(data.region || '') + ' (' + esc(data.country_code || '') + ')</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Line Type</div><div class="or-data-value">' + esc(data.line_type || 'UNKNOWN') + '</div></div>';
+            contentHtml += '</div>';
+        }
+        // ── THREAT PULSES ──
+        else if (tabId === 'threats') {
+            var tLevel = data.threat_level || 'LOW';
+            var tColor = tLevel === 'HIGH' ? '#FF4444' : tLevel === 'MEDIUM' ? '#FF9500' : '#76FF03';
+            contentHtml += '<div class="or-data-grid">';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Threat Level</div><div class="or-data-value large" style="color:' + tColor + '">' + tLevel + '</div></div>';
+            if (data.tor_exit_node !== null) {
+                contentHtml += '<div class="or-data-card"><div class="or-data-label">Tor Exit Node</div><div class="or-data-value ' + (data.tor_exit_node ? 'danger' : 'success') + '">' + (data.tor_exit_node ? 'YES (TOR DETECTED)' : 'NO') + '</div></div>';
+            }
+            contentHtml += '</div>';
+            if (data.pulses && data.pulses.length) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">ALIENVAULT OTX PULSES</div><div class="or-section-count">' + data.pulses.length + '</div></div>';
+                data.pulses.forEach(function(p) {
+                    contentHtml += '<div class="or-record-row" style="flex-direction:column; align-items:flex-start; gap:4px;">';
+                    contentHtml += '<div style="color:#FF9500; font-weight:bold;">' + esc(p.name) + '</div>';
+                    if (p.description) contentHtml += '<div style="font-size:0.75rem; color:var(--text-muted);">' + esc(p.description) + '</div>';
+                    contentHtml += '</div>';
+                });
+                contentHtml += '</div>';
+            }
+        }
         // ── GENERIC JSON FALLBACK ──
         else {
             contentHtml += '<pre style="font-size:0.75rem;color:#A9B7C6;max-height:500px;overflow-y:auto;background:rgba(0,0,0,0.3);padding:16px;border-radius:8px;border:1px solid rgba(255,255,255,0.05);font-family:\'Roboto Mono\',monospace;">' + esc(JSON.stringify(data, null, 2)) + '</pre>';
         }
+
 
         resultsEl.innerHTML = headerHtml + contentHtml;
         this._renderHistory(); // Refresh history bar

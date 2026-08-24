@@ -99,7 +99,7 @@ def get_bgpview_ve() -> List[Dict[str, Any]]:
     for isp, asn in VE_ASNS.items():
         try:
             url = f"https://api.bgpview.io/asn/{asn}/prefixes"
-            resp = safe_get(url)
+            resp = safe_get(url, timeout=8)
             if resp is not None and resp.status_code == 200:
                 data = resp.json()
                 prefixes = data.get("data", {}).get("ipv4_prefixes", [])
@@ -446,9 +446,10 @@ def get_gaceta_oficial() -> List[Dict[str, Any]]:
     ]
     for base_url in urls:
         try:
-            resp = safe_get(base_url)
+            resp = safe_get(base_url, timeout=10)
             if resp is None or resp.status_code != 200:
-                continue
+                _gaceta_cb["disabled"] = True
+                break
             soup = BeautifulSoup(resp.content, "html.parser")
             items = soup.find_all(["li", "tr", "div", "article"], limit=20)
             for item in items:

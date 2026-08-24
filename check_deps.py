@@ -15,6 +15,7 @@ REQUIRED = {
     "fastapi": "fastapi",
     "pydantic": "pydantic",
     "groq": "groq",
+    "openai": "openai",
     "jinja2": "jinja2",
     "dotenv": "python-dotenv",
     "networkx": "networkx",
@@ -27,6 +28,8 @@ REQUIRED = {
     "bleach": "bleach[css]",
     "prometheus_client": "prometheus-client",
     "psutil": "psutil",
+    "tls_client": "tls-client",
+    "pystray": "pystray",
 }
 
 
