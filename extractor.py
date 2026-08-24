@@ -415,9 +415,8 @@ async def parse_single_feed_async(session, source, url, retry_count=0, problem_i
             dt = parse_datetime(published_raw) or parse_datetime(published_parsed)
 
             if not dt:
-                dt = now  # Fallback
-
-            if dt < cutoff_time:
+                # Si el feed RSS no incluye fecha (ej. páginas estáticas de CNN),
+                # no asignamos 'now' para evitar que aparezcan falsamente como "recién publicadas".
                 continue
 
             title = entry.get("title", "Sin título").strip()
