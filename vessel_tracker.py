@@ -147,58 +147,6 @@ def get_vessels_fleetmon() -> List[Dict[str, Any]]:
 
 
 # ==========================================
-# SCRAPING DE SITIOS PÚBLICOS (Sin API key)
-# ==========================================
-def scrape_marinetraffic_public() -> List[Dict[str, Any]]:
-    """Scraping de datos públicos de MarineTraffic (limitado)"""
-    vessels = []
-
-    try:
-        # Página de tráfico en tiempo real de Venezuela
-        url = "https://www.marinetraffic.com/en/ais/home/centerx:-65.5/centery:8.5/zoom:5"
-
-        resp = safe_get(url)
-        if resp.status_code == 200:
-            # Extraer datos del HTML (MarineTraffic usa JavaScript para cargar datos)
-            # Nota: Este enfoque es limitado y puede requerir actualizaciones frecuentes
-            import re
-
-            patterns = [
-                r'lat":(\d+\.\d+),"lon":(-?\d+\.\d+)',
-                r'"LAT"\s*:\s*(\d+\.\d+).*?"LON"\s*:\s*(-?\d+\.\d+)',
-                r'latitude["\']?\s*[:=]\s*(\d+\.\d+).*?longitude["\']?\s*[:=]\s*(-?\d+\.\d+)',
-            ]
-            seen_coords = set()
-            for pat in patterns:
-                for match in re.finditer(pat, resp.text, re.DOTALL):
-                    lat, lon = match.group(1), match.group(2)
-                    key = f"{float(lat):.3f},{float(lon):.3f}"
-                    if key not in seen_coords:
-                        seen_coords.add(key)
-                        vessels.append(
-                            {
-                                "latitude": float(lat),
-                                "longitude": float(lon),
-                                "name": "Embarcación",
-                                "speed": 0,
-                                "heading": 0,
-                                "timestamp": datetime.now().isoformat(),
-                                "type": "vessel",
-                                "source": "MarineTraffic",
-                            }
-                        )
-                    if len(vessels) >= 50:
-                        break
-                if len(vessels) >= 50:
-                    break
-
-    except Exception as e:
-        logger.warning(f"MarineTraffic scraping error: {e}")
-
-    return vessels
-
-
-# ==========================================
 # ANÁLISIS DE PATRONES DE EMBARCACIONES
 # ==========================================
 def analyze_vessel_patterns(vessels: List[Dict[str, Any]]) -> Dict[str, Any]:
@@ -221,8 +169,8 @@ def analyze_vessel_patterns(vessels: List[Dict[str, Any]]) -> Dict[str, Any]:
     total_speed = 0
 
     for vessel in vessels:
-        # Por tipo
-        vessel_type = vessel.get("type", "Unknown")
+        # Por tipo (unificado entre vessel_type, ship_type y type)
+        vessel_type = str(vessel.get("vessel_type") or vessel.get("ship_type") or vessel.get("type") or "Unknown")
         analysis["by_type"][vessel_type] = analysis["by_type"].get(vessel_type, 0) + 1
 
         # Por bandera
@@ -230,7 +178,7 @@ def analyze_vessel_patterns(vessels: List[Dict[str, Any]]) -> Dict[str, Any]:
         analysis["by_flag"][flag] = analysis["by_flag"].get(flag, 0) + 1
 
         # Velocidad
-        speed = vessel.get("speed", 0)
+        speed = float(vessel.get("speed", 0) or 0)
         total_speed += speed
 
         # Estacionarias vs en movimiento
@@ -240,13 +188,14 @@ def analyze_vessel_patterns(vessels: List[Dict[str, Any]]) -> Dict[str, Any]:
             analysis["moving"] += 1
 
         # Tipos específicos
-        if "tanker" in vessel_type.lower() or vessel_type == "oil":
+        v_type_lower = vessel_type.lower()
+        if "tanker" in v_type_lower or "petro" in v_type_lower or v_type_lower == "oil":
             analysis["tankers"] += 1
-        elif "cargo" in vessel_type.lower():
+        elif "cargo" in v_type_lower or "carrier" in v_type_lower or "container" in v_type_lower:
             analysis["cargo_ships"] += 1
 
-        # Embarcaciones sospechosas (velocidad inusual, cerca de puertos petroleros)
-        if speed > 20 and vessel_type in ["oil", "tanker"]:
+        # Embarcaciones sospechosas (velocidad inusual para buques tanque)
+        if speed > 20 and ("tanker" in v_type_lower or v_type_lower == "oil"):
             analysis["suspicious_vessels"].append(
                 {
                     "name": vessel.get("name", "Unknown"),
@@ -316,7 +265,7 @@ def get_vessels_aishub() -> List[Dict[str, Any]]:
         bbox = BBOX
         url = "https://data.aishub.net/ws.php"
         params = {
-            "username": "ZS2313",  # cuenta pública de demostración
+            "username": os.getenv("AISHUB_USERNAME", "ZS2313"),
             "format": "1",
             "output": "json",
             "compress": "0",

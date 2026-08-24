@@ -138,12 +138,13 @@
                     {% set is_telegram = 'Telegram' in (item.source or '') or 't.me' in (item.link or '') %}
                     {% set is_bluesky = 'Bluesky' in (item.source or '') or 'bsky.app' in (item.link or '') %}
                     {% set is_mastodon = 'Mastodon' in (item.source or '') or 'mastodon.' in (item.link or '') or 'fosstodon' in (item.link or '') or 'infosec.exchange' in (item.link or '') %}
+                    {% set is_x = 'X/' in (item.source or '') or 'Twitter' in (item.source or '') or 'twitter.com' in (item.link or '') or 'x.com' in (item.link or '') or 'twitterwebviewer' in (item.link or '') %}
                     {% set text_search = ((item.title or '') + ' ' + (item.summary or '') + ' ' + (item.source or ''))|lower %}
 
                     <div class="social-item {% if is_reddit %}reddit-item{% endif %}"
                          data-search-text="{{ text_search }}"
-                         data-source-type="{% if is_reddit %}REDDIT{% elif is_telegram %}TELEGRAM{% elif is_bluesky %}BLUESKY{% elif is_mastodon %}MASTODON{% else %}NEWS{% endif %}"
-                         style="background: rgba(255,255,255,0.02); border: 1px solid {% if is_bluesky %}rgba(14,165,233,0.2){% elif is_mastodon %}rgba(99,91,255,0.2){% else %}rgba(255,255,255,0.05){% endif %}; padding: 0.8rem; border-radius: 6px; display: flex; flex-direction: column; justify-content: space-between;">
+                         data-source-type="{% if is_reddit %}REDDIT{% elif is_telegram %}TELEGRAM{% elif is_bluesky %}BLUESKY{% elif is_mastodon %}MASTODON{% elif is_x %}TWITTER{% else %}NEWS{% endif %}"
+                         style="background: rgba(255,255,255,0.02); border: 1px solid {% if is_bluesky %}rgba(14,165,233,0.2){% elif is_mastodon %}rgba(99,91,255,0.2){% elif is_x %}rgba(255,255,255,0.2){% else %}rgba(255,255,255,0.05){% endif %}; padding: 0.8rem; border-radius: 6px; display: flex; flex-direction: column; justify-content: space-between;">
                         <div>
                             <div style="display: flex; align-items: center; gap: 0.4rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
                                 {% if is_reddit %}
@@ -161,6 +162,10 @@
                                 {% elif is_mastodon %}
                                 <span class="social-tag" style="background: rgba(99,91,255,0.15); color: #a78bfa; border: 1px solid #635bff; padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold;">
                                     🐘 {{ item.source or 'Mastodon' }}
+                                </span>
+                                {% elif is_x %}
+                                <span class="social-tag" style="background: rgba(255,255,255,0.1); color: #ffffff; border: 1px solid rgba(255,255,255,0.3); padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold;">
+                                    𝕏 {{ item.source or 'X/Twitter' }}
                                 </span>
                                 {% else %}
                                 <span class="social-tag" style="background: rgba(0,229,255,0.15); color: var(--primary); border: 1px solid var(--primary); padding: 1px 6px; border-radius: 4px; font-size: 0.65rem; font-weight: bold;">

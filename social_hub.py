@@ -279,6 +279,62 @@ def fetch_rss(name: str, url: str, max_items: int = 5) -> List[Dict]:
     return results
 
 
+
+# ── Extractor: twitterwebviewer.com (X/Twitter sin API key) ──────
+TWITTER_WEB_VIEWER_BASE = "https://twitterwebviewer.com"
+
+
+def fetch_twitterwebviewer(query: str, max_items: int = 6) -> List[Dict]:
+    """Extrae posts de X/Twitter via twitterwebviewer.com (sin credenciales)."""
+    try:
+        from bs4 import BeautifulSoup
+        url = f"{TWITTER_WEB_VIEWER_BASE}/search"
+        params = {"q": query, "f": "live"}
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept-Language": "es-419,es;q=0.9",
+            "Referer": TWITTER_WEB_VIEWER_BASE,
+        }
+        resp = _session.get(url, params=params, headers=headers, timeout=15)
+        if not resp or resp.status_code != 200:
+            logger.warning(f"[TWV] twitterwebviewer retornó {getattr(resp, 'status_code', 'N/A')} para '{query}'")
+            return []
+        soup = BeautifulSoup(resp.text, "html.parser")
+        results = []
+        tweet_divs = (
+            soup.select("div.tweet") or
+            soup.select("article") or
+            soup.select("div[data-tweet-id]") or
+            soup.select(".tweet-body, .timeline-Tweet")
+        )
+        for div in tweet_divs[:max_items]:
+            text_el = div.select_one(".tweet-text, p, .timeline-Tweet-text")
+            text = text_el.get_text(" ", strip=True) if text_el else ""
+            if not text or len(text) < 10:
+                continue
+            link_el = div.select_one("a[href*='twitter.com'], a[href*='x.com']")
+            link = link_el["href"] if link_el and link_el.get("href") else f"https://x.com/search?q={query}"
+            if not link.startswith("http"):
+                link = TWITTER_WEB_VIEWER_BASE + link
+            time_el = div.select_one("time, .tweet-timestamp, .js-short-timestamp")
+            published = time_el.get("datetime", time_el.get_text(strip=True)) if time_el else "Reciente"
+            item = {
+                "title": text[:140],
+                "summary": text,
+                "link": link,
+                "published": published[:16] if len(published) > 16 else published,
+                "source": f"X/Twitter #{query}",
+            }
+            if not is_duplicate(item):
+                results.append(item)
+        if not results:
+            logger.warning(f"[TWV] Sin tweets parseados para '{query}' (HTML puede haber cambiado)")
+        return results
+    except Exception as e:
+        logger.warning(f"[TWV] twitterwebviewer error para '{query}': {e}")
+        return []
+
+
 # ── Extractores: APIs con Credenciales ───────────────────────────
 def fetch_reddit_auth() -> List[Dict]:
     """Extrae de Reddit usando PRAW si hay credenciales."""
@@ -352,6 +408,8 @@ def get_social_hub_data() -> Dict[str, Any]:
         ("Bluesky CiberSeg", lambda: fetch_bluesky("ciberseguridad")),
         ("Mastodon Venezuela", lambda: fetch_mastodon("venezuela")),
         ("Mastodon InfoSec", lambda: fetch_mastodon("infosec")),
+        ("X Venezuela", lambda: fetch_twitterwebviewer("venezuela")),
+        ("X CiberSeg", lambda: fetch_twitterwebviewer("ciberseguridad")),
         ("TikTok Hashtags", get_tiktok_all),
         ("TikTok Perfiles", get_tiktok_profiles),
         ("Crypto", fetch_crypto),
