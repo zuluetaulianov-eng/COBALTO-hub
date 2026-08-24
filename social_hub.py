@@ -18,7 +18,6 @@ from urllib.parse import urlparse
 
 import feedparser
 import requests
-from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from lxml_html_clean import Cleaner
 

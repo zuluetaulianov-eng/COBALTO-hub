@@ -9,7 +9,6 @@ from typing import Any, Dict, List
 import requests
 
 from config import REGIONAL_BBOX, TRACKING_VESSELS
-from social_public_extractor import safe_get
 
 logger = logging.getLogger(__name__)
 

@@ -341,11 +341,6 @@ def get_flights_adsbexchange() -> List[Dict[str, Any]]:
     """Fuente alternativa ADS-B real: ADS-B Exchange (público, sin API key)"""
     flights = []
     try:
-        # API pública de ADS-B Exchange — bounding box regional
-        bbox = VENEZUELA_BBOX
-        url = (
-            f"https://globe.adsbexchange.com/globeRates.json"
-        )
         # Endpoint real de datos en bbox para región Venezuela/Colombia/Caribe
         data_url = (
             f"https://globe.adsbexchange.com/re-api/?bounds="

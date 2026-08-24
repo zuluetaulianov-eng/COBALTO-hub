@@ -1,6 +1,5 @@
 # tests/test_social_extractors.py
 import sys
-import pytest
 
 sys.path.insert(0, ".")
 
