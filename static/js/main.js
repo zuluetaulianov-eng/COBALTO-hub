@@ -889,13 +889,10 @@ window.CobaltoCore = {
             if (t.initialData) {
                 self.state.tabCache[t.tabId] = t.initialData;
                 self.db.set(t.tabId, t.initialData);
-                
-                var activeTab = document.getElementById(t.tabId);
-                if (activeTab && activeTab.classList.contains('active')) {
-                    t.render(t.initialData);
-                    if (!self.state.tabRendered) self.state.tabRendered = {};
-                    self.state.tabRendered[t.tabId] = true;
-                }
+                // Renderizar siempre en background aunque el tab no esté visible
+                t.render(t.initialData);
+                if (!self.state.tabRendered) self.state.tabRendered = {};
+                self.state.tabRendered[t.tabId] = true;
                 return;
             }
 
@@ -904,13 +901,10 @@ window.CobaltoCore = {
                 .then(function(data) {
                     self.state.tabCache[t.tabId] = data;
                     self.db.set(t.tabId, data);
-                    
-                    var activeTab = document.getElementById(t.tabId);
-                    if (activeTab && activeTab.classList.contains('active')) {
-                        t.render(data);
-                        if (!self.state.tabRendered) self.state.tabRendered = {};
-                        self.state.tabRendered[t.tabId] = true;
-                    }
+                    // Renderizar siempre en background — el tab ya tendrá datos cuando se abra
+                    t.render(data);
+                    if (!self.state.tabRendered) self.state.tabRendered = {};
+                    self.state.tabRendered[t.tabId] = true;
                 })
                 .catch(function(e) {
                     console.warn('[COBALTO] Error precargando ' + t.tabId, e);
@@ -1678,7 +1672,7 @@ window.CobaltoCore = {
         if (targetTab) targetTab.classList.add('active');
         if (btnElement) btnElement.classList.add('active');
         
-        if (tabId === 'tab-cyber') {
+        if (tabId === 'tab-cyber' && !(this.state.tabRendered && this.state.tabRendered['tab-cyber'])) {
             this.lazyLoadTab('tab-cyber', '/api/cyber', data => this._renderCyberGrid(data));
         }
 
@@ -1714,9 +1708,10 @@ window.CobaltoCore = {
         if (tabId === 'tab-alerts') { setTimeout(function() { if (window.CobaltoIntel) CobaltoIntel.filterAlerts(); }, 100); }
 
         if (tabId === 'tab-operators') { if (window.OperatorsManager) window.OperatorsManager.init(); }
-        if (tabId === 'tab-social') this.lazyLoadTab('tab-social', '/api/social', data => this.renderSocialTab(data));
-        if (tabId === 'tab-realtime') this.lazyLoadTab('tab-realtime', '/api/realtime', data => this.renderRealtimeTab(data));
-        if (tabId === 'tab-narrative') this.lazyLoadTab('tab-narrative', '/api/narrative', data => this.renderNarrativeTab(data));
+        // Solo fetch si el preload aún no terminó (tabRendered protege contra doble petición)
+        if (tabId === 'tab-social' && !(this.state.tabRendered && this.state.tabRendered['tab-social'])) this.lazyLoadTab('tab-social', '/api/social', data => this.renderSocialTab(data));
+        if (tabId === 'tab-realtime' && !(this.state.tabRendered && this.state.tabRendered['tab-realtime'])) this.lazyLoadTab('tab-realtime', '/api/realtime', data => this.renderRealtimeTab(data));
+        if (tabId === 'tab-narrative' && !(this.state.tabRendered && this.state.tabRendered['tab-narrative'])) this.lazyLoadTab('tab-narrative', '/api/narrative', data => this.renderNarrativeTab(data));
         if (tabId === 'tab-analytics') {
             if (window.CobaltoAnalytics) {
                 window.CobaltoAnalytics.init();
