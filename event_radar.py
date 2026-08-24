@@ -7,7 +7,7 @@ from datetime import datetime
 from typing import Any, Dict, List
 
 from ai_core import geolocate_text
-from social_hub import fetch_nitter, fetch_rss
+from social_hub import fetch_bluesky, fetch_rss
 
 logger = logging.getLogger("EventRadar")
 
@@ -46,10 +46,10 @@ class EventRadar:
             self._seen_ids = set(list(self._seen_ids)[-self._MAX_SEEN // 2 :])
         logger.info("[RADAR] Iniciando escaneo de eventos flash...")
 
-        # 1. Monitoreo de Twitter (Nitter) para keywords críticas
+        # 1. Monitoreo de Bluesky (AT Protocol) para keywords críticas
         tasks = []
         for kw in RADAR_KEYWORDS[:5]:  # Top 5 prioritarias
-            tasks.append(asyncio.to_thread(fetch_nitter, kw))
+            tasks.append(asyncio.to_thread(fetch_bluesky, kw))
 
         # 2. Monitoreo de feeds de emergencia (si existen)
         tasks.append(asyncio.to_thread(fetch_rss, "Sucesos", "https://t.me/s/notivenezuelaarma"))
