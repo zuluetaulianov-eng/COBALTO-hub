@@ -1,12 +1,12 @@
 @echo off
-title COBALTO HUB v9.0 - Instalador y Bootstrapper Automatizado
+title COBALTO HUB v14.2 - Instalador y Bootstrapper Automatizado
 color 0B
 setlocal enabledelayedexpansion
 
 cls
 echo.
 echo    ===================================================
-echo             C O B A L T O   H U B   v 9 . 0
+echo             C O B A L T O   H U B   v 1 4 . 2
 echo         Instalador de Entorno y Lanzador Dual
 echo    ===================================================
 echo.
@@ -63,7 +63,7 @@ if "%PYTHON_CMD%"=="" (
 :: --- 2. VERIFICAR COMPATIBILIDAD DE VERSION DE PYTHON ---
 :: Comprobar que sea al menos Python 3.10
 %PYTHON_CMD% -c "import sys; sys.exit(0 if sys.version_info >= (3, 10) else 1)" >nul 2>nul
-if %errorlevel% neq 0 (
+if !errorlevel! neq 0 (
     echo  [ALERTA] Se detecto una version obsoleta de Python. Requiere Python 3.10 o superior.
     echo  [+] Actualizando entorno a Python 3.11.9...
     
