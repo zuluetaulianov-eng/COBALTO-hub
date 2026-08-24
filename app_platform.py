@@ -54,6 +54,9 @@ def get_uvicorn_kwargs() -> dict:
         # h11 + asyncio es la combinación más estable en Windows
         kwargs["loop"] = "asyncio"
     else:
-        # httptools + uvloop en Linux/macOS ofrece mejor rendimiento
-        kwargs["loop"] = "uvloop"
+        try:
+            import uvloop  # noqa: F401
+            kwargs["loop"] = "uvloop"
+        except ImportError:
+            kwargs["loop"] = "auto"
     return kwargs
