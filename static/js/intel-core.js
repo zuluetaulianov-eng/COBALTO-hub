@@ -54,6 +54,9 @@ window.CobaltoIntel = {
             if (sort === 'date') {
                 var da = a.getAttribute('data-date') || '';
                 var db = b.getAttribute('data-date') || '';
+                var tsa = Date.parse(da) || 0;
+                var tsb = Date.parse(db) || 0;
+                if (tsa !== tsb) return tsb - tsa;
                 return db.localeCompare(da);
             } else {
                 var ta = a.getAttribute('data-title') || '';
@@ -115,6 +118,21 @@ window.CobaltoIntel = {
             else c.classList.remove('active');
         });
         this.filterSocial();
+    },
+
+    sendToRag: function(title, summary) {
+        if (window.switchTab) {
+            window.switchTab('intel');
+        }
+        const queryInput = document.getElementById('intel-query-input');
+        if (queryInput) {
+            queryInput.value = (title + (summary ? ': ' + summary : '')).trim();
+            queryInput.focus();
+            queryInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        if (window.CobaltoConfig && CobaltoConfig.showToast) {
+            CobaltoConfig.showToast('Tema cargado en Centro de Investigación. Haz clic en Ejecutar.', 'info');
+        }
     },
 
     sendItemToRag: function(btn) {
@@ -416,6 +434,9 @@ window.CobaltoIntel = {
                 case 'time':
                     var ta = a.getAttribute('data-timestamp') || '';
                     var tb = b.getAttribute('data-timestamp') || '';
+                    var tsa = Date.parse(ta) || 0;
+                    var tsb = Date.parse(tb) || 0;
+                    if (tsa !== tsb) return tsb - tsa;
                     return tb.localeCompare(ta);
                 case 'source':
                     var sa = a.getAttribute('data-source') || '';
@@ -479,6 +500,9 @@ window.CobaltoIntel = {
                 case 'date':
                     var da = a.getAttribute('data-published') || '';
                     var db = b.getAttribute('data-published') || '';
+                    var tsa = Date.parse(da) || 0;
+                    var tsb = Date.parse(db) || 0;
+                    if (tsa !== tsb) return tsb - tsa;
                     return db.localeCompare(da);
                 case 'type':
                     var ta = a.getAttribute('data-type') || '';
@@ -668,7 +692,7 @@ window.CobaltoIntel = {
                             <button onclick="CobaltoIntel.executeResearch()" class="btn-tactical" style="background: #FF2D55; color: #fff; font-weight: bold; border: none; padding: 8px 20px; font-size: 0.85rem; border-radius: 6px; cursor: pointer;">
                                 🔄 REINTENTAR INVESTIGACIÓN
                             </button>
-                            <button onclick="if(window.CobaltoConfig)CobaltoConfig.switchSubtab('subtab-osiris')" class="btn-tactical" style="background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 8px 16px; font-size: 0.85rem; border-radius: 6px;">
+                            <button onclick="if(window.switchTab){window.switchTab('config');setTimeout(function(){if(window.CobaltoConfig)CobaltoConfig.switchSubTab('subtab-ai');},150);}" class="btn-tactical" style="background: transparent; color: var(--primary); border: 1px solid var(--primary); padding: 8px 16px; font-size: 0.85rem; border-radius: 6px; cursor: pointer;">
                                 ⚙️ VERIFICAR OLLAMA EN CONFIGURACIÓN
                             </button>
                         </div>

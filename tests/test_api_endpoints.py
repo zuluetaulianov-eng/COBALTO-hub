@@ -154,3 +154,21 @@ async def test_404_returns_json_or_html():
     async with _make_client() as client:
         resp = await client.get("/api/endpoint_que_no_existe_xyz")
         assert resp.status_code in (404, 401)
+
+
+# ── Intel Research & Reports ──
+
+@pytest.mark.asyncio
+async def test_api_intel_research():
+    """POST /api/intel/research debe generar un informe fáctico/IA válido."""
+    async with _make_client() as client:
+        resp = await client.post(
+            "/api/intel/research",
+            json={"query": "Análisis de seguridad en frontera", "use_ai": False, "include_rag": True}
+        )
+        assert resp.status_code in (200, 401)
+        if resp.status_code == 200:
+            data = resp.json()
+            assert data.get("status") == "ok"
+            assert "analisis_completo" in data.get("data", {})
+

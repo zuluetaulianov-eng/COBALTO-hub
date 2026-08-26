@@ -973,6 +973,73 @@ async def intel_region_dossier(lat: float = Query(...), lng: float = Query(...),
     }
 
 
+# ── COLOMBIA OSINT ENDPOINTS ──
+
+@router.get("/colombia/secop")
+async def colombia_secop(
+    q: str | None = Query(None),
+    departamento: str | None = Query(None),
+    monto_min: float | None = Query(None),
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    request: Request = None,
+):
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    from osiris_colombia_recon import query_secop_socrata
+    records = await query_secop_socrata(query_text=q, departamento=departamento, monto_min=monto_min, limit=limit, offset=offset)
+    return {
+        "fuente": "SECOP II / Datos Abiertos Colombia (Socrata)",
+        "total_fetched": len(records),
+        "limit": limit,
+        "offset": offset,
+        "records": records,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+@router.get("/colombia/jep")
+async def colombia_jep(limit: int = Query(15, ge=1, le=50), request: Request = None):
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    from osiris_colombia_recon import fetch_jep_press_releases
+    releases = await fetch_jep_press_releases(limit=limit)
+    return {
+        "fuente": "JEP (Jurisdicción Especial para la Paz)",
+        "total_fetched": len(releases),
+        "records": releases,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+@router.get("/colombia/rama-judicial")
+async def colombia_rama_judicial(radicado: str = Query(...), request: Request = None):
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    from osiris_colombia_recon import query_rama_judicial_radicado
+    result = await query_rama_judicial_radicado(radicado)
+    return {
+        "fuente": "Rama Judicial de Colombia (Consulta de Procesos)",
+        "radicado": radicado,
+        "data": result,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+@router.get("/colombia/summary")
+async def colombia_summary(limit: int = Query(50, ge=1, le=200), request: Request = None):
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    from osiris_colombia_recon import get_colombia_intel_summary
+    records = get_colombia_intel_summary(limit=limit)
+    return {
+        "fuente": "Consolidado SQLite Inteligencia Colombia",
+        "total": len(records),
+        "records": records,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
 # ── Async HTTP helpers ──
 
 async def _fetch_json_http(url: str, headers: dict | None = None, timeout: int = 30) -> Any:

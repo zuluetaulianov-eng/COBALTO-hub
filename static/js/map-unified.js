@@ -6,7 +6,8 @@ window.UnifiedMap = {
         currentBasemap: 'dark',
         pollTimers: [],
         active: false,
-        renderedMarkers: []
+        renderedMarkers: [],
+        currentPoints: []
     },
 
     LAYER_DEFS: {
@@ -63,9 +64,9 @@ window.UnifiedMap = {
         }).setView([6.5, -70.0], 5);
 
         // Tile basemaps
-        this.state.tileLayers.dark = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 });
-        this.state.tileLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18 });
-        this.state.tileLayers.light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 });
+        this.state.tileLayers.dark = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, maxNativeZoom: 16, attribution: '&copy; Esri, HERE, Garmin, NGA' });
+        this.state.tileLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, maxNativeZoom: 18, attribution: '&copy; Esri, Maxar, Earthstar' });
+        this.state.tileLayers.light = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, maxNativeZoom: 16, attribution: '&copy; Esri, HERE, Garmin, NGA' });
 
         this.state.tileLayers[this.state.currentBasemap].addTo(this.state.map);
         L.control.zoom({ position: 'bottomright' }).addTo(this.state.map);
@@ -489,5 +490,19 @@ window.UnifiedMap = {
             }
         }, 200);
     },
+
+    invalidateMap: function() {
+        var m = this.state.map || this.map;
+        if (m && typeof m.invalidateSize === 'function') {
+            m.invalidateSize();
+        }
+    },
+
+    get _map() {
+        return this.state.map;
+    }
 };
+
+window.UnifiedMap = window.UnifiedMap || UnifiedMap;
+window.CobaltoMap = window.UnifiedMap;
 

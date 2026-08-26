@@ -186,10 +186,17 @@ _groq_key_errors: dict = {}  # api_key -> consecutive_failures
 
 
 def get_groq_pool() -> List[AsyncGroq]:
-    """Obtiene los clientes Groq del pool genérico.
-    Incluye claves genéricas y de agente como respaldo para maximizar throughput.
+    """Obtiene los clientes Groq/CometAPI del pool genérico.
+    Incluye claves CometAPI, NVIDIA/Groq y de agente como respaldo para maximizar throughput.
     Si la IA local (Ollama) está habilitada, se inserta como primer cliente del pool."""
     keys = [
+        os.getenv("COMETAPI_KEY_1"),
+        os.getenv("COMETAPI_KEY_2"),
+        os.getenv("COMETAPI_KEY_3"),
+        os.getenv("COMETAPI_KEY_4"),
+        os.getenv("COMETAPI_KEY_5"),
+        os.getenv("COMETAPI_KEY"),
+        os.getenv("OPENAI_API_KEY"),
         os.getenv("GROQ_API_KEY"),
         os.getenv("GROQ_API_KEY_2"),
         os.getenv("GROQ_API_KEY_3"),
@@ -199,9 +206,13 @@ def get_groq_pool() -> List[AsyncGroq]:
         os.getenv("GROQ_API_KEY_MINERVA"),
     ]
     unique_keys = list(set([k for k in keys if k]))
-    clients: List[AsyncGroq] = [
-        AsyncGroq(api_key=k, base_url="https://integrate.api.nvidia.com/v1") for k in unique_keys
-    ]
+    unique_keys.sort(key=lambda k: 0 if k.startswith("sk-") else 1)
+    clients: List[AsyncGroq] = []
+    comet_base = os.getenv("COMETAPI_BASE_URL", "https://api.cometapi.com/v1")
+    for k in unique_keys:
+        base_url = comet_base if k.startswith("sk-") else "https://integrate.api.nvidia.com/v1"
+        clients.append(AsyncGroq(api_key=k, base_url=base_url))
+
     try:
         from ollama_provider import OllamaCompatClient, ollama_settings
 
@@ -264,12 +275,14 @@ _agent_clients: dict = {}
 
 
 def _get_agent_client(env_var: str) -> Optional[AsyncGroq]:
-    """Crea/cachea un cliente Groq dedicado para una env var específica."""
+    """Crea/cachea un cliente Groq/CometAPI dedicado para una env var específica."""
     key = os.getenv(env_var)
     if not key:
         return None
     if env_var not in _agent_clients or _agent_clients[env_var] is None:
-        _agent_clients[env_var] = AsyncGroq(api_key=key, base_url="https://integrate.api.nvidia.com/v1")
+        comet_base = os.getenv("COMETAPI_BASE_URL", "https://api.cometapi.com/v1")
+        base_url = comet_base if key.startswith("sk-") else "https://integrate.api.nvidia.com/v1"
+        _agent_clients[env_var] = AsyncGroq(api_key=key, base_url=base_url)
     return _agent_clients[env_var]
 
 

@@ -590,13 +590,14 @@ AI_MODEL = "meta/llama-3.3-70b-instruct"
 AI_TEMPERATURE = 0.55
 AI_MAX_TOKENS = 800
 
-# ── IA Local (Ollama) ──
+# ── IA Local / Cloud (Ollama) ──
 OLLAMA_ENABLED = os.getenv("OLLAMA_ENABLED", "true").lower() == "true"
 PREFER_LOCAL_AI = os.getenv("PREFER_LOCAL_AI", "true").lower() == "true"
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "localhost")
 OLLAMA_PORT = int(os.getenv("OLLAMA_PORT", "11434"))
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
 OLLAMA_TIMEOUT = float(os.getenv("OLLAMA_TIMEOUT", "180"))
+OLLAMA_API_KEY = os.getenv("OLLAMA_API_KEY", "")
 AI_SYSTEM_PROMPT_ARES = "Tu perspectiva es ABSOLUTAMENTE NEUTRAL, OBJETIVA Y DE VERIFICACIÓN FÁCTICA (OSINT). Analiza las noticias de forma fría, pragmática y científica. Tu misión única es establecer los hechos puros y confirmados, separándolos de cualquier retórica o sesgo político. Determina la veracidad y el alcance fáctico de la información."
 AI_SYSTEM_PROMPT_MINERVA = "Tu perspectiva es de la OPOSICIÓN VENEZOLANA. Toma los hechos objetivos reportados e interprétalos de forma crítica y analítica. Enfócate en el colapso institucional, la crisis de servicios públicos, las denuncias de censura, violaciones de derechos humanos, protestas ciudadanas y la necesidad de cambio. Mantén un tono intelectual, afilado y frío."
 AI_SYSTEM_PROMPT_NEXUS = "Tu perspectiva es del OFICIALISMO VENEZOLANO (Gobierno/Revolución). Toma el análisis de la Oposición y responde en defensa de la soberanía nacional. Enfócate en la resistencia popular ante el bloqueo económico y las sanciones de EE.UU. y sus aliados, los avances estatales y denuncia las críticas opositoras como campaigns de desinformación o intentos de desestabilización."
@@ -935,7 +936,7 @@ def load_dynamic_config():
     global GDACS_MONITOR_ENABLED, GDACS_MAX_DISTANCE_KM, GDACS_EVENT_DAYS
     global ASN_MONITOR_ENABLED, ASN_DROP_THRESHOLD
     global AI_MODEL, AI_TEMPERATURE, AI_MAX_TOKENS, AI_SYSTEM_PROMPT_ARES, AI_SYSTEM_PROMPT_MINERVA, AI_SYSTEM_PROMPT_NEXUS
-    global OLLAMA_ENABLED, OLLAMA_HOST, OLLAMA_PORT, OLLAMA_MODEL, OLLAMA_TIMEOUT
+    global OLLAMA_ENABLED, OLLAMA_HOST, OLLAMA_PORT, OLLAMA_MODEL, OLLAMA_TIMEOUT, OLLAMA_API_KEY
     global TELEGRAM_PUSH_CHAT_ID, ALERT_CRITICAL_KEYWORDS, ALERT_URGENT_KEYWORDS
     global SENTIMIENTO
     global OSIRIS_RECON_ENABLED, OSIRIS_INTEL_ENABLED, OSIRIS_MAP_ENABLED, OSIRIS_CCTV_ENABLED, OSIRIS_FEED_ENABLED
@@ -1009,6 +1010,7 @@ def load_dynamic_config():
             "OLLAMA_PORT": OLLAMA_PORT,
             "OLLAMA_MODEL": OLLAMA_MODEL,
             "OLLAMA_TIMEOUT": OLLAMA_TIMEOUT,
+            "OLLAMA_API_KEY": OLLAMA_API_KEY,
             "TELEGRAM_PUSH_CHAT_ID": TELEGRAM_PUSH_CHAT_ID,
             "ALERT_CRITICAL_KEYWORDS": ALERT_CRITICAL_KEYWORDS,
             "ALERT_URGENT_KEYWORDS": ALERT_URGENT_KEYWORDS,
@@ -1155,6 +1157,8 @@ def load_dynamic_config():
             OLLAMA_MODEL = str(data["OLLAMA_MODEL"])
         if "OLLAMA_TIMEOUT" in data:
             OLLAMA_TIMEOUT = float(data["OLLAMA_TIMEOUT"])
+        if "OLLAMA_API_KEY" in data:
+            OLLAMA_API_KEY = str(data["OLLAMA_API_KEY"])
         if "TELEGRAM_PUSH_CHAT_ID" in data:
             TELEGRAM_PUSH_CHAT_ID = str(data["TELEGRAM_PUSH_CHAT_ID"])
 

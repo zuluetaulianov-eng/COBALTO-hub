@@ -1157,7 +1157,6 @@ window.CobaltoCore = {
     },
 
     _cyberItems: [],
-    _cyberItems: [],
     _cyberFilterCategory: 'ALL',
     _cyberSearchQuery: '',
 
@@ -1404,13 +1403,17 @@ window.CobaltoCore = {
                     }
                     var pubTime = item.published ? `<span style="font-size:0.7rem; color:var(--text-muted); margin-left:auto; font-family:'Roboto Mono', monospace;">${this.utils.escapeHTML(item.published.substring(0, 16))}</span>` : '';
 
+                    var cleanT = (item.title || '').trim();
+                    var cleanS = (item.summary || '').trim();
+                    var showSummary = cleanS && cleanS !== cleanT && !cleanS.startsWith(cleanT.substring(0, 60)) && !cleanT.startsWith(cleanS.substring(0, 60));
+
                     html += `<div class="social-item ${isReddit ? 'reddit-item' : ''}" data-search-text="${this.utils.escapeHTML(searchText)}">
                         <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem; flex-wrap:wrap;">
                             ${tagHtml}
                             ${pubTime}
                         </div>
                         <a href="${this.utils.escapeHTML(itemLink)}" target="_blank" rel="noopener noreferrer" style="font-weight:600; text-decoration:none;">${this.utils.escapeHTML(item.title || '')}</a>
-                        ${item.summary ? `<p style="margin-top:0.3rem; font-size:0.8rem; color:var(--text-muted); line-height:1.4;">${this.utils.escapeHTML(item.summary)}</p>` : ''}
+                        ${showSummary ? `<p style="margin-top:0.3rem; font-size:0.8rem; color:var(--text-muted); line-height:1.4;">${this.utils.escapeHTML(item.summary)}</p>` : ''}
                     </div>`;
                     renderedCount++;
                 }

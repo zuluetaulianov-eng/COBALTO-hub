@@ -119,18 +119,31 @@ async def _build_pipeline_async(priority_only: bool = False) -> Dict[str, Any]:
         if "title" not in item_copy:
             item_copy["title"] = item_copy.get("comment_short", "Reporte Táctico")
         all_entries.append(item_copy)
-    _epoch = datetime(2000, 1, 1)
+    from utils import parse_datetime
 
     def sort_key(x):
         dt = x.get("published_dt")
         if dt is None:
-            return 0
+            raw_val = x.get("published_iso") or x.get("published") or x.get("timestamp") or x.get("created_at")
+            if raw_val:
+                dt = parse_datetime(raw_val)
+        if dt is None:
+            return 0.0
         try:
             return dt.timestamp()
         except (OSError, OverflowError):
-            return 0
+            return 0.0
 
     all_entries.sort(key=sort_key, reverse=True)
+
+    for entry in all_entries:
+        dt = entry.get("published_dt") or parse_datetime(entry.get("published_iso") or entry.get("published"))
+        if dt:
+            entry["published_dt"] = dt
+            entry["published_iso"] = dt.isoformat()
+            if not entry.get("published") or "T" not in str(entry.get("published")):
+                entry["published"] = dt.strftime("%Y-%m-%d %H:%M:%S")
+
     all_entries = cluster_similar_entries(all_entries)
     state.last_entries_cache = all_entries[:2000]
     return {

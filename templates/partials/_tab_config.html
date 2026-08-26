@@ -864,20 +864,20 @@
                             <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Sintonice el comportamiento del motor cognitivo del sistema, los umbrales creativos y las posturas geopolíticas de los agentes de inteligencia.</p>
 
                             <!-- Ollama Engine Config Block -->
-                            <div class="config-section-title" style="margin-top: 1rem;">🦙 MOTOR IA LOCAL (OLLAMA ENGINE)</div>
-                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Configure la conexión al servidor Ollama que corre en la PC local para inferencia y RAG bajo demanda sin límites de API.</p>
+                            <div class="config-section-title" style="margin-top: 1rem;">🦙 MOTOR IA LOCAL / CLOUD (OLLAMA ENGINE)</div>
+                            <p class="text-muted" style="font-size: 0.75rem; margin-top: -1rem; margin-bottom: 1.5rem;">Configure la conexión al servidor Ollama (Local o Cloud/Remote API) para inferencia y RAG bajo demanda sin sobrecargar la CPU/GPU local.</p>
                             <div class="config-grid-form" style="margin-bottom: 2rem;">
                                 <div class="config-checkbox-group">
                                     <input type="checkbox" id="cfg-ollama-enabled" class="config-checkbox">
                                     <div class="flex-column">
-                                        <label for="cfg-ollama-enabled" style="color: #fff; font-size: 0.8rem; cursor: pointer; font-weight: 500;">Activar Motor Ollama Local</label>
-                                        <span style="font-size: 0.65rem; color: var(--text-muted);">Priorizar la PC local para inferencias RAG y consultas tácticas.</span>
+                                        <label for="cfg-ollama-enabled" style="color: #fff; font-size: 0.8rem; cursor: pointer; font-weight: 500;">Activar Motor Ollama (Local / Cloud)</label>
+                                        <span style="font-size: 0.65rem; color: var(--text-muted);">Priorizar Ollama para inferencias RAG y consultas tácticas.</span>
                                     </div>
                                 </div>
                                 <div class="config-input-group">
-                                    <label>IP / Host Servidor Ollama (OLLAMA_HOST)</label>
-                                    <input type="text" id="cfg-ollama-host" class="config-input-field mono" placeholder="192.168.1.213">
-                                    <span style="font-size: 0.65rem; color: var(--text-muted);">IP de la PC donde corre Ollama en la red local.</span>
+                                    <label>URL / Host Servidor Ollama (OLLAMA_HOST)</label>
+                                    <input type="text" id="cfg-ollama-host" class="config-input-field mono" placeholder="192.168.1.213 o https://mi-ollama-cloud.com">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">IP local o URL HTTPS del servidor remoto Ollama.</span>
                                 </div>
                                 <div class="config-input-group">
                                     <label>Puerto Ollama (OLLAMA_PORT)</label>
@@ -885,17 +885,22 @@
                                     <span style="font-size: 0.65rem; color: var(--text-muted);">Puerto predeterminado de Ollama (11434).</span>
                                 </div>
                                 <div class="config-input-group">
+                                    <label>Clave API Ollama Cloud (OLLAMA_API_KEY - Opcional)</label>
+                                    <input type="password" autocomplete="off" id="cfg-ollama-api-key" class="config-input-field mono" placeholder="Bearer Token o API Key si requiere auth">
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Opcional para servicios Ollama Cloud protegidos con autenticación Bearer.</span>
+                                </div>
+                                <div class="config-input-group">
                                     <label>Modelo Ollama (OLLAMA_MODEL)</label>
                                     <button type="button" id="btn-detect-ollama-models" onclick="CobaltoConfig.detectOllamaModels()" class="btn-tactical" style="padding: 0.25rem 0.6rem; font-size: 0.7rem; margin-bottom: 0.4rem; display: inline-flex; align-items: center; gap: 0.3rem;"><i class="fas fa-sync-alt" id="icon-detect-ollama"></i> Auto-Detectar Modelos</button>
                                     <select id="cfg-ollama-model" class="config-input-field mono">
                                         <option value="llama3.2">llama3.2 (Predeterminado)</option>
                                     </select>
-                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Nombre del modelo descargado en Ollama (ej: llama3.2, mistral).</span>
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Nombre del modelo disponible en Ollama (ej: llama3.2, mistral).</span>
                                 </div>
                                 <div class="config-input-group">
                                     <label>Timeout Inferencia (Segundos)</label>
                                     <input type="number" id="cfg-ollama-timeout" class="config-input-field mono" placeholder="180">
-                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Tiempo máximo de espera para la respuesta del modelo local.</span>
+                                    <span style="font-size: 0.65rem; color: var(--text-muted);">Tiempo máximo de espera para la respuesta del modelo.</span>
                                 </div>
                             </div>
 

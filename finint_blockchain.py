@@ -4,14 +4,19 @@ Tracks cryptocurrency wallets, checks against OFAC sanctions,
 and monitors suspicious transactions via public blockchain APIs.
 """
 import asyncio
+import json
 import logging
 import time
 from datetime import datetime
+from pathlib import Path
 from typing import Any, Dict, List
 
 import aiohttp
 
 logger = logging.getLogger(__name__)
+
+DATA_DIR = Path(__file__).parent / "data"
+SANCTIONS_CACHE_FILE = DATA_DIR / "ofac_sanctioned_wallets.json"
 
 # Known OFAC-sanctioned wallet addresses (curated subset for offline lookup)
 SANCTIONED_WALLETS: Dict[str, Dict[str, str]] = {
@@ -21,6 +26,21 @@ SANCTIONED_WALLETS: Dict[str, Dict[str, str]] = {
     "TBs15M8yvVbB7f4T2N9Z7e32N9L4vQ1a1Z": {"entity": "Garantex TRON USDT Treasury", "program": "SDN / RUSSIA-EO14024"},
     "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh": {"entity": "Lazarus Group Hacker Wallet", "program": "SDN / DPRK3"},
 }
+
+
+def _load_ofac_cache():
+    """Carga direcciones sancionadas del caché local en JSON para disponibilidad 100% offline."""
+    if SANCTIONS_CACHE_FILE.exists():
+        try:
+            with open(SANCTIONS_CACHE_FILE, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+                if isinstance(loaded, dict):
+                    SANCTIONED_WALLETS.update(loaded)
+        except Exception as e:
+            logger.warning(f"[FININT] Error al cargar caché OFAC: {e}")
+
+
+_load_ofac_cache()
 
 # Trusted blockchain explorers (rate-limited, free tier)
 BLOCKCHAIN_EXPLORERS = {

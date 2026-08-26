@@ -13,6 +13,21 @@ var graphTimelineIdx = -1;
 var graphColorByCommunity = false;
 var graphCurrentSolver = 'forceAtlas2Based';
 
+var ENTITY_ALIASES = {
+    'eln': 'ELN (Ejército de Liberación Nacional)',
+    'ejército de liberación nacional': 'ELN (Ejército de Liberación Nacional)',
+    'ejercito de liberacion nacional': 'ELN (Ejército de Liberación Nacional)',
+    'mindefensa': 'Ministerio de Defensa',
+    'ministerio de defensa': 'Ministerio de Defensa',
+    'ffmm colombia': 'Fuerzas Militares de Colombia',
+    'fuerzasmilcol': 'Fuerzas Militares de Colombia',
+    'ejército nacional': 'Ejército Nacional de Colombia',
+    'ejercito_col': 'Ejército Nacional de Colombia',
+    'fanb': 'FANB (Fuerza Armada Nacional Bolivariana)',
+    'padrino lópez': 'Vladimir Padrino López',
+    'padrino lopez': 'Vladimir Padrino López'
+};
+
 function resetGraphView() { if (graphNetwork) graphNetwork.fit({ animation: true }); }
 
 function graphRefreshFromEmpty() {
@@ -117,8 +132,10 @@ function visNodeFromRaw(n) {
     var labelSuffix = (ofacBadge || wikiBadge) ? ' ' + ofacBadge + wikiBadge : '';
     var ofacBorder = n.ofac_match ? '#FF2D55' : null;
 
+    var rawText = (n.label || n.id || '').toLowerCase().trim();
+    var canonicalName = ENTITY_ALIASES[rawText] || n.label || n.id;
     return {
-        id: n.id, label: (n.label || n.id) + labelSuffix, title: graphTooltipHTML(n),
+        id: n.id, label: canonicalName + labelSuffix, title: graphTooltipHTML(n),
         size: isBot ? Math.max(16, ((n.pagerank || 0.01) * 22 + 10)) : Math.max(6, Math.min(28, ((n.pagerank || 0.01) * 22 + 6))),
         color: { background: nodeColor, border: ofacBorder || (isBot ? '#FF3B30' : nodeColor), highlight: { background: '#fff', border: isBot ? '#FF9500' : (ofacBorder || catColor) } },
         borderWidth: isBot ? 3 : (n.ofac_match ? 2 : 1),

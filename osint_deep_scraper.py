@@ -9,6 +9,7 @@ import re
 from typing import Any, Dict, List
 
 import aiohttp
+
 try:
     import fake_useragent
 except ImportError:

@@ -10,7 +10,7 @@ _sess: Optional[aiohttp.ClientSession] = None
 
 
 def ollama_settings() -> dict:
-    """Retorna la configuración Ollama desde config.py con defaults seguros."""
+    """Retorna la configuración Ollama desde config.py con defaults seguros (soporta Ollama Local y Ollama Cloud)."""
     try:
         import config
 
@@ -19,37 +19,64 @@ def ollama_settings() -> dict:
         model = getattr(config, "OLLAMA_MODEL", "llama3.2")
         enabled = bool(getattr(config, "OLLAMA_ENABLED", True))
         timeout = float(getattr(config, "OLLAMA_TIMEOUT", 180))
+        api_key = getattr(config, "OLLAMA_API_KEY", "")
     except Exception:
-        host, port, model, enabled, timeout = "192.168.1.213", 11434, "llama3.2", True, 180.0
+        host, port, model, enabled, timeout, api_key = "192.168.1.213", 11434, "llama3.2", True, 180.0, ""
+
+    host_str = str(host).strip()
+    if host_str.startswith("http://") or host_str.startswith("https://"):
+        base_url = host_str.rstrip("/")
+    else:
+        base_url = f"http://{host_str}:{port}"
+
     return {
-        "host": host,
+        "host": host_str,
         "port": port,
-        "base_url": f"http://{host}:{port}",
-        "openai_url": f"http://{host}:{port}/v1",
+        "base_url": base_url,
+        "openai_url": f"{base_url}/v1",
         "model": model,
         "enabled": enabled,
         "timeout": timeout,
+        "api_key": api_key,
     }
 
 
+_sess_key: Optional[tuple] = None
+
+
 async def _get_session() -> aiohttp.ClientSession:
-    global _sess
+    global _sess, _sess_key
+    cfg = ollama_settings()
+    current_key = (cfg["base_url"], cfg.get("api_key", ""), cfg.get("timeout", 180.0))
+
+    if _sess is not None and not _sess.closed and _sess_key != current_key:
+        try:
+            await _sess.close()
+        except Exception:
+            pass
+        _sess = None
+
     if _sess is None or _sess.closed:
+        headers = {"User-Agent": "CobaltoHub-Ollama/9.1"}
+        if cfg.get("api_key"):
+            headers["Authorization"] = f"Bearer {cfg['api_key']}"
         _sess = aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=ollama_settings()["timeout"]),
-            headers={"User-Agent": "CobaltoHub-Ollama/9.1"},
+            timeout=aiohttp.ClientTimeout(total=cfg["timeout"]),
+            headers=headers,
         )
+        _sess_key = current_key
     return _sess
 
 
 async def close_ollama_session():
-    global _sess
+    global _sess, _sess_key
     if _sess and not _sess.closed:
         try:
             await _sess.close()
         except Exception:
             pass
     _sess = None
+    _sess_key = None
 
 
 async def ollama_available() -> bool:

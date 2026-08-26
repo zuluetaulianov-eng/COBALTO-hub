@@ -344,8 +344,8 @@ def get_flights_adsbexchange() -> List[Dict[str, Any]]:
         # Endpoint real de datos en bbox para región Venezuela/Colombia/Caribe
         data_url = (
             f"https://globe.adsbexchange.com/re-api/?bounds="
-            f"{bbox['south']:.1f},{bbox['north']:.1f},"
-            f"{bbox['west']:.1f},{bbox['east']:.1f}"
+            f"{VENEZUELA_BBOX['south']:.1f},{VENEZUELA_BBOX['north']:.1f},"
+            f"{VENEZUELA_BBOX['west']:.1f},{VENEZUELA_BBOX['east']:.1f}"
         )
         headers = {
             "User-Agent": "CobaltoHub/9.0 OSINT",

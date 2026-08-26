@@ -115,8 +115,8 @@ window.CobaltoMap = {
         }).setView([7.0, -66.0], 6);
 
         this.state.darkLayer = L.tileLayer(
-            'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-            { maxZoom: 19, attribution: '&copy; <a href="https://carto.com/">CARTO</a>' }
+            'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+            { maxZoom: 19, maxNativeZoom: 16, attribution: '&copy; Esri, HERE, Garmin, NGA' }
         ).addTo(this.state.map);
 
         this.state.satelliteLayer = L.tileLayer(

@@ -2648,7 +2648,13 @@ async def trigger_extractor_run():
         for src, items in extracted.items():
             if isinstance(items, list):
                 flat_entries.extend(items)
-        flat_entries.sort(key=lambda x: str(x.get("published_iso", x.get("published", ""))), reverse=True)
+        from utils import parse_datetime
+
+        def _get_ts(entry):
+            dt = entry.get("published_dt") or parse_datetime(entry.get("published_iso") or entry.get("published"))
+            return dt.timestamp() if dt else 0.0
+
+        flat_entries.sort(key=_get_ts, reverse=True)
         for entry in flat_entries:
             entry.pop("published_dt", None)
 
@@ -3285,6 +3291,12 @@ async def get_config():
         "AI_SYSTEM_PROMPT_ARES": config.AI_SYSTEM_PROMPT_ARES,
         "AI_SYSTEM_PROMPT_MINERVA": config.AI_SYSTEM_PROMPT_MINERVA,
         "AI_SYSTEM_PROMPT_NEXUS": config.AI_SYSTEM_PROMPT_NEXUS,
+        "OLLAMA_ENABLED": getattr(config, "OLLAMA_ENABLED", True),
+        "OLLAMA_HOST": getattr(config, "OLLAMA_HOST", "localhost"),
+        "OLLAMA_PORT": getattr(config, "OLLAMA_PORT", 11434),
+        "OLLAMA_MODEL": getattr(config, "OLLAMA_MODEL", "llama3.2"),
+        "OLLAMA_TIMEOUT": getattr(config, "OLLAMA_TIMEOUT", 180.0),
+        "OLLAMA_API_KEY": getattr(config, "OLLAMA_API_KEY", ""),
         "TELEGRAM_PUSH_CHAT_ID": config.TELEGRAM_PUSH_CHAT_ID,
         "ALERT_CRITICAL_KEYWORDS": config.ALERT_CRITICAL_KEYWORDS,
         "ALERT_URGENT_KEYWORDS": config.ALERT_URGENT_KEYWORDS,

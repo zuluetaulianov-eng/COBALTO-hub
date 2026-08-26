@@ -202,6 +202,8 @@ window.CobaltoConfig = {
         document.getElementById('cfg-ollama-enabled').checked = cfg.OLLAMA_ENABLED !== false;
         document.getElementById('cfg-ollama-host').value = cfg.OLLAMA_HOST || '192.168.1.213';
         document.getElementById('cfg-ollama-port').value = cfg.OLLAMA_PORT || 11434;
+        const keyEl = document.getElementById('cfg-ollama-api-key');
+        if (keyEl) keyEl.value = cfg.OLLAMA_API_KEY || '';
         document.getElementById('cfg-ollama-model').value = cfg.OLLAMA_MODEL || 'llama3.2';
         document.getElementById('cfg-ollama-timeout').value = cfg.OLLAMA_TIMEOUT || 180;
 
@@ -709,6 +711,7 @@ window.CobaltoConfig = {
             OLLAMA_ENABLED: document.getElementById('cfg-ollama-enabled').checked,
             OLLAMA_HOST: document.getElementById('cfg-ollama-host').value.trim() || '192.168.1.213',
             OLLAMA_PORT: parseInt(document.getElementById('cfg-ollama-port').value) || 11434,
+            OLLAMA_API_KEY: (document.getElementById('cfg-ollama-api-key') ? document.getElementById('cfg-ollama-api-key').value.trim() : ''),
             OLLAMA_MODEL: document.getElementById('cfg-ollama-model').value.trim() || 'llama3.2',
             OLLAMA_TIMEOUT: parseFloat(document.getElementById('cfg-ollama-timeout').value) || 180,
 

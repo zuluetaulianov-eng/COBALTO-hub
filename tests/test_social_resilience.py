@@ -45,3 +45,18 @@ def test_redlib_frontend_pool():
     """Verifica que existan múltiples instancias de Redlib en el pool dinámico."""
     assert len(REDDIT_FRONTEND_INSTANCES) >= 3
     assert any("redlib" in inst or "libreddit" in inst for inst in REDDIT_FRONTEND_INSTANCES)
+
+
+def test_clean_html_artifacts_and_thinking_process():
+    """Verifica que clean_html elimine artefactos de listas Python y marcas de razonamiento IA (thinking process)."""
+    from social_hub import clean_html
+
+    raw_input = "'🌍', '🌎'] INTERNACIONALES Here's a thinking process: https://www.bbc.co.uk/weather/articles/c62krylw57xo #Venezuela"
+    cleaned = clean_html(raw_input)
+
+    assert "'🌍'" not in cleaned
+    assert "'🌎'" not in cleaned
+    assert "Here's a thinking process" not in cleaned
+    assert "INTERNACIONALES" in cleaned
+    assert "#Venezuela" in cleaned
+

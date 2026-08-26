@@ -21,13 +21,24 @@ urllib3.disable_warnings()
 
 
 def clean_text_summary(text: str, max_length: int = 280) -> str:
-    """Limpia etiquetas HTML, unescape entidades y normaliza espacios en resúmenes RSS/OSINT."""
+    """Limpia etiquetas HTML, unescape entidades, rastros de IA y artefactos de listas en resúmenes RSS/OSINT."""
     if not text:
         return ""
     try:
         text = html.unescape(str(text))
         text = re.sub(r'<(br|p|div|/p|/div)[^>]*>', ' ', text, flags=re.IGNORECASE)
         text = re.sub(r'<[^>]+>', '', text)
+
+        # 1. Rastros de pensamiento de IA
+        text = re.sub(r"(?i)<think>.*?</think>", "", text, flags=re.DOTALL)
+        text = re.sub(r"(?i)here'?s\s+a\s+thinking\s+process:?", "", text)
+        text = re.sub(r"(?i)thinking\s+process:?", "", text)
+
+        # 2. Artefactos de listas Python
+        text = re.sub(r"^\s*\[?\s*(?:['\"][^'\"]*['\"]\s*,\s*)*['\"][^'\"]*['\"]\s*\]\s*", "", text)
+        text = re.sub(r"^\s*['\"][^'\"]*['\"]\s*,\s*['\"][^'\"]*['\"]\s*\]\s*", "", text)
+        text = re.sub(r"^\s*['\"\]\)]+\s*", "", text)
+
         text = re.sub(r'\s+', ' ', text).strip()
         return text[:max_length]
     except Exception:
@@ -86,12 +97,51 @@ def check_tor_available() -> bool:
     return get_tor_port() is not None
 
 
+# ── Circuit Breaker Tracker para endpoints externos ──
+_circuit_breaker_state: Dict[str, Dict[str, Any]] = {}
+MAX_FAILURES_BEFORE_BREAKER = 3
+BREAKER_COOLDOWN_SECONDS = 600  # 10 minutos de enfriamiento para dominios inalcanzables
+
+
+def is_circuit_open(target_key: str) -> bool:
+    """Retorna True si el circuito está abierto (desactivado por fallas consecutivas)."""
+    now = time.time()
+    state = _circuit_breaker_state.get(target_key)
+    if not state:
+        return False
+    if state.get("failures", 0) >= MAX_FAILURES_BEFORE_BREAKER:
+        if now < state.get("cooldown_until", 0.0):
+            return True
+        _circuit_breaker_state[target_key] = {"failures": 0, "cooldown_until": 0.0}
+        return False
+    return False
+
+
+def record_circuit_failure(target_key: str):
+    """Registra un fallo de red/timeout para activar el circuit breaker si supera el umbral."""
+    now = time.time()
+    state = _circuit_breaker_state.setdefault(target_key, {"failures": 0, "cooldown_until": 0.0})
+    state["failures"] += 1
+    if state["failures"] >= MAX_FAILURES_BEFORE_BREAKER:
+        state["cooldown_until"] = now + BREAKER_COOLDOWN_SECONDS
+        logger.warning(
+            f"[CIRCUIT BREAKER] Circuito ABIERTO para {target_key} por {BREAKER_COOLDOWN_SECONDS}s ({state['failures']} fallos consecutivos)."
+        )
+
+
+def record_circuit_success(target_key: str):
+    """Registra una respuesta exitosa y resetea el contador de fallos."""
+    if target_key in _circuit_breaker_state:
+        _circuit_breaker_state[target_key] = {"failures": 0, "cooldown_until": 0.0}
+
+
 def safe_get(url: str, timeout: int = 12, *args, **kwargs):
     """
-    Estrategia de conexión en capas con TLS Fingerprint Evasion y Proxies Residenciales:
-    1. Si el dominio bloquea Tor -> usa TLS manager + Proxy Residencial (si está configurado)
-    2. Si Tor está disponible -> lo intenta vía SOCKS con TLS manager
-    3. Fallback directo con firma TLS de navegador
+    Estrategia de conexión en capas con TLS Fingerprint Evasion, Proxies y Circuit Breaker:
+    1. Revisa si el circuito está abierto por fallas consecutivas previas.
+    2. Si el dominio bloquea Tor -> usa TLS manager + Proxy Residencial (si está configurado).
+    3. Si Tor está disponible -> lo intenta vía SOCKS con TLS manager.
+    4. Fallback directo con firma TLS de navegador.
     """
     import urllib3
 
@@ -100,6 +150,26 @@ def safe_get(url: str, timeout: int = 12, *args, **kwargs):
 
     domain = url.split("/")[2] if "://" in url else url
 
+    if is_circuit_open(domain):
+        logger.debug(f"[CIRCUIT BREAKER] Omitiendo {domain} por circuito abierto (fallback pasivo).")
+        return None
+
+    try:
+        resp = _execute_safe_get(url, domain, headers, timeout)
+        if resp is not None and getattr(resp, "status_code", 0) == 200:
+            record_circuit_success(domain)
+            return resp
+        else:
+            record_circuit_failure(domain)
+            return resp
+    except Exception as e:
+        record_circuit_failure(domain)
+        logger.warning(f"[SAFE_GET] Error consultando {domain}: {e}")
+        return None
+
+
+def _execute_safe_get(url: str, domain: str, headers: Dict[str, str], timeout: int):
+    """Ejecuta la cadena de intentos de conexión HTTP/TLS."""
     # 1. Si el dominio bloquea Tor (Reddit, Telegram, Facebook, etc.)
     if any(blocked in domain for blocked in TOR_BLOCKED_DOMAINS):
         proxies = None

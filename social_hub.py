@@ -64,13 +64,26 @@ def canonicalize_url(url: str) -> str:
 
 
 def clean_html(html_content: str) -> str:
-    """Limpia HTML y devuelve texto plano o formateado seguro."""
+    """Limpia HTML, rastros de IA (thinking process) y artefactos de listas en publicaciones OSINT/sociales."""
     if not html_content:
         return ""
     try:
         text = html.unescape(str(html_content))
         text = re.sub(r'<(br|p|div|/p|/div)[^>]*>', ' ', text, flags=re.IGNORECASE)
         text = re.sub(r'<[^>]+>', '', text)
+
+        # 1. Eliminar rastros de cadenas de pensamiento de IA (DeepSeek, Llama, Ollama, etc.)
+        text = re.sub(r"(?i)<think>.*?</think>", "", text, flags=re.DOTALL)
+        text = re.sub(r"(?i)here'?s\s+a\s+thinking\s+process:?", "", text)
+        text = re.sub(r"(?i)thinking\s+process:?", "", text)
+
+        # 2. Eliminar artefactos de listas de Python str tipo "['🌍', '🌎']" o "'🌍', '🌎']"
+        text = re.sub(r"^\s*\[?\s*(?:['\"][^'\"]*['\"]\s*,\s*)*['\"][^'\"]*['\"]\s*\]\s*", "", text)
+        text = re.sub(r"^\s*['\"][^'\"]*['\"]\s*,\s*['\"][^'\"]*['\"]\s*\]\s*", "", text)
+
+        # 3. Eliminar caracteres sueltos de cierre/apertura sobrantes al inicio
+        text = re.sub(r"^\s*['\"\]\)]+\s*", "", text)
+
         text = re.sub(r'\s+', ' ', text).strip()
         return text[:300]
     except Exception:
@@ -397,17 +410,21 @@ def get_social_hub_data() -> Dict[str, Any]:
     start_time = time.time()
 
     tasks = [
-        ("Reddit Public", lambda: fetch_rss("Reddit Vzla", "https://www.reddit.com/r/vzla/new/.rss")),
+        ("Reddit Vzla", lambda: fetch_rss("Reddit Vzla", "https://www.reddit.com/r/vzla/new/.rss")),
+        ("Reddit Colombia", lambda: fetch_rss("Reddit Colombia", "https://www.reddit.com/r/Colombia/new/.rss")),
         (
             "Telegram",
             lambda: fetch_rss("Telegram @notivenezuelaarma", "https://rsshub.app/telegram/channel/notivenezuelaarma"),
         ),
         ("Hacker News", lambda: fetch_rss("Hacker News", "https://hnrss.org/frontpage")),
         ("Bluesky Venezuela", lambda: fetch_bluesky("venezuela")),
+        ("Bluesky Colombia", lambda: fetch_bluesky("colombia")),
         ("Bluesky CiberSeg", lambda: fetch_bluesky("ciberseguridad")),
         ("Mastodon Venezuela", lambda: fetch_mastodon("venezuela")),
+        ("Mastodon Colombia", lambda: fetch_mastodon("colombia")),
         ("Mastodon InfoSec", lambda: fetch_mastodon("infosec")),
         ("X Venezuela", lambda: fetch_twitterwebviewer("venezuela")),
+        ("X Colombia", lambda: fetch_twitterwebviewer("colombia")),
         ("X CiberSeg", lambda: fetch_twitterwebviewer("ciberseguridad")),
         ("TikTok Hashtags", get_tiktok_all),
         ("TikTok Perfiles", get_tiktok_profiles),

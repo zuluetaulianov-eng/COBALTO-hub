@@ -11,6 +11,7 @@
                 <div style="font-size: 0.8rem; color: var(--text-muted);">Extracción anti-censura multicanal: Telegram, Reddit, Mastodon, Bluesky y agregadores OSINT en tiempo real.</div>
             </div>
             <div class="flex items-center gap-05">
+                <span id="social-health-badge" class="font-mono" style="font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); color: #00E5FF; margin-right: 6px;">🟢 EXTRACCIÓN ACTIVA</span>
                 <span id="social-last-sync-time" class="font-mono text-muted" style="font-size: 0.7rem; margin-right: 6px;">Sincronizado: justo ahora</span>
                 <button class="btn-tactical" onclick="if(window.CobaltoIntel && window.CobaltoIntel.refreshSocial) window.CobaltoIntel.refreshSocial();" style="font-size: 0.8rem; padding: 6px 14px;">
                     🔄 SINCRONIZAR RADAR
@@ -185,9 +186,11 @@
                                 {{ item.title|striptags }}
                             </a>
 
-                            {% if item.summary %}
+                            {% set title_clean = (item.title or '')|striptags|trim %}
+                            {% set summary_clean = (item.summary or '')|striptags|trim %}
+                            {% if summary_clean and summary_clean != title_clean and not summary_clean.startswith(title_clean[:60]) and not title_clean.startswith(summary_clean[:60]) %}
                             <p style="margin: 0; font-size: 0.78rem; color: var(--text-muted); line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">
-                                {{ item.summary|striptags }}
+                                {{ summary_clean }}
                             </p>
                             {% endif %}
                         </div>
