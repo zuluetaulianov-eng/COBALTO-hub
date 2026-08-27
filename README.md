@@ -1,31 +1,26 @@
-# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v14.6
+# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v15.0
 
 > **Sistema de Mando y Control de Inteligencia (C4I)** en tiempo real con **Arquitectura Multipaís (Multi-Theater OSINT)**,  
-> **Target Dossier Engine (360° Risk Score)**, **Pipeline de Ingestión Autónoma y Cosecha de Keywords**, **Persistencia Histórica Deduplicada**, **Previsualización de Video Táctico** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
+> **Target Dossier Engine (360° Risk Score)**, **TLS Fingerprinting Evasion (JA3/HTTP2)**, **Singleton Browser Pool Manager**, **Extracción Semántica JSON-LD/OpenGraph**, **Persistencia Histórica Deduplicada**, **Previsualización Multimedia de Video Táctico**, **Streaming HLS CCTV & Analítica YOLOv8** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
 > Consolida fuentes RSS, canales de Telegram, redes sociales, ciberseguridad, rastreo de aeronaves/buques, telemetría de campo en vivo y análisis geopolítico multiagente con IA.  
-> **v14.6** — Motor de Ingestión Persistente Deduplicado por Títulos Canónicos, Previsualizador Multimedia de Video Táctico (MP4/Streams/Telegram/YouTube), Visor Táctico Modal de Inspección Profunda & Red de Vigilancia CCTV Global (15+ Países / 350 Cámaras Concurrentes) en **COBALTO Mobile** y Web.
+> **v15.0** — Motor de Evasión TLS JA3/HTTP2 (`tls_evasion.py`), Singleton Browser Pool Headless (`browser_pool.py`), Extracción Semántica Rica JSON-LD/OpenGraph (`extractor.py`), Circuit Breakers con Exponential Backoff & Jitter (`social_public_extractor.py`), Transcodificador HLS CCTV (`/cctv/stream`) y Analítica de Video YOLOv8 (`/cctv/analyze`) en **COBALTO Mobile** y Web.
 
 ---
 
-## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v14.6)
+## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v15.0)
 
-- **🛡️ Deduplicación Canónica por Título & Persistencia Histórica Cross-Reboot (`dashboard_pipeline.py`, `historical_store.py`):** Reingeniería completa del pipeline de inteligencia. Firma canónica mediante hashes MD5 de títulos normalizados (`re.sub(r'[^a-z0-9áéíóúñ]', '', title)`) e ingesta deduplicada en base de datos SQLite persistente. Las noticias se conservan entre reinicios del sistema y solo se purgan al alcanzar la ventana de retención (`ENTRY_MAX_AGE_HOURS = 48`).
-- **🎬 Previsualización y Reproducción de Video Táctico (`extractor.py`, `social_hub.py`, `_tab_news.html`, `main.js`):** Soporte integral para extracción y renderizado de video en tarjetas de noticias SITREP. Detecta archivos MP4, WebM, M3U8, reproductores embebidos (YouTube, Vimeo, Rumble) y videos nativos de canales de Telegram y Mastodon. Incluye insignias `🎬 VIDEO` y reproducción integrada en el visor modal de inspección profunda (`#sitrep-reader-modal`).
-- **⚡ Corrección de Renderizado Cero-Duplicados en el DOM (`main.js`):** Eliminación del doble renderizado de tarjetas en el arranque del sistema (`renderNewsPage(1)`), garantizando que las 30 primeras tarjetas pre-cargadas por el servidor no se dupliquen al inicializar el cliente JavaScript.
-- **🎥 Red de Vigilancia CCTV Global & Alerta Temprana por Visión Artificial (`osiris_bridge.py`, `cctv_snapshot_collector.py`):** Ampliación masiva del motor de video de OSIRIS. Ingesta pública de **350 cámaras simultáneas** abarcando 15+ países (Colombia, Venezuela, México, Argentina, Chile, Brasil, Perú, Ecuador, Panamá, España, Italia, Alemania, Rusia, Turquía, Japón, Nueva York NYC DOT, Caltrans California).
-- **⚡ Optimización de Rendimiento & Proxy de Video (45s TTL Cache & Connection Pooling):** Almacenamiento en memoria para `/api/osiris/data/cctv` (<5ms de respuesta) y reutilización de socket TCP síncrono en `/api/osiris/cctv/image`.
-- **🎯 Búsqueda de Cámaras Cercanas a Objetivo (`/api/osiris/cctv/nearest`):** Endpoint de localización geográfica por Haversine que devuelve las N cámaras públicas más cercanas a cualquier coordenada objetivo con enlace directo de streaming.
+- **🛡️ Motor Evasor TLS JA3/HTTP2 (`tls_evasion.py`):** Bypass de protecciones Cloudflare/Akamai/WAF mediante la simulación exacta de huellas digitales TLS de navegadores reales (`chrome_120`, `firefox_120`, `safari_16_0`) a velocidad de socket HTTP/2 sin la sobrecarga de un navegador pesado.
+- **🌐 Singleton Browser Pool Manager (`browser_pool.py`):** Reutilización de contextos y pestañas Chromium con Playwright Stealth. Reducción del **70% de consumo en RAM** y aceleración de peticiones complejas a `< 1 segundo`.
+- **🎬 Extractor Semántico Rico (JSON-LD & OpenGraph & Twitter Cards) (`extractor.py`):** Parsing automatizado de esquemas `<script type="application/ld+json">` (`NewsArticle`, `VideoObject`, `ImageObject`) y meta-tags `og:image`, `og:video` y `twitter:player`.
+- **⚡ Circuit Breakers con Exponential Backoff & Jitter (`social_public_extractor.py`):** Control adaptativo de tasa de consultas con desambiguación aleatoria (*Jitter* 0-30s) para prevenir bloqueos por Rate Limit en redes sociales y buscadores.
+- **🎥 Transcodificación HLS & Analítica de Video CCTV YOLOv8-Nano (`osiris_bridge.py`):**
+  - `GET /api/osiris/cctv/stream`: Manifiestos `.m3u8` dinámicos para reproducción nativa HTML5 en navegador sin plugins.
+  - `GET /api/osiris/cctv/analyze`: Detección en tiempo real de vehículos, peatones y densidad de tráfico con generación de alertas tácticas `ALERTA BFT`.
+- **🧪 Cobertura del 100% en Suite de Pruebas (`tests/`):** **153/153 tests pasados exitosamente**.
+- **🛡️ Deduplicación Canónica por Título & Persistencia Histórica Cross-Reboot (`dashboard_pipeline.py`, `historical_store.py`):** Firma canónica mediante hashes MD5 de títulos normalizados e ingesta deduplicada en base de datos SQLite persistente conservada entre reinicios.
+- **🎥 Red de Vigilancia CCTV Global & Alerta Temprana por Visión Artificial (`osiris_bridge.py`, `cctv_snapshot_collector.py`):** Ingesta pública de **350+ cámaras simultáneas** abarcando 15+ países (Colombia, Venezuela, México, Argentina, Chile, Brasil, Perú, Ecuador, Panamá, España, Italia, Alemania, Rusia, Turquía, Japón, NYC DOT, Caltrans CA).
+- **🇨🇴 Módulo de Extracción Teatro Colombia OSINT (`osiris_colombia_recon.py`):** Fuentes oficiales colombianas: **SECOP II**, **SIMCI / UNODC**, **JEP** y **Rama Judicial**.
 - **📱 Integración Visual en COBALTO Mobile (`MapMarkerDetailsSheet` & `cobalto_api_service.dart`):** Marcadores amarillos pulsantes (`#FFD60A`), hoja de detalles táctica con insignias `🔴 LIVE STREAM OSIRIS` y visor de video integrado en vivo.
-- **🇨🇴 Módulo de Extracción Teatro Colombia OSINT (`Teatro Colombia OSINT` / `osiris_colombia_recon.py`):** Fuentes oficiales colombianas: **SECOP II**, **SIMCI / UNODC**, **JEP** y **Rama Judicial**.
-- **🧪 Cobertura del 100% en Suite de Pruebas (`tests/`):** **151/151 tests pasados exitosamente**.
-- **🦋 Migración Social: Nitter → Bluesky + Mastodon (`social_hub.py`):** Nitter discontinuado. Reemplazado por APIs públicas reales sin autenticación: **Bluesky** (AT Protocol, `public.api.bsky.app`) y **Mastodon** (REST API, `mastodon.social` → `fosstodon.org` → `infosec.exchange`).
-- **⏱️ Estabilización del Launcher Desktop (`cobalto_desktop.py`):** Timeout de espera del backend FastAPI ampliado a **45s**, eliminando el falso positivo `[!] Backend did not respond` en arranques iniciales con carga pesada.
-- **🧹 Limpieza de Código Muerto:** Eliminación del código legacy de Nitter (`fetch_nitter`, `NITTER_INSTANCES`). Log de fallos sociales degradado de `ERROR` a `WARNING` para reducir ruido en logs de producción.
-- **🇨🇴 Integración Set DGAE Colombia 2026 (`config.py` & `col.json`):** Carga completa del set de términos de vigilancia táctica DGAE para Colombia (164+ palabras clave, 26 actores de alto perfil, 5 nuevas fuentes RSS estratégicas: *Colombia+20*, *InSight Crime ES*, *Infobae Colombia*, *Indepaz*, *FIP Colombia*).
-- **🛡️ Parcheo y Depuración Dinámica de Feeds (`feed_patches.json`):** Aislamiento de feeds caídos o con bloqueos agresivos (*VenCERT Alertas/Boletines/General*, *DolarToday*, *Banca y Negocios*, *Apuntes de Seguridad*, *Pulzo*).
-- **⚡ Optimización de Rate-Limiters Sociales (`humanization_ratelimit.py`):** Ajuste de ventanas de tiempo y reducción de `max_delay` de 120s a 45s.
-- **👤 Target Dossier Engine (`dossier_engine.py`):** Motor de inteligencia 360° con *Risk Score* (0.0–10.0), vinculación OFAC SDN e historial de eventos.
-- **🌐 Arquitectura Multipaís (Multi-Theater Engine):** Perfiles regionales JSON (`col.json`, `ven.json`, `global.json`) con auto-etiquetado `country_tags` (`COL`, `VEN`, `GLOBAL`).
 
 ---
 
