@@ -103,32 +103,33 @@ def process_auto_ingestion(min_frequency: int = 3) -> Dict[str, Any]:
     # 2. Auto-Registrar Individuos / Entidades de Interés en Entity Registry
     try:
         with get_connection() as conn:
-            # Buscar menciones en reportes HUMINT o FININT con alta severidad
-            rows = conn.fetchall(
-                """
-                SELECT summary, details FROM humint_reports
-                WHERE severity IN ('critica', 'alta')
-                ORDER BY created_at DESC LIMIT 20
-                """
-            )
-            for r in rows:
-                text = f"{r[0] or ''} {r[1] or ''}"
-                # Buscar posibles nombres de personas (Capitalized Words)
-                words = [w for w in text.split() if w.istitle() and len(w) > 3]
-                if len(words) >= 2:
-                    potential_name = " ".join(words[:2])
-                    existing_ent = entity_registry.search_entities(potential_name, limit=1)
-                    if not existing_ent:
-                        entity_registry.register_entity(
-                            canonical_name=potential_name,
-                            entity_type="PERSON",
-                            aliases=[],
-                            wikidata_id=None,
-                            ofac_flag=False,
-                        )
-                        stats["new_entities_registered"] += 1
-                        logger.info(f"[AUTO_TRACKER] Auto-registrado individuo de interés HUMINT: '{potential_name}'")
+            # Verificar existencia de la tabla humint_reports
+            tables = [row[0] for row in conn.fetchall("SELECT name FROM sqlite_master WHERE type='table' AND name='humint_reports'")]
+            if tables:
+                rows = conn.fetchall(
+                    """
+                    SELECT summary, details FROM humint_reports
+                    WHERE severity IN ('critica', 'alta')
+                    ORDER BY created_at DESC LIMIT 20
+                    """
+                )
+                for r in rows:
+                    text = f"{r[0] or ''} {r[1] or ''}"
+                    words = [w for w in text.split() if w.istitle() and len(w) > 3]
+                    if len(words) >= 2:
+                        potential_name = " ".join(words[:2])
+                        existing_ent = entity_registry.search_entities(potential_name, limit=1)
+                        if not existing_ent:
+                            entity_registry.register_entity(
+                                canonical_name=potential_name,
+                                entity_type="PERSON",
+                                aliases=[],
+                                wikidata_id=None,
+                                ofac_flag=False,
+                            )
+                            stats["new_entities_registered"] += 1
+                            logger.info(f"[AUTO_TRACKER] Auto-registrado individuo de interés HUMINT: '{potential_name}'")
     except Exception as e:
-        logger.warning(f"[AUTO_TRACKER] Error procesando auto-registro de entidades: {e}")
+        logger.debug(f"[AUTO_TRACKER] Auto-registro de entidades omitido: {e}")
 
     return stats

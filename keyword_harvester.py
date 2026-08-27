@@ -47,29 +47,22 @@ def harvest_emerging_keywords(
         Lista de diccionarios con el término, frecuencia y tendencia.
     """
     cutoff_dt = datetime.now() - timedelta(hours=hours_back)
-    cutoff_iso = cutoff_dt.isoformat()
-
     text_corpus = []
 
     try:
-        with get_connection() as conn:
-            rows = conn.fetchall(
-                """
-                SELECT title, summary, country_tags
-                FROM sent_news
-                WHERE published >= ? OR created_at >= ?
-                """,
-                (cutoff_iso, cutoff_iso),
-            )
-            for r in rows:
-                c_tags = str(r[2] or "GLOBAL")
-                if theater_filter and theater_filter != "ALL":
-                    if theater_filter not in c_tags and "GLOBAL" not in c_tags:
-                        continue
-                full_text = f"{r[0] or ''} {r[1] or ''}"
+        import historical_store
+        hist_data = historical_store.query_range(from_dt=cutoff_dt, to_dt=datetime.now(), limit=500)
+        entries = hist_data.get("entries", [])
+        for entry in entries:
+            c_tags = str(entry.get("country_tags") or "GLOBAL")
+            if theater_filter and theater_filter != "ALL":
+                if theater_filter not in c_tags and "GLOBAL" not in c_tags:
+                    continue
+            full_text = f"{entry.get('title') or ''} {entry.get('summary') or ''}"
+            if full_text.strip():
                 text_corpus.append(full_text)
     except Exception as e:
-        logger.warning(f"[HARVESTER] Error leyendo sent_news: {e}")
+        logger.warning(f"[HARVESTER] Error leyendo almacenamiento histórico: {e}")
 
     if not text_corpus:
         return []

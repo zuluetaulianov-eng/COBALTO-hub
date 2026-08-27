@@ -127,7 +127,7 @@ async def _build_pipeline_async(priority_only: bool = False) -> Dict[str, Any]:
     external_raw = await fetch_external_news_async(priority_only=priority_only)
     own = get_own_intel()
 
-    from datetime import datetime, timedelta
+    from datetime import datetime, timedelta, timezone
     import hashlib
     import json
     import config
@@ -135,8 +135,19 @@ async def _build_pipeline_async(priority_only: bool = False) -> Dict[str, Any]:
     from utils import parse_datetime
     from social_hub import canonicalize_url
 
+    def _normalize_dt(val: Any) -> Any:
+        if not val:
+            return None
+        if isinstance(val, str):
+            val = parse_datetime(val)
+        if not isinstance(val, datetime):
+            return None
+        if val.tzinfo is None:
+            return val.replace(tzinfo=timezone.utc)
+        return val.astimezone(timezone.utc)
+
     max_age_hours = getattr(config, "ENTRY_MAX_AGE_HOURS", 48)
-    now = datetime.now()
+    now = datetime.now(timezone.utc)
     cutoff_dt = now - timedelta(hours=max_age_hours)
 
     def _entry_sig(item: dict) -> str:
@@ -158,7 +169,7 @@ async def _build_pipeline_async(priority_only: bool = False) -> Dict[str, Any]:
     if hasattr(state, "last_entries_cache") and state.last_entries_cache:
         for item in state.last_entries_cache:
             if isinstance(item, dict):
-                dt = item.get("published_dt") or parse_datetime(item.get("published_iso") or item.get("published"))
+                dt = _normalize_dt(item.get("published_dt") or item.get("published_iso") or item.get("published"))
                 if dt and dt >= cutoff_dt:
                     sig = _entry_sig(item)
                     entries_map[sig] = item
@@ -174,7 +185,7 @@ async def _build_pipeline_async(priority_only: bool = False) -> Dict[str, Any]:
                     entry_dict = json.loads(raw)
                 except Exception:
                     pass
-            dt = entry_dict.get("published_dt") or parse_datetime(entry_dict.get("published_iso") or entry_dict.get("published"))
+            dt = _normalize_dt(entry_dict.get("published_dt") or entry_dict.get("published_iso") or entry_dict.get("published"))
             if dt and dt >= cutoff_dt:
                 sig = _entry_sig(entry_dict)
                 if sig not in entries_map:
@@ -214,7 +225,7 @@ async def _build_pipeline_async(priority_only: bool = False) -> Dict[str, Any]:
     # 5. Normalizar timestamps, ordenar por fecha y purgar expiradas (older than max_age_hours)
     all_entries = []
     for sig, entry in entries_map.items():
-        dt = entry.get("published_dt") or parse_datetime(entry.get("published_iso") or entry.get("published"))
+        dt = _normalize_dt(entry.get("published_dt") or entry.get("published_iso") or entry.get("published"))
         if dt:
             if dt < cutoff_dt:
                 continue
@@ -225,11 +236,7 @@ async def _build_pipeline_async(priority_only: bool = False) -> Dict[str, Any]:
         all_entries.append(entry)
 
     def sort_key(x):
-        dt = x.get("published_dt")
-        if dt is None:
-            raw_val = x.get("published_iso") or x.get("published") or x.get("timestamp") or x.get("created_at")
-            if raw_val:
-                dt = parse_datetime(raw_val)
+        dt = _normalize_dt(x.get("published_dt") or x.get("published_iso") or x.get("published") or x.get("timestamp") or x.get("created_at"))
         if dt is None:
             return 0.0
         try:
