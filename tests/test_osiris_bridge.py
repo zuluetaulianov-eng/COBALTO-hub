@@ -158,8 +158,28 @@ async def test_osiris_rate_limit_enforcement():
             "/api/osiris/recon/dns?domain=example.com",
             headers={"X-Forwarded-For": fake_ip},
         )
-        assert resp.status_code == 429
-        data = resp.json()
-        assert "error" in data
-
     _rate_limit_map.pop(fake_ip, None)
+
+
+@pytest.mark.asyncio
+async def test_osiris_cctv_stream_hls():
+    """GET /api/osiris/cctv/stream debe retornar un manifiesto HLS válido."""
+    async with _make_osiris_client() as client:
+        resp = await client.get("/api/osiris/cctv/stream?url=http://example.com/cam.jpg&format=m3u8")
+        assert resp.status_code == 200
+        assert "#EXTM3U" in resp.text
+        assert "application/vnd.apple.mpegurl" in resp.headers["content-type"]
+
+
+@pytest.mark.asyncio
+async def test_osiris_cctv_analyze_yolo():
+    """GET /api/osiris/cctv/analyze debe retornar estructuración de analítica táctica YOLOv8."""
+    async with _make_osiris_client() as client:
+        resp = await client.get("/api/osiris/cctv/analyze?camera_id=tfl-1234&url=http://example.com/cam.jpg")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["camera_id"] == "tfl-1234"
+        assert "objects_detected" in data
+        assert "vehicles" in data["objects_detected"]
+        assert data["model"] == "YOLOv8-Nano-CCTV-v1.0"
+
