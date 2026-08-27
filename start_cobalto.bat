@@ -2,6 +2,11 @@
 title COBALTO HUB v15.2 - Instalador y Bootstrapper Automatizado
 color 0B
 setlocal enabledelayedexpansion
+set OPENBLAS_NUM_THREADS=1
+set OMP_NUM_THREADS=1
+set MKL_NUM_THREADS=1
+set VECLIB_MAXIMUM_THREADS=1
+set NUMEXPR_NUM_THREADS=1
 
 cls
 echo.
