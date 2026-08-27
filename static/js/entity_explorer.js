@@ -93,27 +93,6 @@
   function filterType() { search(); }
   function filterSource() { search(); }
 
-  function render() {
-    var container = document.getElementById("entity-results");
-    var totalDisplay = document.getElementById("entity-total-display");
-
-    if (!container) return;
-
-    if (!state.filtered || state.filtered.length === 0) {
-      container.innerHTML =
-        '<div class="empty-state" style="grid-column:1/-1;">' +
-        '<div style="font-size:2rem;margin-bottom:0.5rem;">📦</div>' +
-        '<div class="heading-4">0 entidades encontradas</div>' +
-        '<p class="text-muted">No hay entidades en el registro. Puebla el registro desde OFAC SDN + históricos, o ejecuta un ciclo completo.</p>' +
-        '<div class="flex" style="gap:0.5rem;justify-content:center;margin-top:0.8rem;">' +
-        '<button class="btn-tactical" onclick="EntityExplorer.runBackfill()">⚡ Poblar Entidades</button>' +
-        '<button class="btn-tactical" onclick="EntityExplorer.search(\'\', \'\', \'\', false)" style="border-color:var(--text-muted);">🔄 Recargar</button>' +
-        "</div>" +
-        "</div>";
-      if (totalDisplay) totalDisplay.textContent = "0 entidades";
-      updateStats();
-      return;
-    }
 
   function detectCryptoBlockchain(address) {
     if (!address) return null;
