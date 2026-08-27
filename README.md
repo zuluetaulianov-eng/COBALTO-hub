@@ -1,13 +1,25 @@
-# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v15.1
+# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v15.2
 
 > **Sistema de Mando y Control de Inteligencia (C4I)** en tiempo real con **Arquitectura Multipaís (Multi-Theater OSINT)**,  
-> **Target Dossier Engine (360° Risk Score)**, **TLS Fingerprinting Evasion (JA3/HTTP2)**, **Singleton Browser Pool Manager**, **Extracción Semántica JSON-LD/OpenGraph**, **Reproducción de Video Táctico Nativa (Flutter/Web)**, **Persistencia Histórica Deduplicada**, **Streaming HLS CCTV & Analítica YOLOv8** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
+> **Target Dossier Engine (360° Risk Score)**, **TLS Fingerprinting Evasion (JA3/HTTP2)**, **Singleton Browser Pool Manager**, **Extracción Semántica JSON-LD/OpenGraph**, **Reproducción de Video Táctico Nativa (Flutter/Web)**, **Persistencia Histórica Deduplicada**, **OSIRIS Diagnostic Doctor Engine**, **Zero-Key Semantic Web Search & Jina Reader** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
 > Consolida fuentes RSS, canales de Telegram, redes sociales, ciberseguridad, rastreo de aeronaves/buques, telemetría de campo en vivo y análisis geopolítico multiagente con IA.  
-> **v15.1** — Reproductor de Video Táctico Nativo en COBALTO Mobile (`VideoPlayerSheet`), Persistencia SQLite v5 del campo `video`, Motor de Evasión TLS JA3/HTTP2 (`tls_evasion.py`), Singleton Browser Pool Headless (`browser_pool.py`), Extracción Semántica Rica JSON-LD/OpenGraph (`extractor.py`), Circuit Breakers con Exponential Backoff & Jitter (`social_public_extractor.py`), Transcodificador HLS CCTV (`/cctv/stream`) y Analítica de Video YOLOv8 (`/cctv/analyze`).
+> **v15.2** — Absorción de capacidades Agent Reach: Diagnóstico Táctico en Tiempo Real (`OSIRIS Doctor`), Búsqueda Web Semántica Zero-Key (`s.jina.ai`), Extractor de Transcripciones y Metadatos de YouTube (`youtube_intel`), Validador y Lector Directo de Feeds RSS/Atom (`rss_reader`), y Extractor Web Limpio en Markdown (`jina_web_read`).
 
 ---
 
-## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v15.1)
+## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v15.2)
+
+- **🩺 Motor de Diagnóstico Táctico `OSIRIS Doctor` (`osiris_bridge.py` & `osiris_recon.py`):**
+  - Chequeos de salud concurrentes sobre 10 fuentes principales OSINT (DNS DoH, WHOIS RDAP, BGP ip-api, crt.sh, MITRE CVE, Shodan, GitHub, Leaks, AlienVault OTX, Jina Reader).
+  - Botón táctico **`🩺 RUN DOCTOR`** e interfaz interactiva con matriz de disponibilidad de fuentes en tiempo real.
+- **📖 Extractor Web Limpio Markdown via Jina Reader (`jina_web_read`):**
+  - Conversión instantánea de portales web a Markdown para ingesta directa en el motor RAG / IA Core.
+- **🔍 Búsqueda Web Semántica Zero-Key (`jina_web_search`):**
+  - Búsqueda OSINT global libre de claves API mediante la API `s.jina.ai`.
+- **📺 YouTube Intel & Transcriptor (`youtube_intel`):**
+  - Extracción de metadatos oEmbed, thumbnails y subtítulos/transcripciones en texto plano/Markdown para investigación multimedia.
+- **📡 Validador y Lector Directo de Feeds RSS/Atom (`rss_reader`):**
+  - Ingesta directa y parsing de canales RSS/Atom desde el propio kit RECON.
 
 - **🎬 Reproducción de Video Táctico Nativo en COBALTO Mobile (`cobalto_mobile`):**
   - **Widget `VideoPlayerSheet`:** Detección dinámica de streaming directo (MP4/HLS con `chewie` y `video_player`) vs. reproductores incrustados nativos (`youtube_player_flutter`).
