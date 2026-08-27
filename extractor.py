@@ -197,7 +197,7 @@ def extract_featured_media(entry, base_url):
     image_url = None
     video_url = None
 
-    # Buscar en media_content
+    # 1. Buscar en media_content
     if "media_content" in entry:
         for media in entry.media_content:
             medium = media.get("medium") or media.get("type", "")
@@ -208,7 +208,7 @@ def extract_featured_media(entry, base_url):
                 elif medium == "image" and not image_url:
                     image_url = url
 
-    # Buscar en enclosures
+    # 2. Buscar en enclosures
     if "enclosures" in entry:
         for enc in entry.enclosures:
             href = enc.get("href") or enc.get("url")
@@ -219,13 +219,13 @@ def extract_featured_media(entry, base_url):
                 elif "image" in type_attr and not image_url:
                     image_url = href
 
-    # Buscar en media_thumbnail
+    # 3. Buscar en media_thumbnail
     if not image_url and "media_thumbnail" in entry:
         thumbs = entry.media_thumbnail
         if thumbs and len(thumbs) > 0:
             image_url = thumbs[0].get("url")
 
-    # Buscar en content/summary HTML
+    # 4. Extracción Semántica Avanzada (JSON-LD & OpenGraph & Twitter Cards en HTML)
     content = entry.get("summary") or entry.get("description", "")
     if not content and "content" in entry:
         content = entry.content[0].get("value", "") if entry.content else ""
@@ -233,6 +233,49 @@ def extract_featured_media(entry, base_url):
     if content:
         try:
             soup = BeautifulSoup(content, "html.parser")
+            
+            # JSON-LD Schema.org parsing (NewsArticle / VideoObject / ImageObject)
+            for script in soup.find_all("script", type="application/ld+json"):
+                try:
+                    import json
+                    ld_data = json.loads(script.string or "{}")
+                    if isinstance(ld_data, list):
+                        ld_data = ld_data[0] if ld_data else {}
+                    if isinstance(ld_data, dict):
+                        if not image_url:
+                            img = ld_data.get("image")
+                            if isinstance(img, dict):
+                                img = img.get("url")
+                            elif isinstance(img, list) and img:
+                                img = img[0].get("url") if isinstance(img[0], dict) else img[0]
+                            if isinstance(img, str):
+                                image_url = img
+                        if not video_url:
+                            vid = ld_data.get("video")
+                            if isinstance(vid, dict):
+                                vid = vid.get("contentUrl") or vid.get("embedUrl")
+                            elif isinstance(vid, list) and vid:
+                                vid = vid[0].get("contentUrl") if isinstance(vid[0], dict) else None
+                            if isinstance(vid, str):
+                                video_url = vid
+                except Exception:
+                    pass
+
+            # OpenGraph & Twitter Cards
+            if not image_url:
+                meta_img = soup.find("meta", property="og:image") or soup.find("meta", attrs={"name": "twitter:image"})
+                if meta_img and meta_img.get("content"):
+                    image_url = meta_img["content"]
+
+            if not video_url:
+                meta_vid = (
+                    soup.find("meta", property="og:video")
+                    or soup.find("meta", property="og:video:url")
+                    or soup.find("meta", attrs={"name": "twitter:player"})
+                )
+                if meta_vid and meta_vid.get("content"):
+                    video_url = meta_vid["content"]
+
             if not video_url:
                 vid = soup.find("video")
                 if vid:
