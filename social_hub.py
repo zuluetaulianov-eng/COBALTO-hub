@@ -250,7 +250,18 @@ def fetch_mastodon(hashtag: str, max_items: int = 6) -> List[Dict]:
                 link = post.get("url") or f"{instance}/@{acct}"
                 published = (post.get("created_at") or "Reciente")[:16].replace("T", " ")
                 media = post.get("media_attachments", [])
-                image = media[0].get("preview_url") if media else None
+                image = None
+                video = None
+                if media:
+                    for att in media:
+                        att_type = att.get("type")
+                        if att_type in ("video", "gifv"):
+                            video = att.get("url")
+                            image = att.get("preview_url")
+                            break
+                        elif att_type == "image" and not image:
+                            image = att.get("preview_url") or att.get("url")
+
                 item = {
                     "title": text[:140],
                     "summary": text,
@@ -258,6 +269,7 @@ def fetch_mastodon(hashtag: str, max_items: int = 6) -> List[Dict]:
                     "published": published,
                     "source": f"Mastodon #{hashtag} ({instance.split('//')[1]})",
                     "image": image,
+                    "video": video,
                 }
                 if not is_duplicate(item):
                     results.append(item)

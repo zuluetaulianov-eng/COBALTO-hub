@@ -58,25 +58,43 @@ def extract_keywords(text: str) -> set:
     return {w for w in words if w not in STOPWORDS}
 
 def cluster_similar_entries(entries: List[Dict]) -> List[Dict]:
-    clustered = []
+    clustered: List[Dict] = []
     for entry in entries:
         title = entry.get("title", "")
         summary = entry.get("summary", "")
+        title_kw = extract_keywords(title)
         entry_kw = extract_keywords(title + " " + summary[:100])
+        norm_title = re.sub(r'[^a-z0-9áéíóúñ]', '', title.lower())
 
         matched_cluster = None
         for existing in clustered:
-            ex_kw = existing.get("_keywords")
-            if not ex_kw or not entry_kw:
-                continue
+            ex_title = existing.get("title", "")
+            ex_norm_title = existing.get("_norm_title", "")
+            ex_title_kw = existing.get("_title_kw", set())
+            ex_kw = existing.get("_keywords", set())
 
-            intersection = entry_kw.intersection(ex_kw)
-            union = entry_kw.union(ex_kw)
-            jaccard = len(intersection) / len(union) if union else 0.0
-
-            if jaccard >= 0.38 or (len(intersection) >= 3 and len(entry_kw) >= 3):
+            # 1. Coincidencia exacta de título normalizado
+            if norm_title and ex_norm_title and norm_title == ex_norm_title:
                 matched_cluster = existing
                 break
+
+            # 2. Coincidencia por intersección o Jaccard de palabras clave del título
+            if title_kw and ex_title_kw:
+                t_inter = title_kw.intersection(ex_title_kw)
+                t_union = title_kw.union(ex_title_kw)
+                t_jaccard = len(t_inter) / len(t_union) if t_union else 0.0
+                if t_jaccard >= 0.45 or (len(t_inter) >= 3 and len(title_kw) >= 3):
+                    matched_cluster = existing
+                    break
+
+            # 3. Coincidencia por Jaccard del cuerpo de texto (título + resumen)
+            if ex_kw and entry_kw:
+                intersection = entry_kw.intersection(ex_kw)
+                union = entry_kw.union(ex_kw)
+                jaccard = len(intersection) / len(union) if union else 0.0
+                if jaccard >= 0.38:
+                    matched_cluster = existing
+                    break
 
         if matched_cluster:
             rel_sources = matched_cluster.setdefault("related_sources", [])
@@ -86,40 +104,125 @@ def cluster_similar_entries(entries: List[Dict]) -> List[Dict]:
                 "link": entry.get("link", "#"),
                 "published": entry.get("published", "")
             }
-            if not any(s.get("link") == src_info["link"] or s.get("source") == src_info["source"] for s in rel_sources):
+            if not any(s.get("link") == src_info["link"] or (s.get("source") == src_info["source"] and s.get("title") == src_info["title"]) for s in rel_sources):
                 rel_sources.append(src_info)
             matched_cluster["sources_count"] = 1 + len(rel_sources)
         else:
             entry_copy = entry.copy()
             entry_copy["_keywords"] = entry_kw
+            entry_copy["_title_kw"] = title_kw
+            entry_copy["_norm_title"] = norm_title
             entry_copy["related_sources"] = []
             entry_copy["sources_count"] = 1
             clustered.append(entry_copy)
 
     for item in clustered:
         item.pop("_keywords", None)
+        item.pop("_title_kw", None)
+        item.pop("_norm_title", None)
     return clustered
 
 async def _build_pipeline_async(priority_only: bool = False) -> Dict[str, Any]:
     state.progress_state.update({"step": "Escaneando RSS", "percentage": 25})
     external_raw = await fetch_external_news_async(priority_only=priority_only)
     own = get_own_intel()
-    all_entries = []
-    active_sources = []
+
+    from datetime import datetime, timedelta
+    import hashlib
+    import json
+    import config
+    import historical_store
+    from utils import parse_datetime
+    from social_hub import canonicalize_url
+
+    max_age_hours = getattr(config, "ENTRY_MAX_AGE_HOURS", 48)
+    now = datetime.now()
+    cutoff_dt = now - timedelta(hours=max_age_hours)
+
+    def _entry_sig(item: dict) -> str:
+        title = (item.get("title") or "").strip().lower()
+        norm_title = re.sub(r'[^a-z0-9áéíóúñ]', '', title)
+        if len(norm_title) >= 10:
+            return f"title:{hashlib.md5(norm_title.encode('utf-8')).hexdigest()[:24]}"
+        link = item.get("link") or item.get("url") or ""
+        canon = canonicalize_url(link)
+        if canon and canon != "#":
+            return f"link:{canon}"
+        src = (item.get("source") or "").strip().lower()
+        h = hashlib.md5(f"{src}:{title}".encode("utf-8")).hexdigest()[:24]
+        return f"raw:{h}"
+
+    entries_map: Dict[str, Dict] = {}
+
+    # 1. Cargar noticias persistentes en memoria (cache de estado)
+    if hasattr(state, "last_entries_cache") and state.last_entries_cache:
+        for item in state.last_entries_cache:
+            if isinstance(item, dict):
+                dt = item.get("published_dt") or parse_datetime(item.get("published_iso") or item.get("published"))
+                if dt and dt >= cutoff_dt:
+                    sig = _entry_sig(item)
+                    entries_map[sig] = item
+
+    # 2. Cargar historial SQLite persistente (permite mantener noticias al reiniciar el sistema)
+    try:
+        hist_res = historical_store.query_range(from_dt=cutoff_dt, to_dt=now, limit=3000)
+        for item in hist_res.get("entries", []):
+            raw = item.get("raw_data")
+            entry_dict = item
+            if raw and isinstance(raw, str):
+                try:
+                    entry_dict = json.loads(raw)
+                except Exception:
+                    pass
+            dt = entry_dict.get("published_dt") or parse_datetime(entry_dict.get("published_iso") or entry_dict.get("published"))
+            if dt and dt >= cutoff_dt:
+                sig = _entry_sig(entry_dict)
+                if sig not in entries_map:
+                    entries_map[sig] = entry_dict
+    except Exception as hist_err:
+        logger.debug(f"[PIPELINE] Error consultando almacenamiento histórico: {hist_err}")
+
+    # 3. Fusionar noticias recién extraídas (sin duplicar)
+    new_incoming = []
     for source, items in sorted(external_raw.items()):
         if items:
-            active_sources.append((source, items))
             for item in items:
                 item_copy = item.copy()
                 item_copy["source"] = source
-                all_entries.append(item_copy)
+                sig = _entry_sig(item_copy)
+                if sig not in entries_map:
+                    entries_map[sig] = item_copy
+                    new_incoming.append(item_copy)
+
     for item in own:
         item_copy = item.copy()
         item_copy.update({"type": "own", "source": "COBALTO INTEL"})
         if "title" not in item_copy:
             item_copy["title"] = item_copy.get("comment_short", "Reporte Táctico")
-        all_entries.append(item_copy)
-    from utils import parse_datetime
+        sig = _entry_sig(item_copy)
+        if sig not in entries_map:
+            entries_map[sig] = item_copy
+            new_incoming.append(item_copy)
+
+    # 4. Guardar novedades en SQLite historical_store para persistencia post-reinicio
+    if new_incoming:
+        try:
+            historical_store.store_entries(new_incoming, cycle_type="pipeline")
+        except Exception as e:
+            logger.debug(f"[HISTORICAL] Error guardando nuevas noticias: {e}")
+
+    # 5. Normalizar timestamps, ordenar por fecha y purgar expiradas (older than max_age_hours)
+    all_entries = []
+    for sig, entry in entries_map.items():
+        dt = entry.get("published_dt") or parse_datetime(entry.get("published_iso") or entry.get("published"))
+        if dt:
+            if dt < cutoff_dt:
+                continue
+            entry["published_dt"] = dt
+            entry["published_iso"] = dt.isoformat()
+            if not entry.get("published") or "T" not in str(entry.get("published")):
+                entry["published"] = dt.strftime("%Y-%m-%d %H:%M:%S")
+        all_entries.append(entry)
 
     def sort_key(x):
         dt = x.get("published_dt")
@@ -136,16 +239,16 @@ async def _build_pipeline_async(priority_only: bool = False) -> Dict[str, Any]:
 
     all_entries.sort(key=sort_key, reverse=True)
 
+    # 6. Reconstruir lista de fuentes activas con conteos reales acumulados
+    active_sources_dict: Dict[str, List] = {}
     for entry in all_entries:
-        dt = entry.get("published_dt") or parse_datetime(entry.get("published_iso") or entry.get("published"))
-        if dt:
-            entry["published_dt"] = dt
-            entry["published_iso"] = dt.isoformat()
-            if not entry.get("published") or "T" not in str(entry.get("published")):
-                entry["published"] = dt.strftime("%Y-%m-%d %H:%M:%S")
+        src = entry.get("source", "OSINT")
+        active_sources_dict.setdefault(src, []).append(entry)
+    active_sources = [(src, items) for src, items in sorted(active_sources_dict.items())]
 
     all_entries = cluster_similar_entries(all_entries)
     state.last_entries_cache = all_entries[:2000]
+
     return {
         "external": external_raw,
         "own": own,

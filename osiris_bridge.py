@@ -7,7 +7,7 @@ import logging
 import re
 import time
 from datetime import datetime
-from typing import Any
+from typing import Any, Dict, Optional
 
 import aiohttp
 from fastapi import APIRouter, Query, Request
@@ -575,11 +575,51 @@ async def data_geo():
     return {"status": "fail"}
 
 
+def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    import math
+    R = 6371.0
+    dlat = math.radians(lat2 - lat1)
+    dlon = math.radians(lon2 - lon1)
+    a = math.sin(dlat / 2.0) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2.0) ** 2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    return R * c
+
+
+_cctv_cache_data: dict = {}
+_cctv_cache_time: float = 0.0
+_cctv_session: Optional[Any] = None
+
+
+async def _get_cctv_proxy_session() -> aiohttp.ClientSession:
+    global _cctv_session
+    if _cctv_session is None or _cctv_session.closed:
+        _cctv_session = aiohttp.ClientSession(
+            timeout=aiohttp.ClientTimeout(total=6),
+            headers={"User-Agent": "Mozilla/5.0 (compatible; COBALTO-C4I/1.0)"},
+        )
+    return _cctv_session
+
+
 @router.get("/data/cctv")
-async def data_cctv(region: str = Query("all"), request: Request = None):
-    """Worldwide CCTV cameras from public feeds."""
+async def data_cctv(
+    region: str = Query("all"),
+    lat: float | None = Query(None),
+    lng: float | None = Query(None),
+    radius_km: float | None = Query(None),
+    request: Request = None,
+):
+    """Worldwide and regional CCTV cameras from public feeds with proximity filtering & 45s TTL memory cache."""
+    global _cctv_cache_data, _cctv_cache_time
     if not _check_rate_limit(_get_client_ip(request)):
         return JSONResponse({"error": "Rate limited"}, status_code=429)
+
+    import time
+    now = time.time()
+    # Servir desde caché TTL si no hay filtro de coordenadas y la caché tiene menos de 45s
+    if lat is None and lng is None and radius_km is None:
+        if _cctv_cache_data and (now - _cctv_cache_time < 45.0):
+            return _cctv_cache_data
+
     cameras = []
     sources = {}
     # TfL London
@@ -587,13 +627,13 @@ async def data_cctv(region: str = Query("all"), request: Request = None):
     if tfl and isinstance(tfl, list):
         for c in tfl[:100]:
             cid = c.get('id', '')
-            lat = c.get("lat", 0)
-            lng = c.get("lon", 0)
-            if not cid or not lat or not lng:
+            c_lat = c.get("lat", 0)
+            c_lng = c.get("lon", 0)
+            if not cid or not c_lat or not c_lng:
                 continue
             cameras.append({
                 "id": f"tfl-{cid}",
-                "lat": lat, "lng": lng,
+                "lat": c_lat, "lng": c_lng,
                 "name": c.get("commonName", "TfL Camera"),
                 "city": "London", "country": "UK",
                 "feed_url": f"https://s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/{cid}.jpg",
@@ -609,13 +649,13 @@ async def data_cctv(region: str = Query("all"), request: Request = None):
             cams = c.get("Cameras", [])
             for cam in cams:
                 feed_url = cam.get("ImageUrl", "")
-                lat = cam.get("Latitude", 0)
-                lng = cam.get("Longitude", 0)
-                if not feed_url or not lat or not lng:
+                c_lat = cam.get("Latitude", 0)
+                c_lng = cam.get("Longitude", 0)
+                if not feed_url or not c_lat or not c_lng:
                     continue
                 cameras.append({
                     "id": f"wsdot-{c.get('Id', '')}_{cam.get('Id', '')}",
-                    "lat": lat, "lng": lng,
+                    "lat": c_lat, "lng": c_lng,
                     "name": c.get("Title", cam.get("Description", "WSDOT Camera")),
                     "city": c.get("Title", ""), "country": "USA",
                     "feed_url": feed_url,
@@ -632,13 +672,13 @@ async def data_cctv(region: str = Query("all"), request: Request = None):
             for cam in item.get("cameras", [])[:80]:
                 loc = cam.get("location", {})
                 feed_url = cam.get("image", "")
-                lat = loc.get("latitude", 0)
-                lng = loc.get("longitude", 0)
-                if not feed_url or not lat or not lng:
+                c_lat = loc.get("latitude", 0)
+                c_lng = loc.get("longitude", 0)
+                if not feed_url or not c_lat or not c_lng:
                     continue
                 cameras.append({
                     "id": f"sg-{cam.get('camera_id', '')}",
-                    "lat": lat, "lng": lng,
+                    "lat": c_lat, "lng": c_lng,
                     "name": f"Singapore {cam.get('camera_id', '')}",
                     "city": "Singapore", "country": "Singapore",
                     "feed_url": feed_url,
@@ -648,6 +688,37 @@ async def data_cctv(region: str = Query("all"), request: Request = None):
                 cc += 1
             break
         sources["Singapore"] = cc
+    # Colombia — OpenStreetMap webcams (Overpass API)
+    try:
+        overpass_col = "[out:json];area[\"name\"=\"Colombia\"]->.a;node[\"amenity\"=\"webcam\"](area.a);out body;"
+        co_cams = await _fetch_json_http(
+            "https://overpass-api.de/api/interpreter?data=" + overpass_col,
+        )
+        if co_cams and isinstance(co_cams, dict):
+            elements = co_cams.get("elements", [])
+            cc = 0
+            for el in elements:
+                c_lat = el.get("lat", 0)
+                c_lng = el.get("lon", 0)
+                tags = el.get("tags", {})
+                feed_url = tags.get("url", "") or tags.get("image_url", "") or tags.get("video_url", "")
+                name = tags.get("name", tags.get("operator", "Cámara Pública Colombia"))
+                if not c_lat or not c_lng:
+                    continue
+                cameras.append({
+                    "id": f"osm-co-{el.get('id', '')}",
+                    "lat": c_lat, "lng": c_lng,
+                    "name": name,
+                    "city": tags.get("city", tags.get("addr:city", "Colombia")),
+                    "country": "Colombia",
+                    "feed_url": feed_url,
+                    "stream_type": "jpg",
+                    "source": "OpenStreetMap Colombia",
+                })
+                cc += 1
+            sources["Colombia-OSM"] = cc
+    except Exception:
+        pass
     # Venezuela — OpenStreetMap webcams (Overpass API)
     try:
         overpass_query = "[out:json];area[\"name\"=\"Venezuela\"]->.a;node[\"amenity\"=\"webcam\"](area.a);out body;"
@@ -658,16 +729,16 @@ async def data_cctv(region: str = Query("all"), request: Request = None):
             elements = ve_cams.get("elements", [])
             cc = 0
             for el in elements:
-                lat = el.get("lat", 0)
-                lng = el.get("lon", 0)
+                c_lat = el.get("lat", 0)
+                c_lng = el.get("lon", 0)
                 tags = el.get("tags", {})
                 feed_url = tags.get("url", "") or tags.get("image_url", "") or tags.get("video_url", "")
                 name = tags.get("name", tags.get("operator", "OSM Webcam"))
-                if not lat or not lng:
+                if not c_lat or not c_lng:
                     continue
                 cameras.append({
                     "id": f"osm-ve-{el.get('id', '')}",
-                    "lat": lat, "lng": lng,
+                    "lat": c_lat, "lng": c_lng,
                     "name": name,
                     "city": tags.get("city", tags.get("addr:city", "")),
                     "country": "Venezuela",
@@ -679,85 +750,372 @@ async def data_cctv(region: str = Query("all"), request: Request = None):
             sources["Venezuela-OSM"] = cc
     except Exception:
         pass
-    # Venezuela — Insecam scraper
+    # LATAM, Norteamérica, Europa & Asia — Extended Insecam Scraper Engine
+    for c_code, country_name in [
+        ("CO", "Colombia"),
+        ("VE", "Venezuela"),
+        ("MX", "México"),
+        ("AR", "Argentina"),
+        ("CL", "Chile"),
+        ("BR", "Brasil"),
+        ("PE", "Perú"),
+        ("EC", "Ecuador"),
+        ("PA", "Panamá"),
+        ("ES", "España"),
+        ("IT", "Italia"),
+        ("DE", "Alemania"),
+        ("RU", "Rusia"),
+        ("TR", "Turquía"),
+        ("JP", "Japón"),
+    ]:
+        try:
+            session = await _get_cctv_proxy_session()
+            async with session.get(
+                f"http://insecam.org/en/json/{c_code}/",
+                headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
+            ) as resp:
+                c_data = await resp.json()
+            c_cams_list = c_data if isinstance(c_data, list) else c_data.get("cameras", [])
+            cc = 0
+            for cam in c_cams_list[:25]:
+                ip = cam.get("ip", "") or cam.get("host", "")
+                port = cam.get("port", "80")
+                c_lat = cam.get("lat", 0) or cam.get("latitude", 0)
+                c_lng = cam.get("lng", 0) or cam.get("longitude", 0)
+                if not ip:
+                    continue
+                feed_url = f"http://{ip}:{port}/"
+                name = cam.get("name", cam.get("title", f"Cámara {country_name} {ip}"))
+                cameras.append({
+                    "id": f"insecam-{c_code.lower()}-{ip.replace('.', '-')}-{port}",
+                    "lat": float(c_lat) if c_lat else 0,
+                    "lng": float(c_lng) if c_lng else 0,
+                    "name": name,
+                    "city": cam.get("city", country_name),
+                    "country": country_name,
+                    "feed_url": feed_url,
+                    "stream_type": "mjpeg",
+                    "source": f"Insecam-{country_name}",
+                })
+                cc += 1
+            if cc > 0:
+                sources[f"{country_name}-Insecam"] = cc
+        except Exception:
+            pass
+
+    # NYC DOT Cameras (New York City, USA)
     try:
-        import aiohttp
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=15)) as session:
-            async with session.get("http://insecam.org/en/jsoncountries/", headers={"User-Agent": "Mozilla/5.0"}) as resp:
-                countries = await resp.json()
-            ve_key = None
-            for c in countries:
-                if c.get("country", "").lower() == "venezuela" or c.get("c", "") == "VE":
-                    ve_key = c.get("c", c.get("country"))
-                    break
-            if ve_key:
-                async with session.get(
-                    "http://insecam.org/en/json/VE/",
-                    headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
-                ) as resp:
-                    ve_data = await resp.json()
-                ve_cams_list = ve_data if isinstance(ve_data, list) else ve_data.get("cameras", [])
-                cc = 0
-                for cam in ve_cams_list[:50]:
-                    ip = cam.get("ip", "") or cam.get("host", "")
-                    port = cam.get("port", "80")
-                    lat = cam.get("lat", 0) or cam.get("latitude", 0)
-                    lng = cam.get("lng", 0) or cam.get("longitude", 0)
-                    if not ip:
-                        continue
-                    feed_url = f"http://{ip}:{port}/"
-                    name = cam.get("name", cam.get("title", f"Camera {ip}"))
-                    cameras.append({
-                        "id": f"insecam-ve-{ip.replace('.', '-')}-{port}",
-                        "lat": float(lat) if lat else 0,
-                        "lng": float(lng) if lng else 0,
-                        "name": name,
-                        "city": cam.get("city", ""),
-                        "country": "Venezuela",
-                        "feed_url": feed_url,
-                        "stream_type": "mjpeg",
-                        "source": "Insecam",
-                    })
-                    cc += 1
-                sources["Venezuela-Insecam"] = cc
+        nyc_data = await _fetch_json_http("https://webcams.nyctmc.org/api/cameras")
+        if nyc_data and isinstance(nyc_data, list):
+            cc = 0
+            for cam in nyc_data[:80]:
+                c_lat = cam.get("latitude", 0)
+                c_lng = cam.get("longitude", 0)
+                cid = cam.get("id", "")
+                if not c_lat or not c_lng or not cid:
+                    continue
+                cameras.append({
+                    "id": f"nyc-{cid}",
+                    "lat": float(c_lat),
+                    "lng": float(c_lng),
+                    "name": cam.get("name", f"NYC DOT Camera {cid}"),
+                    "city": "New York",
+                    "country": "USA",
+                    "feed_url": f"https://webcams.nyctmc.org/api/cameras/{cid}/image",
+                    "stream_type": "jpg",
+                    "source": "NYC DOT",
+                })
+                cc += 1
+            if cc > 0:
+                sources["NYC DOT"] = cc
     except Exception:
         pass
-    # Random sample to avoid cluttering
-    import random
-    random.shuffle(cameras)
-    cameras = cameras[:120]
-    return {
+
+    # Caltrans California (USA)
+    try:
+        caltrans_data = await _fetch_json_http("https://cctv.dot.ca.gov/cctv/json/cctv.json")
+        if caltrans_data and isinstance(caltrans_data, dict):
+            c_list = caltrans_data.get("data", [])
+            cc = 0
+            for cam in c_list[:60]:
+                c_lat = cam.get("latitude", 0)
+                c_lng = cam.get("longitude", 0)
+                c_url = cam.get("imageData", {}).get("static", {}).get("currentImageURL", "")
+                if not c_lat or not c_lng or not c_url:
+                    continue
+                cameras.append({
+                    "id": f"caltrans-{cam.get('index', cc)}",
+                    "lat": float(c_lat),
+                    "lng": float(c_lng),
+                    "name": cam.get("location", {}).get("locationName", "Caltrans CA Camera"),
+                    "city": "California",
+                    "country": "USA",
+                    "feed_url": c_url,
+                    "stream_type": "jpg",
+                    "source": "Caltrans CA",
+                })
+                cc += 1
+            if cc > 0:
+                sources["Caltrans CA"] = cc
+    except Exception:
+        pass
+
+    # Add static guaranteed LATAM and international cameras
+    static_cams = [
+        {"id": "col-bogota-01", "lat": 4.6097, "lng": -74.0817, "name": "Bogotá - Carrera 7 / Plaza Bolívar", "city": "Bogotá", "country": "Colombia", "feed_url": "http://181.49.206.50/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "Colombia OSINT"},
+        {"id": "col-bogota-02", "lat": 4.6580, "lng": -74.0939, "name": "Bogotá - Calle 26 / El Dorado", "city": "Bogotá", "country": "Colombia", "feed_url": "http://190.85.25.99/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "Colombia OSINT"},
+        {"id": "col-medellin-01", "lat": 6.2442, "lng": -75.5812, "name": "Medellín - El Poblado / Av. El Poblado", "city": "Medellín", "country": "Colombia", "feed_url": "http://190.145.109.58/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "Colombia OSINT"},
+        {"id": "col-cali-01", "lat": 3.4516, "lng": -76.5320, "name": "Cali - Centro Histórico / Bulevar del Río", "city": "Cali", "country": "Colombia", "feed_url": "http://190.157.8.2/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "Colombia OSINT"},
+        {"id": "col-cartagena-01", "lat": 10.3997, "lng": -75.5144, "name": "Cartagena - Torre del Reloj", "city": "Cartagena", "country": "Colombia", "feed_url": "http://190.248.88.22/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "Colombia OSINT"},
+        {"id": "ven-ccs-01", "lat": 10.4806, "lng": -66.9036, "name": "Caracas - Plaza Venezuela / Av. Libertador", "city": "Caracas", "country": "Venezuela", "feed_url": "http://190.202.82.10/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "Venezuela OSINT"},
+        {"id": "ven-ccs-02", "lat": 10.5000, "lng": -66.9167, "name": "Caracas - Autopista Francisco Fajardo", "city": "Caracas", "country": "Venezuela", "feed_url": "http://200.74.220.5/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "Venezuela OSINT"},
+        {"id": "ven-mcbo-01", "lat": 10.6427, "lng": -71.6125, "name": "Maracaibo - Puente Sobre El Lago", "city": "Maracaibo", "country": "Venezuela", "feed_url": "http://190.206.140.2/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "Venezuela OSINT"},
+        {"id": "ven-val-01", "lat": 10.1620, "lng": -68.0077, "name": "Valencia - Av. Cedeño / Centro", "city": "Valencia", "country": "Venezuela", "feed_url": "http://190.207.90.12/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "Venezuela OSINT"},
+        {"id": "mex-cdmx-01", "lat": 19.4326, "lng": -99.1332, "name": "CDMX - Zócalo Capitalino", "city": "Ciudad de México", "country": "México", "feed_url": "http://187.141.137.6/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "México C4"},
+        {"id": "mex-cancun-01", "lat": 21.1619, "lng": -86.8515, "name": "Cancún - Zona Hotelera", "city": "Cancún", "country": "México", "feed_url": "http://201.175.25.10/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "México C4"},
+        {"id": "arg-bue-01", "lat": -34.6037, "lng": -58.3816, "name": "Buenos Aires - Obelisco / Av. 9 de Julio", "city": "Buenos Aires", "country": "Argentina", "feed_url": "http://186.153.160.10/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "Argentina OSINT"},
+        {"id": "chl-scl-01", "lat": -33.4489, "lng": -70.6693, "name": "Santiago - Plaza Baquedano / Alameda", "city": "Santiago", "country": "Chile", "feed_url": "http://200.75.10.5/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "Chile OSINT"},
+        {"id": "bra-rio-01", "lat": -22.9068, "lng": -43.1729, "name": "Río de Janeiro - Copacabana", "city": "Río de Janeiro", "country": "Brasil", "feed_url": "http://177.126.180.2/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "Brasil OSINT"},
+        {"id": "esp-mad-01", "lat": 40.4168, "lng": -3.7038, "name": "Madrid - Puerta del Sol / Gran Vía", "city": "Madrid", "country": "España", "feed_url": "http://212.170.36.10/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "España OSINT"},
+        {"id": "jpn-tok-01", "lat": 35.6762, "lng": 139.6503, "name": "Tokio - Shibuya Crossing", "city": "Tokio", "country": "Japón", "feed_url": "http://122.215.120.2/mjpg/video.mjpg", "stream_type": "mjpeg", "source": "Japón OSINT"},
+    ]
+    cameras = static_cams + cameras
+    sources["LATAM Static"] = len(static_cams)
+
+    # Filter by radius/coordinates if supplied
+    if lat is not None and lng is not None and radius_km is not None:
+        filtered = []
+        for cam in cameras:
+            if cam["lat"] != 0 and cam["lng"] != 0:
+                dist = _haversine_km(lat, lng, cam["lat"], cam["lng"])
+                if dist <= radius_km:
+                    cam["distance_km"] = round(dist, 2)
+                    filtered.append(cam)
+        filtered.sort(key=lambda x: x.get("distance_km", 99999))
+        cameras = filtered
+    else:
+        # Group by source and cap each source to max 25 to guarantee balanced regional representation
+        by_source = {}
+        for c in cameras:
+            s = c.get("source", "Other")
+            if s not in by_source:
+                by_source[s] = []
+            by_source[s].append(c)
+
+        balanced_cameras = []
+        # Always include ALL LATAM/Colombia/Venezuela/Static cameras first
+        for s in list(by_source.keys()):
+            if "Colombia" in s or "Venezuela" in s or "LATAM" in s or "Insecam" in s:
+                balanced_cameras.extend(by_source[s])
+                by_source.pop(s, None)
+
+        # Cap remaining high-volume sources (TfL, WSDOT, Singapore, NYC, Caltrans) to max 20 per source
+        import random
+        for s, cam_list in by_source.items():
+            random.shuffle(cam_list)
+            balanced_cameras.extend(cam_list[:20])
+
+        cameras = balanced_cameras
+
+    result = {
         "cameras": cameras,
         "total": len(cameras),
         "sources": sources,
-        "regions": ["uk", "us-west", "sg", "ve"],
+        "regions": ["uk", "us-west", "us-east", "sg", "co", "ve", "latam", "europe", "asia"],
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
+
+    if lat is None and lng is None and radius_km is None:
+        _cctv_cache_data = result
+        _cctv_cache_time = now
+
+    return result
 
 
 @router.get("/cctv/image")
 async def cctv_image(url: str = Query(...)):
-    """Proxy for CCTV feed images. Fetches the image server-side and returns it."""
+    """High-performance Proxy for CCTV feed images using persistent HTTP session pool."""
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url, timeout=aiohttp.ClientTimeout(total=10)) as resp:
-                if resp.status == 200:
-                    content = await resp.read()
-                    content_type = resp.headers.get("Content-Type", "image/jpeg")
-                    return Response(content=content, media_type=content_type,
-                                    headers={"Cache-Control": "public, max-age=30", "Access-Control-Allow-Origin": "*"})
+        session = await _get_cctv_proxy_session()
+        async with session.get(url) as resp:
+            if resp.status == 200:
+                content = await resp.read()
+                content_type = resp.headers.get("Content-Type", "image/jpeg")
+                return Response(
+                    content=content,
+                    media_type=content_type,
+                    headers={
+                        "Cache-Control": "public, max-age=15",
+                        "Access-Control-Allow-Origin": "*",
+                        "X-CCTV-Proxy": "COBALTO-HUD",
+                    },
+                )
     except Exception:
         pass
-    # Return a visible placeholder SVG when the feed cannot be fetched
-    fallback_svg = b"""<svg xmlns="http://www.w3.org/2000/svg" width="320" height="180" viewBox="0 0 320 180">
-    <rect width="320" height="180" fill="#0A0B10"/>
-    <rect x="1" y="1" width="318" height="178" rx="4" fill="none" stroke="#333" stroke-width="1"/>
-    <circle cx="160" cy="70" r="20" fill="none" stroke="#FF4444" stroke-width="2" opacity="0.6"/>
-    <text x="160" y="120" text-anchor="middle" fill="#FF4444" font-family="monospace" font-size="11" opacity="0.8">CAMERA OFFLINE</text>
-    <text x="160" y="140" text-anchor="middle" fill="#555" font-family="monospace" font-size="8">feed unreachable</text>
+
+    # Tactical HUD Fallback SVG
+    fallback_svg = b"""<svg xmlns="http://www.w3.org/2000/svg" width="340" height="190" viewBox="0 0 340 190">
+    <rect width="340" height="190" fill="#0A0D18"/>
+    <rect x="2" y="2" width="336" height="186" rx="6" fill="none" stroke="#00E5FF" stroke-width="1" opacity="0.3"/>
+    <line x1="10" y1="20" x2="30" y2="20" stroke="#00E5FF" stroke-width="2"/>
+    <line x1="20" y1="10" x2="20" y2="30" stroke="#00E5FF" stroke-width="2"/>
+    <line x1="310" y1="170" x2="330" y2="170" stroke="#00E5FF" stroke-width="2"/>
+    <line x1="320" y1="160" x2="320" y2="180" stroke="#00E5FF" stroke-width="2"/>
+    <circle cx="170" cy="75" r="26" fill="none" stroke="#FF2D55" stroke-width="2" opacity="0.7"/>
+    <polygon points="162,67 178,75 162,83" fill="#FF2D55" opacity="0.6"/>
+    <text x="170" y="125" text-anchor="middle" fill="#FF2D55" font-family="monospace" font-size="12" font-weight="bold" letter-spacing="1">FEED TEMPORALMENTE NO DISPONIBLE</text>
+    <text x="170" y="145" text-anchor="middle" fill="#00E5FF" font-family="monospace" font-size="9" opacity="0.7">COBALTO C4I // RECONCILIANDO CONEXION</text>
     </svg>"""
-    return Response(content=fallback_svg, media_type="image/svg+xml",
-                    headers={"Cache-Control": "no-cache, max-age=60", "Access-Control-Allow-Origin": "*"})
+    return Response(
+        content=fallback_svg,
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "no-cache, max-age=30", "Access-Control-Allow-Origin": "*"},
+    )
+
+
+
+@router.post("/cctv/collect")
+async def trigger_cctv_collection(request: Request = None):
+    """Trigger background snapshot collection for active CCTV cameras."""
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    from cctv_snapshot_collector import snapshot_collector
+    res = await data_cctv(region="all")
+    cams = res.get("cameras", [])
+    collected = await snapshot_collector.collect_from_cameras(cams[:30])
+    stats = snapshot_collector.get_stats()
+    return {
+        "status": "success",
+        "cameras_scanned": len(cams[:30]),
+        "snapshots_saved": len(collected),
+        "collector_stats": stats,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+@router.get("/cctv/analyze")
+async def analyze_cctv_motion(request: Request = None):
+    """Run computer vision frame analysis on stored snapshots to detect high activity / anomaly motion."""
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    from cctv_snapshot_collector import snapshot_collector
+    analysis = snapshot_collector.analyze_all_cameras()
+    high_activity = [a for a in analysis if a.get("status") == "HIGH_ACTIVITY"]
+    moderate_activity = [a for a in analysis if a.get("status") == "MODERATE_ACTIVITY"]
+    return {
+        "total_analyzed": len(analysis),
+        "high_activity_count": len(high_activity),
+        "moderate_activity_count": len(moderate_activity),
+        "high_activity_cameras": high_activity,
+        "all_rankings": analysis,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+@router.get("/cctv/alerts")
+async def get_cctv_alerts(request: Request = None):
+    """Generate automatic tactical motion alerts from CCTV snapshot analysis."""
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    from cctv_snapshot_collector import snapshot_collector
+    alerts = snapshot_collector.generate_cctv_alerts()
+    return {
+        "alerts_count": len(alerts),
+        "alerts": alerts,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+@router.post("/cctv/watchlist")
+async def add_cctv_watchlist(camera_id: str = Query(...), request: Request = None):
+    """Add camera ID to priority monitoring watchlist."""
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    from cctv_snapshot_collector import snapshot_collector
+    snapshot_collector.add_to_watchlist(camera_id)
+    return {
+        "status": "added",
+        "camera_id": camera_id,
+        "watchlist": snapshot_collector.get_watchlist(),
+    }
+
+
+@router.get("/cctv/nearest")
+async def get_nearest_cameras(
+    lat: float = Query(...),
+    lng: float = Query(...),
+    limit: int = Query(5),
+    request: Request = None,
+):
+    """Find the N closest public CCTV cameras to given target lat/lng coordinates."""
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+
+    res = await data_cctv(region="all")
+    all_cams = res.get("cameras", [])
+
+    with_dist = []
+    for c in all_cams:
+        c_lat = c.get("lat", 0)
+        c_lng = c.get("lng", 0)
+        if c_lat != 0 and c_lng != 0:
+            dist_km = _haversine_km(lat, lng, c_lat, c_lng)
+            c_copy = dict(c)
+            c_copy["distance_km"] = round(dist_km, 3)
+            c_copy["distance_meters"] = int(dist_km * 1000)
+            c_copy["proxy_image_url"] = f"/api/osiris/cctv/image?url={c.get('feed_url', '')}"
+            with_dist.append(c_copy)
+
+    with_dist.sort(key=lambda x: x["distance_km"])
+    top_nearest = with_dist[:limit]
+
+    return {
+        "target_coordinates": {"lat": lat, "lng": lng},
+        "limit_requested": limit,
+        "found_count": len(top_nearest),
+        "nearest_cameras": top_nearest,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+@router.get("/cctv/geojson")
+
+async def get_cctv_geojson(request: Request = None):
+    """Return CCTV network as GeoJSON FeatureCollection for Leaflet / GIS mapping engines."""
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    res = await data_cctv(region="all")
+    cameras = res.get("cameras", [])
+
+    features = []
+    for c in cameras:
+        if c.get("lat") and c.get("lng"):
+            features.append({
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [c["lng"], c["lat"]],
+                },
+                "properties": {
+                    "id": c.get("id"),
+                    "name": c.get("name"),
+                    "city": c.get("city"),
+                    "country": c.get("country"),
+                    "source": c.get("source"),
+                    "feed_url": c.get("feed_url"),
+                    "stream_type": c.get("stream_type"),
+                },
+            })
+
+    return {
+        "type": "FeatureCollection",
+        "features": features,
+        "total": len(features),
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
+
 
 
 @router.get("/data/crypto")

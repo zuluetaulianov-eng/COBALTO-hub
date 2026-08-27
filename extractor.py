@@ -193,15 +193,31 @@ def safe_published_datetime(parsed_tuple):
     return parse_datetime(parsed_tuple)
 
 
-def extract_featured_image(entry, base_url):
+def extract_featured_media(entry, base_url):
     image_url = None
+    video_url = None
 
     # Buscar en media_content
     if "media_content" in entry:
         for media in entry.media_content:
-            if media.get("medium") == "image":
-                image_url = media.get("url")
-                break
+            medium = media.get("medium") or media.get("type", "")
+            url = media.get("url")
+            if url:
+                if medium == "video" or re.search(r"\.(mp4|webm|m3u8|mov)(\?.*)?$", url, re.I):
+                    video_url = url
+                elif medium == "image" and not image_url:
+                    image_url = url
+
+    # Buscar en enclosures
+    if "enclosures" in entry:
+        for enc in entry.enclosures:
+            href = enc.get("href") or enc.get("url")
+            type_attr = enc.get("type", "")
+            if href:
+                if "video" in type_attr or re.search(r"\.(mp4|webm|m3u8|mov)(\?.*)?$", href, re.I):
+                    video_url = href
+                elif "image" in type_attr and not image_url:
+                    image_url = href
 
     # Buscar en media_thumbnail
     if not image_url and "media_thumbnail" in entry:
@@ -210,27 +226,45 @@ def extract_featured_image(entry, base_url):
             image_url = thumbs[0].get("url")
 
     # Buscar en content/summary HTML
-    if not image_url:
-        content = entry.get("summary") or entry.get("description", "")
-        if not content and "content" in entry:
-            content = entry.content[0].get("value", "") if entry.content else ""
+    content = entry.get("summary") or entry.get("description", "")
+    if not content and "content" in entry:
+        content = entry.content[0].get("value", "") if entry.content else ""
 
-        if content:
-            try:
-                soup = BeautifulSoup(content, "html.parser")
+    if content:
+        try:
+            soup = BeautifulSoup(content, "html.parser")
+            if not video_url:
+                vid = soup.find("video")
+                if vid:
+                    src = vid.get("src") or (vid.find("source") and vid.find("source").get("src"))
+                    if src:
+                        video_url = src
+                if not video_url:
+                    iframe = soup.find("iframe")
+                    if iframe and iframe.get("src"):
+                        src = iframe["src"]
+                        if any(k in src.lower() for k in ["youtube", "youtu.be", "vimeo", "rumble", "dailymotion"]):
+                            video_url = src
+            if not image_url:
                 img = soup.find("img")
                 if img and img.get("src"):
                     image_url = img["src"]
-            except Exception:
-                pass
+        except Exception:
+            pass
+
+    link = entry.get("link", "")
+    if not video_url and link and any(k in link.lower() for k in ["youtube.com/watch", "youtu.be/"]):
+        video_url = link
 
     if image_url:
         image_url = urljoin(base_url, image_url)
-        # Validar extensión de imagen
         if not re.search(r"\.(jpe?g|png|webp|gif|bmp|svg)(\?.*)?$", image_url, re.I):
             image_url = None
 
-    return image_url
+    if video_url:
+        video_url = urljoin(base_url, video_url)
+
+    return image_url, video_url
 
 
 def _clean_and_extract_summary(summary_raw):
@@ -452,8 +486,8 @@ async def parse_single_feed_async(session, source, url, retry_count=0, problem_i
             matches_keyword = any(kw in text for kw in active_keywords)
 
             if matches_keyword or is_priority:
-                # Offload de parsing de imágenes (BeautifulSoup) a hilo separado
-                image_url = await asyncio.to_thread(extract_featured_image, entry, url)
+                # Offload de parsing de imágenes y video (BeautifulSoup) a hilo separado
+                image_url, video_url = await asyncio.to_thread(extract_featured_media, entry, url)
 
                 try:
                     import theaters_config
@@ -470,6 +504,7 @@ async def parse_single_feed_async(session, source, url, retry_count=0, problem_i
                         "published_dt": dt,
                         "published_iso": dt.isoformat(),
                         "image": image_url,
+                        "video": video_url,
                         "source": source,
                         "type": "external",
                         "priority": is_priority,
@@ -600,7 +635,7 @@ async def fetch_telegram_source(source_name, url):
                 title = text.split("\n")[0][:100]
                 summary = textwrap.shorten(text, width=280, placeholder="...")
 
-                # Extract featured image from Telegram post
+                # Extract featured image & video from Telegram post
                 photo_el = msg.select_one(".tgme_widget_message_photo_wrap")
                 tg_image_url = ""
                 if photo_el:
@@ -608,6 +643,9 @@ async def fetch_telegram_source(source_name, url):
                     match = re.search(r"background-image:url\('(.*?)'\)", style)
                     if match:
                         tg_image_url = match.group(1)
+
+                video_el = msg.select_one(".tgme_widget_message_video_player video, .tgme_widget_message_video video")
+                tg_video_url = video_el.get("src") if video_el and video_el.get("src") else ""
 
                 entries.append(
                     {
@@ -618,6 +656,7 @@ async def fetch_telegram_source(source_name, url):
                         "published_dt": pub_dt,
                         "published_iso": pub_dt.isoformat(),
                         "image": tg_image_url,
+                        "video": tg_video_url,
                         "source": source_name,
                         "type": "telegram",
                     }

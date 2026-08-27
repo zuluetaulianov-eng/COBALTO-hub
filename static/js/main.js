@@ -691,6 +691,9 @@ window.CobaltoCore = {
     renderNewsPage: function(page) {
         const grid = document.getElementById('news-grid');
         if (!grid || !this.state.allNews) return;
+        if (page === 1) {
+            grid.innerHTML = '';
+        }
         const start = (page - 1) * this.state.newsPerPage;
         var rawItems = this.state.allNews.slice(start, start + this.state.newsPerPage);
         if (!rawItems.length) return;
@@ -742,13 +745,38 @@ window.CobaltoCore = {
             var sourcesCount = item.sources_count || 1;
             var sourcesBadgeHtml = sourcesCount > 1 ? `<span class="config-chip" style="font-size:0.68rem; background:rgba(0,229,255,0.15); border:1px solid var(--primary); color:#00E5FF; font-weight:bold;">🌐 ${sourcesCount} FUENTES</span>` : '';
             var relatedJson = item.related_sources ? this.utils.escapeHTML(JSON.stringify(item.related_sources)) : '[]';
+            var videoEsc = item.video ? this.utils.escapeHTML(item.video) : '';
 
-            var imgHtml = item.image ? `<img src="${this.utils.escapeHTML(item.image)}" class="card-image" style="margin-bottom: 0.8rem; border-radius: 8px; cursor:pointer;" alt="" loading="lazy" onclick="window.openSitrepReader(this.closest('.news-card'))">` : '';
+            var mediaHtml = '';
+            if (item.video) {
+                var vidSrc = this.utils.escapeHTML(item.video);
+                if (vidSrc.includes('youtube.com') || vidSrc.includes('youtu.be') || vidSrc.includes('vimeo') || vidSrc.includes('rumble')) {
+                    mediaHtml = `
+                        <div class="video-preview-wrapper" style="position:relative; margin-bottom:0.8rem; border-radius:8px; overflow:hidden; border:1px solid rgba(0,229,255,0.3); background:#000;">
+                            <div style="position:relative; padding-bottom:56.25%; height:0;">
+                                <iframe src="${vidSrc}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" allowfullscreen loading="lazy"></iframe>
+                            </div>
+                            <span class="config-chip" style="position:absolute; top:6px; right:6px; background:rgba(255,45,85,0.85); color:#fff; font-size:0.65rem; font-weight:bold; z-index:2; pointer-events:none;">🎬 VIDEO</span>
+                        </div>
+                    `;
+                } else {
+                    var posterAttr = item.image ? `poster="${this.utils.escapeHTML(item.image)}"` : '';
+                    mediaHtml = `
+                        <div class="video-preview-wrapper" style="position:relative; margin-bottom:0.8rem; border-radius:8px; overflow:hidden; border:1px solid rgba(0,229,255,0.3); background:#000;">
+                            <video src="${vidSrc}" ${posterAttr} controls muted playsinline style="width:100%; max-height:220px; object-fit:cover; display:block;" loading="lazy"></video>
+                            <span class="config-chip" style="position:absolute; top:6px; right:6px; background:rgba(255,45,85,0.85); color:#fff; font-size:0.65rem; font-weight:bold; z-index:2; pointer-events:none;">🎬 VIDEO</span>
+                        </div>
+                    `;
+                }
+            } else if (item.image) {
+                mediaHtml = `<img src="${this.utils.escapeHTML(item.image)}" class="card-image" style="margin-bottom: 0.8rem; border-radius: 8px; cursor:pointer;" alt="" loading="lazy" onclick="window.openSitrepReader(this.closest('.news-card'))">`;
+            }
+
             var titleClean = (item.title || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
             var linkEsc = this.utils.escapeHTML(item.link || '#');
 
             return `
-                <div class="news-card" data-title="${this.utils.escapeHTML(t)}" data-summary="${this.utils.escapeHTML(s)}" data-country="${countryTag}" data-category="${category}" data-severity="${severity}" data-sources-count="${sourcesCount}" data-related="${relatedJson}">
+                <div class="news-card" data-title="${this.utils.escapeHTML(t)}" data-summary="${this.utils.escapeHTML(s)}" data-country="${countryTag}" data-category="${category}" data-severity="${severity}" data-sources-count="${sourcesCount}" data-related="${relatedJson}" data-video="${videoEsc}">
                     <div>
                         <div class="news-header">
                             <div class="flex items-center gap-05 flex-wrap">
@@ -759,7 +787,7 @@ window.CobaltoCore = {
                             </div>
                             <span class="news-time">${this.utils.escapeHTML(item.published || '')}</span>
                         </div>
-                        ${imgHtml}
+                        ${mediaHtml}
                         <a href="javascript:void(0)" onclick="window.openSitrepReader(this.closest('.news-card'))" class="news-title" title="Clic para maximizar e inspeccionar la noticia">${this.utils.escapeHTML(item.title || '')}</a>
                         <p class="news-summary">${this.utils.escapeHTML(item.summary || '')}</p>
                     </div>
@@ -3018,10 +3046,20 @@ window.openSitrepReader = function(card) {
         sevEl.textContent = severity === 'CRITICAL' ? '🔴 CRÍTICO' : (severity === 'HIGH' ? '🟠 ALTO' : (severity === 'MEDIUM' ? '🟡 MEDIO' : '🔵 INFO'));
     }
 
+    var video = card.getAttribute('data-video') || card.querySelector('video')?.src || card.querySelector('iframe')?.src || '';
+
     var imgWrapper = document.getElementById('sitrep-modal-img-wrapper');
     var imgEl = document.getElementById('sitrep-modal-img');
-    if (img && imgWrapper && imgEl) {
-        imgEl.src = img;
+    if (video && imgWrapper) {
+        if (video.includes('youtube') || video.includes('youtu.be') || video.includes('vimeo') || video.includes('rumble')) {
+            imgWrapper.innerHTML = `<div style="position:relative; padding-bottom:56.25%; height:0; border-radius:8px; overflow:hidden; border:1px solid rgba(0,229,255,0.3);"><iframe src="${video}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" allowfullscreen></iframe></div>`;
+        } else {
+            var poster = img ? `poster="${img}"` : '';
+            imgWrapper.innerHTML = `<video src="${video}" ${poster} controls playsinline style="width:100%; max-height:360px; border-radius:8px; object-fit:contain; background:#000; display:block; border:1px solid rgba(0,229,255,0.3);"></video>`;
+        }
+        imgWrapper.style.display = 'block';
+    } else if (img && imgWrapper && imgEl) {
+        imgWrapper.innerHTML = `<img id="sitrep-modal-img" src="${img}" style="width:100%; max-height:360px; object-fit:cover; border-radius:8px; display:block;" alt="">`;
         imgWrapper.style.display = 'block';
     } else if (imgWrapper) {
         imgWrapper.style.display = 'none';
