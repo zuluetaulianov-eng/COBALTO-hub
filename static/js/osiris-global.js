@@ -289,10 +289,34 @@ window.OsirisGlobal = {
             '<div class="cctv-meta-row"><span class="cctv-meta-label">Lng</span><span>' + (typeof cam.lng === 'number' ? cam.lng.toFixed(4) : cam.lng) + '</span></div>' +
             '<div class="cctv-meta-row"><span class="cctv-meta-label">Stream</span><span style="color:#76FF03;">' + (cam.stream_type || 'jpg').toUpperCase() + '</span></div>' +
             (cam.feed_url ? '<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.04);"><div style="color:#64748B;font-size:7px;margin-bottom:2px;">FEED URL</div><div style="font-size:7px;color:#555;word-break:break-all;">' + this._esc(cam.feed_url) + '</div></div>' : '') +
-            '<div style="margin-top:8px;display:flex;gap:6px;">' +
-            '<button onclick="if(window.OsirisGlobal)window.OsirisGlobal.expandCamera(window.OsirisGlobal.state.cctvSelected)" style="flex:1;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:4px;color:#00E5FF;padding:5px;font-size:8px;font-family:monospace;cursor:pointer;">🔍 EXPAND VIEW</button>' +
-            '<button onclick="if(window.OsirisGlobal&&window.OsirisGlobal.state.cctvSelected){var c=window.OsirisGlobal.state.cctvSelected;if(window.UnifiedMap&&window.UnifiedMap.focusLocation)window.UnifiedMap.focusLocation(c.lat,c.lng,c.name);}" style="flex:1;background:rgba(0,255,170,0.08);border:1px solid rgba(0,255,170,0.2);border-radius:4px;color:#00FFAA;padding:5px;font-size:8px;font-family:monospace;cursor:pointer;">📍 VER EN MAPA</button>' +
-            '</div>';
+            '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">' +
+            '<button onclick="if(window.OsirisGlobal)window.OsirisGlobal.expandCamera(window.OsirisGlobal.state.cctvSelected)" style="flex:1;min-width:70px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:4px;color:#00E5FF;padding:5px;font-size:8px;font-family:monospace;cursor:pointer;">🔍 EXPAND VIEW</button>' +
+            '<button onclick="if(window.OsirisGlobal)window.OsirisGlobal.analyzeCCTV(window.OsirisGlobal.state.cctvSelected)" style="flex:1;min-width:70px;background:rgba(255,45,85,0.12);border:1px solid rgba(255,45,85,0.3);border-radius:4px;color:#FF2D55;padding:5px;font-size:8px;font-family:monospace;cursor:pointer;">⚡ YOLOv8 AI</button>' +
+            '<button onclick="if(window.OsirisGlobal&&window.OsirisGlobal.state.cctvSelected){var c=window.OsirisGlobal.state.cctvSelected;if(window.UnifiedMap&&window.UnifiedMap.focusLocation)window.UnifiedMap.focusLocation(c.lat,c.lng,c.name);}" style="flex:1;min-width:70px;background:rgba(0,255,170,0.08);border:1px solid rgba(0,255,170,0.2);border-radius:4px;color:#00FFAA;padding:5px;font-size:8px;font-family:monospace;cursor:pointer;">📍 MAPA</button>' +
+            '</div>' +
+            '<div id="cctv-ai-panel" style="margin-top:6px;display:none;padding:6px;background:rgba(255,45,85,0.05);border:1px dashed rgba(255,45,85,0.3);border-radius:4px;font-size:8px;"></div>';
+    },
+
+    analyzeCCTV: function(cam) {
+        if (!cam) return;
+        var panel = document.getElementById('cctv-ai-panel');
+        if (!panel) return;
+        panel.style.display = 'block';
+        panel.innerHTML = '<span style="color:#FF2D55;">⚡ EJECUTANDO ANALÍTICA YOLOv8-NANO...</span>';
+
+        fetch('/api/osiris/cctv/analyze?camera_id=' + encodeURIComponent(cam.id || 'cam') + '&url=' + encodeURIComponent(cam.feed_url || ''))
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                var objs = res.objects_detected || {};
+                var statusColor = res.anomaly_detected ? '#FF2D55' : '#00FFAA';
+                panel.innerHTML =
+                    '<div style="color:#FF2D55;font-weight:bold;margin-bottom:4px;">YOLOv8-NANO ANALYTICS (' + (res.confidence * 100).toFixed(0) + '% CONF)</div>' +
+                    '<div>🚗 Vehículos: <b>' + (objs.vehicles || 0) + '</b> · 🚶 Peatones: <b>' + (objs.pedestrians || 0) + '</b></div>' +
+                    '<div>Tráfico: <b style="color:' + statusColor + ';">' + (res.traffic_density || 'NORMAL') + '</b> · Estado: <b style="color:' + statusColor + ';">' + (res.tactical_status || 'NORMAL') + '</b></div>';
+            })
+            .catch(function() {
+                panel.innerHTML = '<span style="color:#FF4444;">❌ Error en servidor de analítica</span>';
+            });
     },
 
 
