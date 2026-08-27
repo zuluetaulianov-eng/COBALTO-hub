@@ -1,14 +1,19 @@
-# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v15.0
+# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v15.1
 
 > **Sistema de Mando y Control de Inteligencia (C4I)** en tiempo real con **Arquitectura Multipaís (Multi-Theater OSINT)**,  
-> **Target Dossier Engine (360° Risk Score)**, **TLS Fingerprinting Evasion (JA3/HTTP2)**, **Singleton Browser Pool Manager**, **Extracción Semántica JSON-LD/OpenGraph**, **Persistencia Histórica Deduplicada**, **Previsualización Multimedia de Video Táctico**, **Streaming HLS CCTV & Analítica YOLOv8** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
+> **Target Dossier Engine (360° Risk Score)**, **TLS Fingerprinting Evasion (JA3/HTTP2)**, **Singleton Browser Pool Manager**, **Extracción Semántica JSON-LD/OpenGraph**, **Reproducción de Video Táctico Nativa (Flutter/Web)**, **Persistencia Histórica Deduplicada**, **Streaming HLS CCTV & Analítica YOLOv8** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
 > Consolida fuentes RSS, canales de Telegram, redes sociales, ciberseguridad, rastreo de aeronaves/buques, telemetría de campo en vivo y análisis geopolítico multiagente con IA.  
-> **v15.0** — Motor de Evasión TLS JA3/HTTP2 (`tls_evasion.py`), Singleton Browser Pool Headless (`browser_pool.py`), Extracción Semántica Rica JSON-LD/OpenGraph (`extractor.py`), Circuit Breakers con Exponential Backoff & Jitter (`social_public_extractor.py`), Transcodificador HLS CCTV (`/cctv/stream`) y Analítica de Video YOLOv8 (`/cctv/analyze`) en **COBALTO Mobile** y Web.
+> **v15.1** — Reproductor de Video Táctico Nativo en COBALTO Mobile (`VideoPlayerSheet`), Persistencia SQLite v5 del campo `video`, Motor de Evasión TLS JA3/HTTP2 (`tls_evasion.py`), Singleton Browser Pool Headless (`browser_pool.py`), Extracción Semántica Rica JSON-LD/OpenGraph (`extractor.py`), Circuit Breakers con Exponential Backoff & Jitter (`social_public_extractor.py`), Transcodificador HLS CCTV (`/cctv/stream`) y Analítica de Video YOLOv8 (`/cctv/analyze`).
 
 ---
 
-## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v15.0)
+## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v15.1)
 
+- **🎬 Reproducción de Video Táctico Nativo en COBALTO Mobile (`cobalto_mobile`):**
+  - **Widget `VideoPlayerSheet`:** Detección dinámica de streaming directo (MP4/HLS con `chewie` y `video_player`) vs. reproductores incrustados nativos (`youtube_player_flutter`).
+  - **Tarjetas SitRep (`SitrepNewsCard`):** Badge táctico `🎥 MEDIA`, botón flotante de reproducción rápida sobre la miniatura e interacción directa vía botón `VIDEO`.
+  - **Hoja de Detalle (`IntelDetailsSheet`):** Banner superior destacado para reproducción inmediata de contenido audiovisual adjunto a reportes de inteligencia.
+  - **Persistencia SQLite v5 (`LocalDbService` & `LocalExtractorService`):** Actualización del esquema `cobalto_edge.db` para almacenar y consultar el campo `video` de forma offline.
 - **🛡️ Motor Evasor TLS JA3/HTTP2 (`tls_evasion.py`):** Bypass de protecciones Cloudflare/Akamai/WAF mediante la simulación exacta de huellas digitales TLS de navegadores reales (`chrome_120`, `firefox_120`, `safari_16_0`) a velocidad de socket HTTP/2 sin la sobrecarga de un navegador pesado.
 - **🌐 Singleton Browser Pool Manager (`browser_pool.py`):** Reutilización de contextos y pestañas Chromium con Playwright Stealth. Reducción del **70% de consumo en RAM** y aceleración de peticiones complejas a `< 1 segundo`.
 - **🎬 Extractor Semántico Rico (JSON-LD & OpenGraph & Twitter Cards) (`extractor.py`):** Parsing automatizado de esquemas `<script type="application/ld+json">` (`NewsArticle`, `VideoObject`, `ImageObject`) y meta-tags `og:image`, `og:video` y `twitter:player`.
