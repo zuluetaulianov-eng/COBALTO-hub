@@ -97,10 +97,11 @@ def check_tor_available() -> bool:
     return get_tor_port() is not None
 
 
-# ── Circuit Breaker Tracker para endpoints externos ──
+# ── Circuit Breaker Tracker para endpoints externos con Exponential Backoff & Jitter ──
 _circuit_breaker_state: Dict[str, Dict[str, Any]] = {}
 MAX_FAILURES_BEFORE_BREAKER = 3
-BREAKER_COOLDOWN_SECONDS = 600  # 10 minutos de enfriamiento para dominios inalcanzables
+BASE_BREAKER_COOLDOWN = 300  # 5 minutos base
+MAX_BREAKER_COOLDOWN = 1800  # 30 minutos máximo
 
 
 def is_circuit_open(target_key: str) -> bool:
@@ -112,20 +113,25 @@ def is_circuit_open(target_key: str) -> bool:
     if state.get("failures", 0) >= MAX_FAILURES_BEFORE_BREAKER:
         if now < state.get("cooldown_until", 0.0):
             return True
-        _circuit_breaker_state[target_key] = {"failures": 0, "cooldown_until": 0.0}
+        # Cooldown cumplido: permitir un intento de recuperación
         return False
     return False
 
 
 def record_circuit_failure(target_key: str):
-    """Registra un fallo de red/timeout para activar el circuit breaker si supera el umbral."""
+    """Registra un fallo e incrementa el tiempo de enfriamiento con Exponential Backoff & Jitter."""
+    import random
     now = time.time()
     state = _circuit_breaker_state.setdefault(target_key, {"failures": 0, "cooldown_until": 0.0})
     state["failures"] += 1
     if state["failures"] >= MAX_FAILURES_BEFORE_BREAKER:
-        state["cooldown_until"] = now + BREAKER_COOLDOWN_SECONDS
+        exponent = min(state["failures"] - MAX_FAILURES_BEFORE_BREAKER, 4)
+        backoff = min(MAX_BREAKER_COOLDOWN, BASE_BREAKER_COOLDOWN * (2 ** exponent))
+        jitter = random.uniform(0.0, 30.0)
+        cooldown_total = backoff + jitter
+        state["cooldown_until"] = now + cooldown_total
         logger.warning(
-            f"[CIRCUIT BREAKER] Circuito ABIERTO para {target_key} por {BREAKER_COOLDOWN_SECONDS}s ({state['failures']} fallos consecutivos)."
+            f"[CIRCUIT BREAKER] Circuito ABIERTO para {target_key} por {int(cooldown_total)}s (Exponential Backoff + Jitter, fallo #{state['failures']})."
         )
 
 
