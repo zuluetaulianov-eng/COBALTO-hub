@@ -1,12 +1,12 @@
 @echo off
-title COBALTO HUB v14.2 - Instalador y Bootstrapper Automatizado
+title COBALTO HUB v15.2 - Instalador y Bootstrapper Automatizado
 color 0B
 setlocal enabledelayedexpansion
 
 cls
 echo.
 echo    ===================================================
-echo             C O B A L T O   H U B   v 1 4 . 2
+echo             C O B A L T O   H U B   v 1 5 . 2
 echo         Instalador de Entorno y Lanzador Dual
 echo    ===================================================
 echo.

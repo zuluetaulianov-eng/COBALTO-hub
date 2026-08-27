@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# COBALTO HUB v9.0 - Instalador & Bootstrapper Automatizado (Linux/macOS)
+# COBALTO HUB v15.2 - Instalador & Bootstrapper Automatizado (Linux/macOS)
 CYAN='\033[0;36m'
 BRIGHT_CYAN='\033[1;36m'
 GREEN='\033[0;32m'
@@ -12,7 +12,7 @@ clear
 
 echo -e "${BRIGHT_CYAN}"
 echo "   ==================================================="
-echo "            C O B A L T O   H U B   v 9 . 0"
+echo "            C O B A L T O   H U B   v 1 5 . 2"
 echo "        Instalador de Entorno y Lanzador Dual"
 echo "   ==================================================="
 echo -e "${NC}"
