@@ -24,6 +24,8 @@ window.OsirisRecon = {
                 { id: 'whois', label: 'WHOIS / RDAP', icon: '📄', placeholder: 'example.com', color: '#FFD700', hint: 'Domain name' },
                 { id: 'ssl', label: 'SSL Certificates', icon: '🔒', placeholder: 'example.com', color: '#76FF03', hint: 'Domain name' },
                 { id: 'certs', label: 'Cert Transparency', icon: '🔐', placeholder: 'example.com', color: '#E040FB', hint: 'Domain name' },
+                { id: 'web', label: 'Web Reader (Jina)', icon: '📖', placeholder: 'https://example.com', color: '#00FFAA', hint: 'Full URL or Domain' },
+                { id: 'youtube', label: 'YouTube Intel', icon: '📺', placeholder: 'https://youtube.com/watch?v=...', color: '#FF0000', hint: 'YouTube Video URL or ID' },
             ]
         },
         {
@@ -34,6 +36,7 @@ window.OsirisRecon = {
                 { id: 'bgp', label: 'BGP Routing', icon: '🌍', placeholder: '1.1.1.1 or AS13335', color: '#00E5FF', hint: 'IP or ASN' },
                 { id: 'headers', label: 'HTTP Headers', icon: '📋', placeholder: 'https://example.com', color: '#87CEEB', hint: 'Full URL' },
                 { id: 'mac', label: 'MAC Vendor', icon: '🖐️', placeholder: '00:00:00:00:00:00', color: '#FFD700', hint: 'MAC address' },
+                { id: 'rss', label: 'RSS Reader', icon: '📡', placeholder: 'https://example.com/feed.xml', color: '#FF9500', hint: 'RSS/Atom Feed URL' },
             ]
         },
         {
@@ -54,6 +57,7 @@ window.OsirisRecon = {
                 { id: 'leaks', label: 'Breach Check', icon: '💀', placeholder: 'target@example.com', color: '#E040FB', hint: 'Email address' },
                 { id: 'phone', label: 'Phone Carrier', icon: '📞', placeholder: '+1234567890', color: '#FF9500', hint: 'Intl format format' },
                 { id: 'sanctions', label: 'OFAC Sanctions', icon: '⚖️', placeholder: 'Putin', color: '#D4AF37', hint: 'Entity name' },
+                { id: 'search', label: 'Semantic Search', icon: '🔍', placeholder: 'cybersecurity threat actor colombia', color: '#00FFAA', hint: 'Search query' },
             ]
         }
     ],
@@ -112,6 +116,11 @@ window.OsirisRecon = {
                 if (input) input.value = self.state.query;
                 self.switchTab(histBtn.dataset.tab);
                 self.runQuery();
+                return;
+            }
+            var doctorBtn = e.target.closest('#or-run-doctor-btn');
+            if (doctorBtn) {
+                self._runDoctor();
                 return;
             }
             var copyJsonBtn = e.target.closest('#or-export-json');
@@ -310,6 +319,10 @@ window.OsirisRecon = {
             'github': '/api/osiris/recon/github?user=' + encodeURIComponent(query.replace('@', '')),
             'leaks': '/api/osiris/recon/leaks?email=' + encodeURIComponent(query),
             'threats': '/api/osiris/recon/threats?query=' + encodeURIComponent(query),
+            'web': '/api/osiris/recon/web?url=' + encodeURIComponent(query),
+            'search': '/api/osiris/recon/search?query=' + encodeURIComponent(query),
+            'youtube': '/api/osiris/recon/youtube?url=' + encodeURIComponent(query),
+            'rss': '/api/osiris/recon/rss?url=' + encodeURIComponent(query),
         };
         return map[tabId] || '';
     },
@@ -533,6 +546,61 @@ window.OsirisRecon = {
                 contentHtml += '</div>';
             }
         }
+        // ── WEB READER (JINA) ──
+        else if (tabId === 'web') {
+            contentHtml += '<div class="or-data-grid">';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Source</div><div class="or-data-value info">' + esc(data.source || 'Jina Reader') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Content Length</div><div class="or-data-value large">' + (data.length || 0).toLocaleString() + ' chars</div></div>';
+            contentHtml += '</div>';
+            if (data.content) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">EXTRACTED MARKDOWN CONTENT</div>' + copy(data.content) + '</div>';
+                contentHtml += '<pre style="font-size:0.8rem;color:#E0E0E0;max-height:600px;overflow-y:auto;background:rgba(0,0,0,0.4);padding:16px;border-radius:8px;border:1px solid rgba(0,229,255,0.2);white-space:pre-wrap;word-break:break-word;font-family:\'Roboto Mono\',monospace;">' + esc(data.content) + '</pre></div>';
+            }
+        }
+        // ── SEMANTIC SEARCH ──
+        else if (tabId === 'search') {
+            contentHtml += '<div class="or-data-grid">';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Query</div><div class="or-data-value info">' + esc(data.query || query) + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Source</div><div class="or-data-value success">' + esc(data.source || 'Jina Search') + '</div></div>';
+            contentHtml += '</div>';
+            if (data.content) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">SEARCH RESULTS MARKDOWN</div>' + copy(data.content) + '</div>';
+                contentHtml += '<pre style="font-size:0.8rem;color:#E0E0E0;max-height:600px;overflow-y:auto;background:rgba(0,0,0,0.4);padding:16px;border-radius:8px;border:1px solid rgba(0,229,255,0.2);white-space:pre-wrap;word-break:break-word;font-family:\'Roboto Mono\',monospace;">' + esc(data.content) + '</pre></div>';
+            }
+        }
+        // ── YOUTUBE INTEL ──
+        else if (tabId === 'youtube') {
+            contentHtml += '<div class="or-data-grid">';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Video Title</div><div class="or-data-value large" style="color:#FF4444;">' + esc(data.title || '') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Author / Channel</div><div class="or-data-value info">' + esc(data.author_name || 'Unknown') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Video ID</div><div class="or-data-value">' + esc(data.video_id || '') + copy(data.video_id) + '</div></div>';
+            contentHtml += '</div>';
+            if (data.thumbnail_url) {
+                contentHtml += '<div class="or-section" style="text-align:center;"><img src="' + esc(data.thumbnail_url) + '" style="max-width:320px;border-radius:8px;border:1px solid rgba(255,0,0,0.4);" /></div>';
+            }
+            if (data.transcript) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">TRANSCRIPT / EXTRACTED CONTENT</div>' + copy(data.transcript) + '</div>';
+                contentHtml += '<pre style="font-size:0.8rem;color:#E0E0E0;max-height:500px;overflow-y:auto;background:rgba(0,0,0,0.4);padding:16px;border-radius:8px;border:1px solid rgba(255,0,0,0.2);white-space:pre-wrap;word-break:break-word;font-family:\'Roboto Mono\',monospace;">' + esc(data.transcript) + '</pre></div>';
+            }
+        }
+        // ── RSS READER ──
+        else if (tabId === 'rss') {
+            contentHtml += '<div class="or-data-grid">';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Feed URL</div><div class="or-data-value info">' + esc(data.url || query) + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Articles Extracted</div><div class="or-data-value large success">' + (data.total_items || 0) + '</div></div>';
+            contentHtml += '</div>';
+            if (data.items && data.items.length) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">RECENT FEED ITEMS</div><div class="or-section-count">' + data.items.length + '</div></div>';
+                data.items.forEach(function(item) {
+                    contentHtml += '<div class="or-record-row" style="flex-direction:column; align-items:flex-start; gap:4px; margin-bottom:8px; padding:10px; background:rgba(0,0,0,0.2); border-radius:6px;">';
+                    contentHtml += '<div style="color:#FF9500; font-weight:bold;"><a href="' + esc(item.link || '#') + '" target="_blank" style="color:inherit;text-decoration:none;">' + esc(item.title || 'Untitled') + '</a></div>';
+                    if (item.published) contentHtml += '<div style="font-size:0.7rem; color:var(--text-muted);">' + esc(item.published) + '</div>';
+                    if (item.description) contentHtml += '<div style="font-size:0.75rem; color:#aaa; margin-top:4px;">' + esc(item.description) + '</div>';
+                    contentHtml += '</div>';
+                });
+                contentHtml += '</div>';
+            }
+        }
         // ── MAC VENDOR ──
         else if (tabId === 'mac') {
             contentHtml += '<div class="or-data-grid">';
@@ -653,4 +721,46 @@ window.OsirisRecon = {
         if (this.state.history.length > 20) this.state.history.length = 20;
         try { localStorage.setItem('osiris_recon_history', JSON.stringify(this.state.history)); } catch(e) {}
     },
+
+    _runDoctor: function() {
+        var self = this;
+        this.state.loading = true;
+        this._showLoading();
+        fetch('/api/osiris/doctor')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                self.state.loading = false;
+                self.state.results = data;
+                
+                var resultsEl = document.getElementById('osiris-recon-container');
+                if (!resultsEl) return;
+                
+                var statusColor = data.status === 'ONLINE' ? '#76FF03' : data.status === 'DEGRADED' ? '#FF9500' : '#FF4444';
+                var headerHtml = '<div class="or-result-header"><div class="or-result-title"><span style="color:#00E5FF">🩺</span> OSIRIS DOCTOR: <span style="color:' + statusColor + ';font-weight:bold;">' + (data.status || 'UNKNOWN') + '</span> (' + data.healthy_services + '/' + data.total_services + ' Active - ' + data.health_percentage + '%)</div><div class="or-result-actions"><div class="or-timer">⏱️ ' + data.latency_ms + 'ms</div><button id="or-export-json" class="or-action-btn">{ } JSON</button></div></div>';
+                
+                var contentHtml = '<div class="or-data-grid" style="margin-bottom:16px;">';
+                contentHtml += '<div class="or-data-card"><div class="or-data-label">Overall Health</div><div class="or-data-value large" style="color:' + statusColor + '">' + data.health_percentage + '%</div></div>';
+                contentHtml += '<div class="or-data-card"><div class="or-data-label">Operational Sources</div><div class="or-data-value large success">' + data.healthy_services + ' / ' + data.total_services + '</div></div>';
+                contentHtml += '<div class="or-data-card"><div class="or-data-label">Diagnostic Latency</div><div class="or-data-value info">' + data.latency_ms + ' ms</div></div>';
+                contentHtml += '</div>';
+
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">SERVICE STATUS MATRIX</div></div>';
+                if (data.services && data.services.length) {
+                    data.services.forEach(function(s) {
+                        var sColor = s.status === 'ONLINE' ? '#76FF03' : s.status === 'DEGRADED' ? '#FF9500' : '#FF4444';
+                        contentHtml += '<div class="or-record-row">';
+                        contentHtml += '<div class="or-record-data" style="font-weight:bold;text-transform:uppercase;color:var(--primary);">' + self._esc(s.name) + '</div>';
+                        contentHtml += '<div class="or-record-meta"><span class="or-tag" style="background:rgba(0,0,0,0.3);border:1px solid ' + sColor + ';color:' + sColor + ';">' + s.status + '</span> <span style="color:var(--text-muted);font-size:0.75rem;">' + self._esc(s.detail || '') + '</span></div>';
+                        contentHtml += '</div>';
+                    });
+                }
+                contentHtml += '</div>';
+                
+                resultsEl.innerHTML = headerHtml + contentHtml;
+            })
+            .catch(function(err) {
+                self.state.loading = false;
+                self._renderError('Doctor diagnostic scan failed: ' + (err.message || 'Unknown'));
+            });
+    }
 };

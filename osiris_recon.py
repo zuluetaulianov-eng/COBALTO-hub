@@ -485,6 +485,182 @@ async def http_headers(url: str) -> dict:
         return {"url": url, "error": str(e)}
 
 
+# ── Jina Reader Web Clean Reader ──
+async def jina_web_read(url: str) -> dict:
+    """Extract clean Markdown text from any public URL using Jina Reader (r.jina.ai)."""
+    if not url:
+        return {"error": "No URL provided", "url": url}
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+    jina_url = f"https://r.jina.ai/{url}"
+    hdrs = {"User-Agent": USER_AGENT, "Accept": "text/plain"}
+    content = await _fetch_text(jina_url, headers=hdrs, timeout=35)
+    if not content:
+        return {"error": "Failed to fetch page via Jina Reader", "url": url, "content": None}
+    
+    # Check for antibot / challenge response
+    sample = content[:4096].lower()
+    if "just a moment..." in sample or "attention required! | cloudflare" in sample:
+        return {"error": "Cloudflare/Anti-bot challenge encountered", "url": url, "content": None}
+    
+    return {
+        "url": url,
+        "content": content,
+        "length": len(content),
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "source": "Jina Reader (r.jina.ai)"
+    }
+
+
+# ── Jina Web Search (Zero-Key Search) ──
+async def jina_web_search(query: str) -> dict:
+    """Zero-key semantic web search via Jina Search (s.jina.ai)."""
+    if not query:
+        return {"error": "No query provided", "query": query}
+    search_url = f"https://s.jina.ai/{query}"
+    hdrs = {"User-Agent": USER_AGENT, "Accept": "text/plain"}
+    content = await _fetch_text(search_url, headers=hdrs, timeout=35)
+    if not content:
+        return {"query": query, "error": "Search failed or rate-limited", "content": None}
+    
+    return {
+        "query": query,
+        "content": content,
+        "length": len(content),
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "source": "Jina Search (s.jina.ai)"
+    }
+
+
+# ── YouTube Intel & Transcript Extractor ──
+async def youtube_intel(url_or_id: str) -> dict:
+    """Extract YouTube video metadata, thumbnail, embed info and transcript via Jina."""
+    if not url_or_id:
+        return {"error": "No URL or ID provided"}
+    
+    # Normalize URL
+    video_id = url_or_id.strip()
+    if "youtube.com" in video_id or "youtu.be" in video_id:
+        m = re.search(r"(?:v=|\/)([a-zA-Z0-9_-]{11})", video_id)
+        if m:
+            video_id = m.group(1)
+    
+    target_url = f"https://www.youtube.com/watch?v={video_id}"
+    oembed_url = f"https://www.youtube.com/oembed?url={target_url}&format=json"
+    meta = await _fetch_json(oembed_url, timeout=15) or {}
+    
+    # Fetch transcript / text via Jina
+    transcript = await jina_web_read(target_url)
+    
+    return {
+        "video_id": video_id,
+        "target_url": target_url,
+        "title": meta.get("title", f"YouTube Video ({video_id})"),
+        "author_name": meta.get("author_name", "Unknown"),
+        "author_url": meta.get("author_url", ""),
+        "thumbnail_url": meta.get("thumbnail_url", f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg"),
+        "html_embed": meta.get("html", ""),
+        "transcript": transcript.get("content", ""),
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "source": "YouTube oEmbed + Jina Reader"
+    }
+
+
+# ── RSS / Atom Feed Reader ──
+async def rss_reader(url: str) -> dict:
+    """Fetch and parse live RSS/Atom feeds."""
+    if not url:
+        return {"error": "No RSS URL provided"}
+    if not url.startswith(("http://", "https://")):
+        url = "https://" + url
+    
+    raw_xml = await _fetch_text(url, timeout=20)
+    if not raw_xml:
+        return {"error": "Failed to fetch RSS feed", "url": url}
+    
+    items = []
+    try:
+        import xml.etree.ElementTree as ET
+        root = ET.fromstring(raw_xml)
+        
+        # Standard RSS 2.0
+        for item in root.findall(".//item")[:20]:
+            t = item.findtext("title", "").strip()
+            l = item.findtext("link", "").strip()
+            d = item.findtext("description", "").strip()
+            p = item.findtext("pubDate", "").strip()
+            if t or l:
+                items.append({"title": t, "link": l, "description": d[:300], "published": p})
+        
+        # Atom fallback
+        if not items:
+            for entry in root.findall(".//{http://www.w3.org/2005/Atom}entry")[:20]:
+                t = entry.findtext("{http://www.w3.org/2005/Atom}title", "").strip()
+                l_elem = entry.find("{http://www.w3.org/2005/Atom}link")
+                l = l_elem.get("href", "") if l_elem is not None else ""
+                d = entry.findtext("{http://www.w3.org/2005/Atom}summary", entry.findtext("{http://www.w3.org/2005/Atom}content", "")).strip()
+                p = entry.findtext("{http://www.w3.org/2005/Atom}updated", "").strip()
+                if t or l:
+                    items.append({"title": t, "link": l, "description": d[:300], "published": p})
+    except Exception as parse_err:
+        logger.warning(f"[RSS READER] XML parse error for {url}: {parse_err}")
+    
+    return {
+        "url": url,
+        "total_items": len(items),
+        "items": items,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "source": "OSIRIS RSS Reader"
+    }
+
+
+# ── OSIRIS Doctor Diagnostic Engine ──
+async def osiris_doctor() -> dict:
+    """Run concurrent diagnostic health checks across all OSIRIS RECON services."""
+    start_time = datetime.utcnow()
+    checks = {
+        "dns": dns_lookup("google.com"),
+        "whois": whois_lookup("google.com"),
+        "bgp": bgp_lookup("1.1.1.1"),
+        "certs": certs_lookup("google.com"),
+        "cve": cve_lookup("CVE-2021-44228"),
+        "shodan": shodan_lookup("1.1.1.1"),
+        "github": github_lookup("torvalds"),
+        "leaks": leaks_lookup("test@example.com"),
+        "threats": threats_lookup(),
+        "web_reader": jina_web_read("example.com"),
+    }
+    
+    keys = list(checks.keys())
+    results = await asyncio.gather(*checks.values(), return_exceptions=True)
+    
+    services = []
+    healthy_count = 0
+    
+    for key, res in zip(keys, results):
+        if isinstance(res, Exception) or not res or (isinstance(res, dict) and res.get("error") and "Rate limited" in str(res.get("error"))):
+            services.append({"name": key, "status": "OFFLINE", "detail": str(res)})
+        elif isinstance(res, dict) and res.get("error"):
+            services.append({"name": key, "status": "DEGRADED", "detail": res.get("error")})
+            healthy_count += 1
+        else:
+            services.append({"name": key, "status": "ONLINE", "detail": "Operational"})
+            healthy_count += 1
+            
+    elapsed_ms = round((datetime.utcnow() - start_time).total_seconds() * 1000)
+    overall_status = "ONLINE" if healthy_count == len(keys) else "DEGRADED" if healthy_count > 0 else "CRITICAL"
+    
+    return {
+        "status": overall_status,
+        "healthy_services": healthy_count,
+        "total_services": len(keys),
+        "health_percentage": round((healthy_count / len(keys)) * 100, 1),
+        "latency_ms": elapsed_ms,
+        "services": services,
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+
 def _is_valid_ip(ip: str) -> bool:
     try:
         socket.inet_aton(ip)
@@ -495,3 +671,4 @@ def _is_valid_ip(ip: str) -> bool:
             return True
         except OSError:
             return False
+

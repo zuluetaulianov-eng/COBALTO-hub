@@ -31,13 +31,18 @@ from osiris_recon import (
     http_headers,
     ip_intel,
     ip_sweep,
+    jina_web_read,
+    jina_web_search,
     leaks_lookup,
     mac_lookup,
+    osiris_doctor,
     phone_lookup,
+    rss_reader,
     shodan_lookup,
     ssl_check,
     threats_lookup,
     whois_lookup,
+    youtube_intel,
 )
 
 logger = logging.getLogger(__name__)
@@ -88,7 +93,7 @@ def _get_client_ip(request: Request | None) -> str:
 
 
 
-# ── Health ──
+# ── Health & Doctor ──
 @router.get("/health")
 async def osiris_health():
     return {
@@ -97,6 +102,14 @@ async def osiris_health():
         "version": "1.0.0",
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
+
+
+@router.get("/doctor")
+async def osiris_doctor_route(request: Request = None):
+    """Diagnostic health check engine inspired by Agent Reach doctor."""
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    return await osiris_doctor()
 
 
 # ── RECON TOOLKIT ────────
@@ -223,6 +236,38 @@ async def recon_headers(url: str = Query(...), request: Request = None):
     if not _check_rate_limit(_get_client_ip(request)):
         return JSONResponse({"error": "Rate limited"}, status_code=429)
     return await http_headers(url)
+
+
+@router.get("/recon/web")
+async def recon_web(url: str = Query(...), request: Request = None):
+    """Extract clean Markdown content from any URL via Jina Reader."""
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    return await jina_web_read(url)
+
+
+@router.get("/recon/search")
+async def recon_search(query: str = Query(...), request: Request = None):
+    """Zero-key semantic web search via Jina Search."""
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    return await jina_web_search(query)
+
+
+@router.get("/recon/youtube")
+async def recon_youtube(url: str = Query(...), request: Request = None):
+    """Extract YouTube video metadata, thumbnail, embed info and transcript."""
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    return await youtube_intel(url)
+
+
+@router.get("/recon/rss")
+async def recon_rss(url: str = Query(...), request: Request = None):
+    """Fetch and parse live RSS/Atom feeds."""
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    return await rss_reader(url)
 
 
 # ── SANCTIONS ──
