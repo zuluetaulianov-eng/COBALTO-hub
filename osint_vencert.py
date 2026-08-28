@@ -10,15 +10,21 @@ urllib3.disable_warnings()
 VENCERT_URL = "https://vencert.suscerte.gob.ve/alertas/"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CobaltoHub/9.0 ThreatIntel"
 
-_vencert_cb = {"disabled": False}
+_vencert_cb = {"disabled_until": 0}
 
 
 def get_vencert_alerts() -> List[Dict[str, Any]]:
     results = []
-    if _vencert_cb["disabled"]:
+    now_ts = datetime.now().timestamp()
+    if now_ts < _vencert_cb["disabled_until"]:
         return results
     try:
-        resp = requests.get(VENCERT_URL, headers={"User-Agent": USER_AGENT}, timeout=10)
+        resp = requests.get(
+            VENCERT_URL,
+            headers={"User-Agent": USER_AGENT},
+            timeout=10,
+            verify=False,
+        )
         if resp.status_code == 200:
             soup = BeautifulSoup(resp.text, "html.parser")
             # Las alertas de vencert suelen estar en bloques de artículos o posts
@@ -78,11 +84,11 @@ def get_vencert_alerts() -> List[Dict[str, Any]]:
                             }
                         )
         else:
-            print(f"[VENCERT-WARN] HTTP {resp.status_code} desde VenCERT. Desactivando consultas estatales.")
-            _vencert_cb["disabled"] = True
+            print(f"[VENCERT-WARN] HTTP {resp.status_code} desde VenCERT. Desactivando por 10 min.")
+            _vencert_cb["disabled_until"] = now_ts + 600
     except Exception as e:
-        print(f"[VENCERT-WARN] Error consultando portal estatal: {e}. Desactivando consultas estatales.")
-        _vencert_cb["disabled"] = True
+        print(f"[VENCERT-WARN] Error consultando portal estatal: {e}. Desactivando por 10 min.")
+        _vencert_cb["disabled_until"] = now_ts + 600
 
     return results
 
