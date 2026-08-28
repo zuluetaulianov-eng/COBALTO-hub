@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# COBALTO HUB v15.2 - Instalador & Bootstrapper Automatizado (Linux/macOS)
+# COBALTO HUB v16.0 - Instalador & Bootstrapper Automatizado (Linux/macOS)
 CYAN='\033[0;36m'
 BRIGHT_CYAN='\033[1;36m'
 GREEN='\033[0;32m'
