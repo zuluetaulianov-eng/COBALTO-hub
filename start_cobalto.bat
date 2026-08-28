@@ -1,5 +1,5 @@
 @echo off
-title COBALTO HUB v15.2 - Instalador y Bootstrapper Automatizado
+title COBALTO HUB v16.0 - Instalador y Bootstrapper Automatizado
 color 0B
 setlocal enabledelayedexpansion
 set OPENBLAS_NUM_THREADS=1
@@ -11,7 +11,7 @@ set NUMEXPR_NUM_THREADS=1
 cls
 echo.
 echo    ===================================================
-echo             C O B A L T O   H U B   v 1 5 . 2
+echo             C O B A L T O   H U B   v 1 6 . 0
 echo         Instalador de Entorno y Lanzador Dual
 echo    ===================================================
 echo.
