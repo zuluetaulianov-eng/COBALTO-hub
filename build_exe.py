@@ -51,6 +51,8 @@ def build():
         "--hidden-import=cobalto_gui_launcher",
         "--hidden-import=cobalto_desktop",
         "--hidden-import=cobalto_worker",
+        "--hidden-import=osint_ivss",
+        "--hidden-import=osint_seniat",
         "cobalto_desktop.py"
     ]
 

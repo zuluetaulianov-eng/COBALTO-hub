@@ -1,13 +1,26 @@
-# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v15.3
+# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v16.0
 
 > **Sistema de Mando y Control de Inteligencia (C4I)** en tiempo real con **Arquitectura Multipaís (Multi-Theater OSINT)**,  
-> **Target Dossier Engine (360° Risk Score)**, **TLS Fingerprinting Evasion (JA3/HTTP2)**, **Singleton Browser Pool Manager**, **Visión Táctica CCTV 100% Real & Motor Proxy Resiliente**, **Extracción Semántica JSON-LD/OpenGraph**, **Reproducción de Video Táctico Nativa (Flutter/Web)**, **Persistencia Histórica Deduplicada**, **OSIRIS Diagnostic Doctor Engine**, **Zero-Key Semantic Web Search & Jina Reader** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
+> **Target Dossier Engine (360° Risk Score)**, **Módulos OSINT Estatales Venezolanos (IVSS / SENIAT RIF)**, **Streaming de Video Continuo HLS.js en Visor CCTV**, **Pivot de Inteligencia en Grafo Táctico**, **TLS Fingerprinting Evasion (JA3/HTTP2)**, **Singleton Browser Pool Manager**, **Visión Táctica CCTV 100% Real & Motor Proxy Resiliente**, **Extracción Semántica JSON-LD/OpenGraph**, **Reproducción de Video Táctico Nativa (Flutter/Web)**, **Persistencia Histórica Deduplicada**, **OSIRIS Diagnostic Doctor Engine**, **Zero-Key Semantic Web Search & Jina Reader** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
 > Consolida fuentes RSS, canales de Telegram, redes sociales, ciberseguridad, rastreo de aeronaves/buques, telemetría de campo en vivo y análisis geopolítico multiagente con IA.  
-> **v15.3** — Visión Táctica CCTV 100% Real: Ingesta asíncrona paralela (`asyncio.gather`), Evasión SSL & Exploración Adaptativa IP, Caché en Memoria Anti-Parpadeo (90s), Búsqueda Instantánea, Captura Táctica de Snapshots (`📸`), Enlace Bi-direccional con Mapa Leaflet y Analítica Visual YOLOv8-Nano.
+> **v16.0** — Integración OSINT Estatal Venezolana & Video Continuo HLS.js: Extracción automatizada IVSS (Cédula/Patrono) y SENIAT (RIF/Condición Fiscal/Domicilio), reproductor HLS.js integrado en visor CCTV, navegación pivot 1-clic en el Grafo Táctico y suite de 160 pruebas pasadas al 100%.
 
 ---
 
-## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v15.3)
+## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v16.0)
+
+- **🏛️ Extractor OSINT IVSS Venezuela (`osint_ivss.py` & `osiris-recon.js`):**
+  - Consulta de filiación individual por cédula (`V-` / `E-`), extracción de patrono registrado, caja regional asignada y estatus de pensión.
+  - Ingesta automática en el sensor de *Radar Social* (`dashboard_sensors.py`) para detectar anuncios socioeconómicos y de movilidad urbana del portal oficial `ivss.gob.ve`.
+- **📜 Módulo OSINT SENIAT RIF & Condición Fiscal (`osint_seniat.py` & `osiris-recon.js`):**
+  - Perfilamiento tributario por RIF (`V-`, `J-`, `E-`, `G-`), obtención de Razón Social / Nombre Oficial, condición de Sujeto Pasivo Especial (Agente de Retención IVA), porcentaje de retención y domicilio fiscal nacional.
+  - Circuito de evasión de errores SSL gubernamentales (`verify=False`) y `CircuitBreaker` adaptativo de 10 minutos.
+- **📹 Streaming Video Continuo HLS.js para CCTV Grid & Modal (`templates/partials/_head.html` & `osiris-global.js`):**
+  - Integración de `Hls.js` para la reproducción fluida de streams de video en tiempo real (`.m3u8`) en el visor CCTV de OSIRIS Global.
+  - Conmutación inteligente entre fotogramas estáticos y reproductor HTML5 con control de errores y recuperación automática de cortes de búfer.
+- **🕸️ Enlace Bi-direccional y Pivot OSINT en Grafo Táctico (`intel-graph.js`):**
+  - Integración de botones de acción rápida en el panel de detalle de cualquier nodo en el Grafo Social: salto en 1-clic hacia las herramientas **IVSS Cédula** y **SENIAT RIF** dentro de OSIRIS RECON.
+- **🧪 Cobertura del 100% en Suite de Pruebas (`tests/`):** **160/160 tests pasados exitosamente**.
 
 - **📹 Visión Táctica CCTV 100% Real & Motor Proxy Resiliente (`osiris_bridge.py` & `osiris-global.js`):**
   - **Política Cero Simulación:** Eliminación completa de generadores sintéticos. Las transmisiones muestran exclusivamente fuentes en vivo o un indicador SVG neutro de fuera de línea si la cámara cae en origen.
