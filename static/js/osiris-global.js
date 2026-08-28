@@ -219,19 +219,63 @@ window.OsirisGlobal = {
         this._renderCCTVInfo();
     },
 
+    _isHlsStream: function(url) {
+        if (!url) return false;
+        var clean = String(url).toLowerCase().split('?')[0];
+        return clean.indexOf('.m3u8') !== -1 || clean.indexOf('/hls/') !== -1 || clean.indexOf('m3u8=') !== -1;
+    },
+
     expandCamera: function(cam) {
         var modal = document.getElementById('cctv-modal');
         var img = document.getElementById('cctv-modal-img');
+        var video = document.getElementById('cctv-modal-video');
         var name = document.getElementById('cctv-modal-name');
         var meta = document.getElementById('cctv-modal-meta');
         if (!modal || !img) return;
 
         name.textContent = cam.name || 'Unknown';
-        var proxyUrl = '/api/osiris/cctv/image?url=' + encodeURIComponent(cam.feed_url || '');
-        img.setAttribute('data-base-src', proxyUrl);
-        img.src = proxyUrl + '&_t=' + Date.now();
+        
+        if (this.state.modalHls) {
+            try { this.state.modalHls.destroy(); } catch(e) {}
+            this.state.modalHls = null;
+        }
+
+        var isHls = this._isHlsStream(cam.feed_url);
+
+        if (isHls && video) {
+            img.style.display = 'none';
+            video.style.display = 'block';
+            if (window.Hls && Hls.isSupported()) {
+                var hls = new Hls({ enableWorker: true, lowLatencyMode: true, backBufferLength: 30 });
+                hls.loadSource(cam.feed_url);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    video.play().catch(function() {});
+                });
+                hls.on(Hls.Events.ERROR, function(e, data) {
+                    if (data.fatal) {
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR: hls.startLoad(); break;
+                            case Hls.ErrorTypes.MEDIA_ERROR: hls.recoverMediaError(); break;
+                            default: hls.destroy(); break;
+                        }
+                    }
+                });
+                this.state.modalHls = hls;
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = cam.feed_url;
+                video.play().catch(function() {});
+            }
+        } else {
+            if (video) { video.style.display = 'none'; try { video.pause(); } catch(e) {} }
+            img.style.display = 'block';
+            var proxyUrl = '/api/osiris/cctv/image?url=' + encodeURIComponent(cam.feed_url || '');
+            img.setAttribute('data-base-src', proxyUrl);
+            img.src = proxyUrl + '&_t=' + Date.now();
+        }
+
         meta.innerHTML =
-            '<div><span style="color:#64748B;">Source:</span> ' + this._esc(cam.source || '') + '</div>' +
+            '<div><span style="color:#64748B;">Source:</span> ' + this._esc(cam.source || '') + ' ' + (isHls ? '<span style="color:#00E5FF;font-weight:bold;">[LIVE HLS STREAM]</span>' : '') + '</div>' +
             '<div><span style="color:#64748B;">Location:</span> ' + this._esc(cam.city || '') + (cam.country ? ', ' + this._esc(cam.country) : '') + '</div>' +
             '<div><span style="color:#64748B;">Lat:</span> ' + (cam.lat || 0) + ' <span style="color:#64748B;">Lng:</span> ' + (cam.lng || 0) + '</div>' +
             '<div style="margin-top:8px;display:flex;gap:6px;justify-content:center;">' +
@@ -242,6 +286,14 @@ window.OsirisGlobal = {
 
     closeModal: function() {
         var modal = document.getElementById('cctv-modal');
+        var video = document.getElementById('cctv-modal-video');
+        if (this.state.modalHls) {
+            try { this.state.modalHls.destroy(); } catch(e) {}
+            this.state.modalHls = null;
+        }
+        if (video) {
+            try { video.pause(); video.src = ''; } catch(e) {}
+        }
         if (modal) modal.style.display = 'none';
     },
 

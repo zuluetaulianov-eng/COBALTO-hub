@@ -668,6 +668,13 @@ async def ivss_lookup(cedula: str, nationality: str = "V") -> dict:
     return lookup_ivss_individual(cedula, nationality)
 
 
+# ── SENIAT RIF Verification (Venezuela OSINT) ──
+async def seniat_lookup(rif: str) -> dict:
+    """SENIAT RIF Tax condition & Legal Address lookup."""
+    from osint_seniat import lookup_seniat_rif
+    return await lookup_seniat_rif(rif)
+
+
 def _is_valid_ip(ip: str) -> bool:
     try:
         socket.inet_aton(ip)

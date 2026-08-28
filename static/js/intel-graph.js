@@ -374,14 +374,23 @@ function showGraphNodeDetail(nodeId) {
     var sent = node.sentiment || 'neutral';
     var sentColor = sent === 'positive' ? '#00FF88' : sent === 'negative' ? '#FF2D55' : '#FFCC00';
     var catColor = node.group === 'persons' ? '#FF2D55' : node.group === 'organizations' ? '#B388FF' : node.group === 'locations' ? '#00E5FF' : '#888888';
+    
+    var entityId = node.id || '';
+    var labelStr = node.label || entityId;
+
     panel.innerHTML = '<div class="gdetail-header" style="border-left:4px solid ' + catColor + ';">' +
-        '<span class="gdetail-title" style="color:' + catColor + ';">' + (node.label || node.id) + '</span>' +
+        '<span class="gdetail-title" style="color:' + catColor + ';">' + labelStr + '</span>' +
         '<button onclick="hideGraphDetail()" class="gdetail-close">\u2715</button></div>' +
         '<div class="gdetail-body">' +
-        '<div class="gdetail-section"><div class="gdetail-sectitle">Clasificaci\u00F3n</div>' +
+        '<div class="gdetail-section"><div class="gdetail-sectitle">Clasificaci\u00F3n & Registro</div>' +
         '<div class="gdetail-row"><span class="gdetail-label">Tipo</span><span class="gdetail-value">' + (node.group || '?') + '</span></div>' +
         '<div class="gdetail-row"><span class="gdetail-label">Comunidad</span><span class="gdetail-value">' + (node.community !== undefined ? node.community : '?') + '</span></div>' +
         '<div class="gdetail-row"><span class="gdetail-label">Sentimiento</span><span class="gdetail-value ' + sent + '">' + sent + ' (' + (node.sentiment_score || 0).toFixed(2) + ')</span></div></div>' +
+        '<div class="gdetail-section"><div class="gdetail-sectitle">Acciones de Inteligencia OSINT (Pivot)</div>' +
+        '<div style="display:flex;flex-direction:column;gap:6px;margin-top:6px;">' +
+        '<button onclick="if(window.OsirisRecon){switchTab(\'tab-osiris-recon\');window.OsirisRecon.switchSubTab(\'ivss\');window.OsirisRecon.runTool(\'ivss\', \'' + entityId.replace(/'/g, "\\'") + '\');}" style="background:rgba(0,229,255,0.12);border:1px solid rgba(0,229,255,0.4);border-radius:4px;color:#00E5FF;padding:6px;font-size:10px;font-family:monospace;cursor:pointer;text-align:left;">🏛️ CONSULTAR EN IVSS (Cédula)</button>' +
+        '<button onclick="if(window.OsirisRecon){switchTab(\'tab-osiris-recon\');window.OsirisRecon.switchSubTab(\'seniat\');window.OsirisRecon.runTool(\'seniat\', \'' + entityId.replace(/'/g, "\\'") + '\');}" style="background:rgba(255,215,0,0.12);border:1px solid rgba(255,215,0,0.4);border-radius:4px;color:#FFD700;padding:6px;font-size:10px;font-family:monospace;cursor:pointer;text-align:left;">📜 CONSULTAR SENIAT RIF</button>' +
+        '</div></div>' +
         '<div class="gdetail-section"><div class="gdetail-sectitle">Métricas de Influencia & Enlace</div>' +
         '<div class="gdetail-row" title="Importancia macro en la red social"><span class="gdetail-label">👑 Influencia Macro</span><span class="gdetail-value">' + (node.pagerank || 0).toFixed(4) + '</span></div>' +
         '<div class="gdetail-row" title="Capacidad de conectar comunidades distintas"><span class="gdetail-label">🌉 Nodo Enlace / Puente</span><span class="gdetail-value">' + (node.betweenness_centrality || 0).toFixed(4) + '</span></div>' +

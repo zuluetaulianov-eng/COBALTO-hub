@@ -39,6 +39,7 @@ from osiris_recon import (
     osiris_doctor,
     phone_lookup,
     rss_reader,
+    seniat_lookup,
     shodan_lookup,
     ssl_check,
     threats_lookup,
@@ -277,6 +278,14 @@ async def recon_ivss(cedula: str = Query(...), nationality: str = Query("V"), re
     if not _check_rate_limit(_get_client_ip(request)):
         return JSONResponse({"error": "Rate limited"}, status_code=429)
     return await ivss_lookup(cedula, nationality)
+
+
+@router.get("/recon/seniat")
+async def recon_seniat(rif: str = Query(...), request: Request = None):
+    """SENIAT RIF Tax Condition & Legal Address verification."""
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    return await seniat_lookup(rif)
 
 
 # ── SANCTIONS ──

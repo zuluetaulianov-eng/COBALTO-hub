@@ -54,6 +54,7 @@ window.OsirisRecon = {
             label: 'Identity & Intel',
             tabs: [
                 { id: 'ivss', label: 'IVSS Venezuela', icon: '🏛️', placeholder: 'V-12345678', color: '#00E5FF', hint: 'Cédula de Identidad (V-12345678)' },
+                { id: 'seniat', label: 'SENIAT RIF', icon: '📜', placeholder: 'J-30000000-1', color: '#FFD700', hint: 'RIF (V/J/E/G-12345678-9)' },
                 { id: 'github', label: 'GitHub Recon', icon: '💻', placeholder: 'torvalds', color: '#87CEEB', hint: 'Username' },
                 { id: 'leaks', label: 'Breach Check', icon: '💀', placeholder: 'target@example.com', color: '#E040FB', hint: 'Email address' },
                 { id: 'phone', label: 'Phone Carrier', icon: '📞', placeholder: '+1234567890', color: '#FF9500', hint: 'Intl format format' },
@@ -307,6 +308,7 @@ window.OsirisRecon = {
     _getApiPath: function(tabId, query) {
         var map = {
             'ivss': '/api/osiris/recon/ivss?cedula=' + encodeURIComponent(query),
+            'seniat': '/api/osiris/recon/seniat?rif=' + encodeURIComponent(query),
             'dns': '/api/osiris/recon/dns?domain=' + encodeURIComponent(query),
             'whois': '/api/osiris/recon/whois?domain=' + encodeURIComponent(query),
             'ip': '/api/osiris/recon/ip?ip=' + encodeURIComponent(query),
@@ -621,6 +623,18 @@ window.OsirisRecon = {
             contentHtml += '</div>';
             contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">FUENTES OFICIALES</div></div>';
             contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(data.fuente || '🇻🇪 IVSS Registro Social') + '</div><div class="or-record-meta">' + esc(data.fecha_consulta || '') + '</div></div></div>';
+        }
+        // ── SENIAT RIF ──
+        else if (tabId === 'seniat') {
+            contentHtml += '<div class="or-data-grid">';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">RIF Registrado</div><div class="or-data-value large info">' + esc(data.rif || query) + copy(data.rif || query) + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Razón Social / Nombre</div><div class="or-data-value large success">' + esc(data.razon_social || 'N/A') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Condición IVA</div><div class="or-data-value">' + esc(data.condicion_iva || 'CONTRIBUYENTE REGISTRADO') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Tasa Retención IVA</div><div class="or-data-value info">' + esc(data.tasa_retencion || '75%') + '</div></div>';
+            contentHtml += '</div>';
+            contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">DOMICILIO FISCAL & FUENTE</div></div>';
+            contentHtml += '<div class="or-record-row"><div class="or-record-data">📍 ' + esc(data.domicilio_fiscal || 'VENEZUELA') + '</div></div>';
+            contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(data.fuente || '🇻🇪 SENIAT Registro Fiscal') + '</div><div class="or-record-meta">' + esc(data.fecha_consulta || '') + '</div></div></div>';
         }
         // ── PHONE CARRIER ──
         else if (tabId === 'phone') {
