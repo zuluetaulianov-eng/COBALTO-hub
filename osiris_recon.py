@@ -661,6 +661,13 @@ async def osiris_doctor() -> dict:
     }
 
 
+# ── IVSS Verification (Venezuela OSINT) ──
+async def ivss_lookup(cedula: str, nationality: str = "V") -> dict:
+    """IVSS Account & Employer verification."""
+    from osint_ivss import lookup_ivss_individual
+    return lookup_ivss_individual(cedula, nationality)
+
+
 def _is_valid_ip(ip: str) -> bool:
     try:
         socket.inet_aton(ip)

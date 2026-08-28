@@ -53,6 +53,7 @@ window.OsirisRecon = {
             id: 'identity',
             label: 'Identity & Intel',
             tabs: [
+                { id: 'ivss', label: 'IVSS Venezuela', icon: '🏛️', placeholder: 'V-12345678', color: '#00E5FF', hint: 'Cédula de Identidad (V-12345678)' },
                 { id: 'github', label: 'GitHub Recon', icon: '💻', placeholder: 'torvalds', color: '#87CEEB', hint: 'Username' },
                 { id: 'leaks', label: 'Breach Check', icon: '💀', placeholder: 'target@example.com', color: '#E040FB', hint: 'Email address' },
                 { id: 'phone', label: 'Phone Carrier', icon: '📞', placeholder: '+1234567890', color: '#FF9500', hint: 'Intl format format' },
@@ -305,6 +306,7 @@ window.OsirisRecon = {
 
     _getApiPath: function(tabId, query) {
         var map = {
+            'ivss': '/api/osiris/recon/ivss?cedula=' + encodeURIComponent(query),
             'dns': '/api/osiris/recon/dns?domain=' + encodeURIComponent(query),
             'whois': '/api/osiris/recon/whois?domain=' + encodeURIComponent(query),
             'ip': '/api/osiris/recon/ip?ip=' + encodeURIComponent(query),
@@ -608,6 +610,17 @@ window.OsirisRecon = {
             contentHtml += '<div class="or-data-card"><div class="or-data-label">Manufacturer / Vendor</div><div class="or-data-value large success">' + esc(data.vendor || 'Unknown') + '</div></div>';
             contentHtml += '<div class="or-data-card"><div class="or-data-label">OUI Prefix</div><div class="or-data-value">' + esc(data.prefix || 'N/A') + '</div></div>';
             contentHtml += '</div>';
+        }
+        // ── IVSS VENEZUELA ──
+        else if (tabId === 'ivss') {
+            contentHtml += '<div class="or-data-grid">';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Cédula de Identidad</div><div class="or-data-value large info">' + esc(data.cedula || query) + copy(data.cedula || query) + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Estatus de Consulta</div><div class="or-data-value large success">' + esc(data.status || 'CONSULTADO') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Patrono Registrado</div><div class="or-data-value">' + esc(data.patrono_registrado || 'N/A') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Caja Regional</div><div class="or-data-value">' + esc(data.caja_regional || 'N/A') + '</div></div>';
+            contentHtml += '</div>';
+            contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">FUENTES OFICIALES</div></div>';
+            contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(data.fuente || '🇻🇪 IVSS Registro Social') + '</div><div class="or-record-meta">' + esc(data.fecha_consulta || '') + '</div></div></div>';
         }
         // ── PHONE CARRIER ──
         else if (tabId === 'phone') {

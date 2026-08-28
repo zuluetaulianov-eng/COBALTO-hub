@@ -31,6 +31,7 @@ from osiris_recon import (
     http_headers,
     ip_intel,
     ip_sweep,
+    ivss_lookup,
     jina_web_read,
     jina_web_search,
     leaks_lookup,
@@ -268,6 +269,14 @@ async def recon_rss(url: str = Query(...), request: Request = None):
     if not _check_rate_limit(_get_client_ip(request)):
         return JSONResponse({"error": "Rate limited"}, status_code=429)
     return await rss_reader(url)
+
+
+@router.get("/recon/ivss")
+async def recon_ivss(cedula: str = Query(...), nationality: str = Query("V"), request: Request = None):
+    """IVSS Account & Employer verification."""
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    return await ivss_lookup(cedula, nationality)
 
 
 # ── SANCTIONS ──
