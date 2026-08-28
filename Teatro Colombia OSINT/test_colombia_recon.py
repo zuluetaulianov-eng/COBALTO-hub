@@ -2,7 +2,6 @@
 test_colombia_recon.py - Tests unitarios e integración para la suite OSINT Colombia
 (SECOP II, JEP, Rama Judicial y SQLite local).
 """
-from unittest.mock import MagicMock, patch
 
 import pytest
 

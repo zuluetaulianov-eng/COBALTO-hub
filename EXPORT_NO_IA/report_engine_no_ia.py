@@ -6,7 +6,6 @@ heurísticas deterministas, matrices de riesgo y análisis de datos estadístico
 NO REQUIERE NINGUNA API DE IA O LLM EXTERNO.
 """
 
-import json
 import logging
 import re
 from datetime import datetime

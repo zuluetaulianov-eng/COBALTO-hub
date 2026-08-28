@@ -7,7 +7,7 @@ import logging
 import re
 import time
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 import aiohttp
 from fastapi import APIRouter, Query, Request
@@ -622,25 +622,32 @@ async def data_geo():
 
 def _haversine_km(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     import math
-    R = 6371.0
+    r_earth = 6371.0
     dlat = math.radians(lat2 - lat1)
     dlon = math.radians(lon2 - lon1)
     a = math.sin(dlat / 2.0) ** 2 + math.cos(math.radians(lat1)) * math.cos(math.radians(lat2)) * math.sin(dlon / 2.0) ** 2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
-    return R * c
+    return r_earth * c
 
 
 _cctv_cache_data: dict = {}
 _cctv_cache_time: float = 0.0
 _cctv_session: Optional[Any] = None
+_cctv_last_valid_frames: dict = {}
 
 
 async def _get_cctv_proxy_session() -> aiohttp.ClientSession:
     global _cctv_session
     if _cctv_session is None or _cctv_session.closed:
+        connector = aiohttp.TCPConnector(ssl=False)
         _cctv_session = aiohttp.ClientSession(
-            timeout=aiohttp.ClientTimeout(total=6),
-            headers={"User-Agent": "Mozilla/5.0 (compatible; COBALTO-C4I/1.0)"},
+            connector=connector,
+            timeout=aiohttp.ClientTimeout(total=5, connect=3),
+            headers={
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, Gecko) Chrome/122.0.0.0 Safari/537.36",
+                "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
+            },
         )
     return _cctv_session
 
@@ -667,243 +674,106 @@ async def data_cctv(
 
     cameras = []
     sources = {}
-    # TfL London
-    tfl = await _fetch_json_http("https://api.tfl.gov.uk/Place/Type/JamCam")
-    if tfl and isinstance(tfl, list):
-        for c in tfl[:100]:
-            cid = c.get('id', '')
-            c_lat = c.get("lat", 0)
-            c_lng = c.get("lon", 0)
-            if not cid or not c_lat or not c_lng:
-                continue
-            cameras.append({
-                "id": f"tfl-{cid}",
-                "lat": c_lat, "lng": c_lng,
-                "name": c.get("commonName", "TfL Camera"),
-                "city": "London", "country": "UK",
-                "feed_url": f"https://s3-eu-west-1.amazonaws.com/jamcams.tfl.gov.uk/{cid}.jpg",
-                "stream_type": "jpg",
-                "source": "TfL",
-            })
-        sources["TfL"] = len(cameras)
-    # WSDOT Washington
-    wsdot = await _fetch_json_http("https://data.wsdot.wa.gov/log/public/cameras.json")
-    if wsdot and isinstance(wsdot, list):
-        cc = 0
-        for c in wsdot[:100]:
-            cams = c.get("Cameras", [])
-            for cam in cams:
-                feed_url = cam.get("ImageUrl", "")
-                c_lat = cam.get("Latitude", 0)
-                c_lng = cam.get("Longitude", 0)
-                if not feed_url or not c_lat or not c_lng:
-                    continue
-                cameras.append({
-                    "id": f"wsdot-{c.get('Id', '')}_{cam.get('Id', '')}",
-                    "lat": c_lat, "lng": c_lng,
-                    "name": c.get("Title", cam.get("Description", "WSDOT Camera")),
-                    "city": c.get("Title", ""), "country": "USA",
-                    "feed_url": feed_url,
-                    "stream_type": "jpg",
-                    "source": "WSDOT",
-                })
-                cc += 1
-        sources["WSDOT"] = cc
-    # Singapore
-    sg = await _fetch_json_http("https://api.data.gov.sg/v1/transport/traffic-images")
-    if sg and isinstance(sg, dict):
-        cc = 0
-        for item in sg.get("items", []):
-            for cam in item.get("cameras", [])[:80]:
-                loc = cam.get("location", {})
-                feed_url = cam.get("image", "")
-                c_lat = loc.get("latitude", 0)
-                c_lng = loc.get("longitude", 0)
-                if not feed_url or not c_lat or not c_lng:
-                    continue
-                cameras.append({
-                    "id": f"sg-{cam.get('camera_id', '')}",
-                    "lat": c_lat, "lng": c_lng,
-                    "name": f"Singapore {cam.get('camera_id', '')}",
-                    "city": "Singapore", "country": "Singapore",
-                    "feed_url": feed_url,
-                    "stream_type": "jpg",
-                    "source": "Singapore LTA",
-                })
-                cc += 1
-            break
-        sources["Singapore"] = cc
-    # Colombia — OpenStreetMap webcams (Overpass API)
-    try:
-        overpass_col = "[out:json];area[\"name\"=\"Colombia\"]->.a;node[\"amenity\"=\"webcam\"](area.a);out body;"
-        co_cams = await _fetch_json_http(
-            "https://overpass-api.de/api/interpreter?data=" + overpass_col,
-        )
-        if co_cams and isinstance(co_cams, dict):
-            elements = co_cams.get("elements", [])
-            cc = 0
-            for el in elements:
-                c_lat = el.get("lat", 0)
-                c_lng = el.get("lon", 0)
-                tags = el.get("tags", {})
-                feed_url = tags.get("url", "") or tags.get("image_url", "") or tags.get("video_url", "")
-                name = tags.get("name", tags.get("operator", "Cámara Pública Colombia"))
-                if not c_lat or not c_lng:
-                    continue
-                cameras.append({
-                    "id": f"osm-co-{el.get('id', '')}",
-                    "lat": c_lat, "lng": c_lng,
-                    "name": name,
-                    "city": tags.get("city", tags.get("addr:city", "Colombia")),
-                    "country": "Colombia",
-                    "feed_url": feed_url,
-                    "stream_type": "jpg",
-                    "source": "OpenStreetMap Colombia",
-                })
-                cc += 1
-            sources["Colombia-OSM"] = cc
-    except Exception:
-        pass
-    # Venezuela — OpenStreetMap webcams (Overpass API)
-    try:
-        overpass_query = "[out:json];area[\"name\"=\"Venezuela\"]->.a;node[\"amenity\"=\"webcam\"](area.a);out body;"
-        ve_cams = await _fetch_json_http(
-            "https://overpass-api.de/api/interpreter?data=" + overpass_query,
-        )
-        if ve_cams and isinstance(ve_cams, dict):
-            elements = ve_cams.get("elements", [])
-            cc = 0
-            for el in elements:
-                c_lat = el.get("lat", 0)
-                c_lng = el.get("lon", 0)
-                tags = el.get("tags", {})
-                feed_url = tags.get("url", "") or tags.get("image_url", "") or tags.get("video_url", "")
-                name = tags.get("name", tags.get("operator", "OSM Webcam"))
-                if not c_lat or not c_lng:
-                    continue
-                cameras.append({
-                    "id": f"osm-ve-{el.get('id', '')}",
-                    "lat": c_lat, "lng": c_lng,
-                    "name": name,
-                    "city": tags.get("city", tags.get("addr:city", "")),
-                    "country": "Venezuela",
-                    "feed_url": feed_url,
-                    "stream_type": "jpg",
-                    "source": "OpenStreetMap",
-                })
-                cc += 1
-            sources["Venezuela-OSM"] = cc
-    except Exception:
-        pass
-    # LATAM, Norteamérica, Europa & Asia — Extended Insecam Scraper Engine
-    for c_code, country_name in [
-        ("CO", "Colombia"),
-        ("VE", "Venezuela"),
-        ("MX", "México"),
-        ("AR", "Argentina"),
-        ("CL", "Chile"),
-        ("BR", "Brasil"),
-        ("PE", "Perú"),
-        ("EC", "Ecuador"),
-        ("PA", "Panamá"),
-        ("ES", "España"),
-        ("IT", "Italia"),
-        ("DE", "Alemania"),
-        ("RU", "Rusia"),
-        ("TR", "Turquía"),
-        ("JP", "Japón"),
-    ]:
-        try:
-            session = await _get_cctv_proxy_session()
-            async with session.get(
-                f"http://insecam.org/en/json/{c_code}/",
-                headers={"User-Agent": "Mozilla/5.0", "Accept": "application/json"},
-            ) as resp:
-                c_data = await resp.json()
-            c_cams_list = c_data if isinstance(c_data, list) else c_data.get("cameras", [])
-            cc = 0
-            for cam in c_cams_list[:25]:
-                ip = cam.get("ip", "") or cam.get("host", "")
-                port = cam.get("port", "80")
-                c_lat = cam.get("lat", 0) or cam.get("latitude", 0)
-                c_lng = cam.get("lng", 0) or cam.get("longitude", 0)
-                if not ip:
-                    continue
-                feed_url = f"http://{ip}:{port}/"
-                name = cam.get("name", cam.get("title", f"Cámara {country_name} {ip}"))
-                cameras.append({
-                    "id": f"insecam-{c_code.lower()}-{ip.replace('.', '-')}-{port}",
-                    "lat": float(c_lat) if c_lat else 0,
-                    "lng": float(c_lng) if c_lng else 0,
-                    "name": name,
-                    "city": cam.get("city", country_name),
-                    "country": country_name,
-                    "feed_url": feed_url,
-                    "stream_type": "mjpeg",
-                    "source": f"Insecam-{country_name}",
-                })
-                cc += 1
-            if cc > 0:
-                sources[f"{country_name}-Insecam"] = cc
-        except Exception:
-            pass
 
-    # NYC DOT Cameras (New York City, USA)
-    try:
+    async def _fetch_tfl():
+        tfl_cams = []
+        tfl = await _fetch_json_http("https://api.tfl.gov.uk/Place/Type/JamCam")
+        if tfl and isinstance(tfl, list):
+            for c in tfl[:120]:
+                cid = c.get('id', '')
+                c_lat = c.get("lat", 0)
+                c_lng = c.get("lon", 0)
+                if not cid or not c_lat or not c_lng:
+                    continue
+                props = {p.get('key'): p.get('value') for p in c.get('additionalProperties', []) if p.get('key')}
+                feed_url = props.get('imageUrl')
+                if not feed_url:
+                    continue
+                tfl_cams.append({
+                    "id": f"tfl-{cid}",
+                    "lat": c_lat, "lng": c_lng,
+                    "name": c.get("commonName", "TfL Camera"),
+                    "city": "London", "country": "UK",
+                    "feed_url": feed_url,
+                    "stream_type": "jpg",
+                    "source": "TfL London",
+                })
+        return "TfL London", tfl_cams
+
+    async def _fetch_singapore():
+        sg_cams = []
+        sg = await _fetch_json_http("https://api.data.gov.sg/v1/transport/traffic-images")
+        if sg and isinstance(sg, dict):
+            for item in sg.get("items", []):
+                for cam in item.get("cameras", [])[:80]:
+                    loc = cam.get("location", {})
+                    feed_url = cam.get("image", "")
+                    c_lat = loc.get("latitude", 0)
+                    c_lng = loc.get("longitude", 0)
+                    if not feed_url or not c_lat or not c_lng:
+                        continue
+                    sg_cams.append({
+                        "id": f"sg-{cam.get('camera_id', '')}",
+                        "lat": c_lat, "lng": c_lng,
+                        "name": f"Singapore {cam.get('camera_id', '')}",
+                        "city": "Singapore", "country": "Singapore",
+                        "feed_url": feed_url,
+                        "stream_type": "jpg",
+                        "source": "Singapore LTA",
+                    })
+                break
+        return "Singapore LTA", sg_cams
+
+    async def _fetch_wsdot():
+        wsdot_cams = []
+        wsdot = await _fetch_json_http("https://data.wsdot.wa.gov/log/public/cameras.json")
+        if wsdot and isinstance(wsdot, list):
+            for c in wsdot[:80]:
+                for cam in c.get("Cameras", []):
+                    feed_url = cam.get("ImageUrl", "")
+                    c_lat = cam.get("Latitude", 0)
+                    c_lng = cam.get("Longitude", 0)
+                    if not feed_url or not c_lat or not c_lng:
+                        continue
+                    wsdot_cams.append({
+                        "id": f"wsdot-{c.get('Id', '')}_{cam.get('Id', '')}",
+                        "lat": c_lat, "lng": c_lng,
+                        "name": c.get("Title", cam.get("Description", "WSDOT Camera")),
+                        "city": c.get("Title", ""), "country": "USA",
+                        "feed_url": feed_url,
+                        "stream_type": "jpg",
+                        "source": "WSDOT",
+                    })
+        return "WSDOT", wsdot_cams
+
+    async def _fetch_nyc():
+        nyc_cams = []
         nyc_data = await _fetch_json_http("https://webcams.nyctmc.org/api/cameras")
         if nyc_data and isinstance(nyc_data, list):
-            cc = 0
             for cam in nyc_data[:80]:
                 c_lat = cam.get("latitude", 0)
                 c_lng = cam.get("longitude", 0)
                 cid = cam.get("id", "")
                 if not c_lat or not c_lng or not cid:
                     continue
-                cameras.append({
+                nyc_cams.append({
                     "id": f"nyc-{cid}",
-                    "lat": float(c_lat),
-                    "lng": float(c_lng),
+                    "lat": float(c_lat), "lng": float(c_lng),
                     "name": cam.get("name", f"NYC DOT Camera {cid}"),
-                    "city": "New York",
-                    "country": "USA",
+                    "city": "New York", "country": "USA",
                     "feed_url": f"https://webcams.nyctmc.org/api/cameras/{cid}/image",
                     "stream_type": "jpg",
                     "source": "NYC DOT",
                 })
-                cc += 1
-            if cc > 0:
-                sources["NYC DOT"] = cc
-    except Exception:
-        pass
+        return "NYC DOT", nyc_cams
 
-    # Caltrans California (USA)
-    try:
-        caltrans_data = await _fetch_json_http("https://cctv.dot.ca.gov/cctv/json/cctv.json")
-        if caltrans_data and isinstance(caltrans_data, dict):
-            c_list = caltrans_data.get("data", [])
-            cc = 0
-            for cam in c_list[:60]:
-                c_lat = cam.get("latitude", 0)
-                c_lng = cam.get("longitude", 0)
-                c_url = cam.get("imageData", {}).get("static", {}).get("currentImageURL", "")
-                if not c_lat or not c_lng or not c_url:
-                    continue
-                cameras.append({
-                    "id": f"caltrans-{cam.get('index', cc)}",
-                    "lat": float(c_lat),
-                    "lng": float(c_lng),
-                    "name": cam.get("location", {}).get("locationName", "Caltrans CA Camera"),
-                    "city": "California",
-                    "country": "USA",
-                    "feed_url": c_url,
-                    "stream_type": "jpg",
-                    "source": "Caltrans CA",
-                })
-                cc += 1
-            if cc > 0:
-                sources["Caltrans CA"] = cc
-    except Exception:
-        pass
+    results = await asyncio.gather(_fetch_tfl(), _fetch_singapore(), _fetch_wsdot(), _fetch_nyc(), return_exceptions=True)
+    for res in results:
+        if isinstance(res, tuple) and len(res) == 2:
+            s_name, c_list = res
+            if c_list:
+                cameras.extend(c_list)
+                sources[s_name] = len(c_list)
 
     # Add static guaranteed LATAM and international cameras
     static_cams = [
@@ -979,42 +849,100 @@ async def data_cctv(
 
 @router.get("/cctv/image")
 async def cctv_image(url: str = Query(...)):
-    """High-performance Proxy for CCTV feed images using persistent HTTP session pool."""
-    try:
-        session = await _get_cctv_proxy_session()
-        async with session.get(url) as resp:
-            if resp.status == 200:
-                content = await resp.read()
-                content_type = resp.headers.get("Content-Type", "image/jpeg")
-                return Response(
-                    content=content,
-                    media_type=content_type,
-                    headers={
-                        "Cache-Control": "public, max-age=15",
-                        "Access-Control-Allow-Origin": "*",
-                        "X-CCTV-Proxy": "COBALTO-HUD",
-                    },
-                )
-    except Exception:
-        pass
+    """High-performance Proxy for REAL CCTV feed images with IP fallback probing & 90s frame memory cache."""
+    global _cctv_last_valid_frames
+    import time
+    now_ts = time.time()
 
-    # Tactical HUD Fallback SVG
+    async def _try_fetch_feed(target_url: str):
+        try:
+            session = await _get_cctv_proxy_session()
+            async with session.get(target_url, timeout=4) as resp:
+                if resp.status == 200:
+                    c_type = resp.headers.get("Content-Type", "").lower()
+                    if "multipart" in c_type or "mjpeg" in c_type or ".mjpg" in target_url:
+                        frame_bytes = b""
+                        start_time = time.time()
+                        while time.time() - start_time < 2.0:
+                            chunk = await resp.content.read(32768)
+                            if not chunk:
+                                break
+                            frame_bytes += chunk
+                            s_idx = frame_bytes.find(b"\xff\xd8")
+                            e_idx = frame_bytes.find(b"\xff\xd9", s_idx + 2) if s_idx != -1 else -1
+                            if s_idx != -1 and e_idx != -1:
+                                jpeg_data = frame_bytes[s_idx:e_idx + 2]
+                                _cctv_last_valid_frames[url] = (jpeg_data, "image/jpeg", time.time())
+                                return Response(
+                                    content=jpeg_data,
+                                    media_type="image/jpeg",
+                                    headers={
+                                        "Cache-Control": "public, max-age=5",
+                                        "Access-Control-Allow-Origin": "*",
+                                        "X-CCTV-Proxy": "COBALTO-MJPEG-REAL",
+                                    },
+                                )
+                    else:
+                        content = await resp.read()
+                        if content and len(content) > 100:
+                            content_type = resp.headers.get("Content-Type", "image/jpeg")
+                            if "octet-stream" in content_type:
+                                content_type = "image/jpeg"
+                            _cctv_last_valid_frames[url] = (content, content_type, time.time())
+                            return Response(
+                                content=content,
+                                media_type=content_type,
+                                headers={
+                                    "Cache-Control": "public, max-age=10",
+                                    "Access-Control-Allow-Origin": "*",
+                                    "X-CCTV-Proxy": "COBALTO-REAL-FEED",
+                                },
+                            )
+        except Exception as err:
+            logger.debug(f"[CCTV PROXY] Real feed fetch error for {target_url}: {err}")
+        return None
+
+    if url.startswith("http://") or url.startswith("https://"):
+        # 1. Primary target fetch
+        res = await _try_fetch_feed(url)
+        if res:
+            return res
+
+        # 2. If url ends with '/', probe standard IP webcam paths
+        if url.endswith("/"):
+            for subpath in ["mjpg/video.mjpg", "axis-cgi/mjpg/video.cgi", "video.mjpg", "image.jpg"]:
+                probe_url = f"{url}{subpath}"
+                res_probe = await _try_fetch_feed(probe_url)
+                if res_probe:
+                    return res_probe
+
+    # 3. Memory cache fallback: serve last valid real frame if < 90 seconds old (prevents visual flickering during temporary drop)
+    if url in _cctv_last_valid_frames:
+        cached_bytes, cached_type, cached_time = _cctv_last_valid_frames[url]
+        if now_ts - cached_time < 90.0:
+            return Response(
+                content=cached_bytes,
+                media_type=cached_type,
+                headers={
+                    "Cache-Control": "public, max-age=5",
+                    "Access-Control-Allow-Origin": "*",
+                    "X-CCTV-Proxy": "COBALTO-FRAME-CACHE",
+                },
+            )
+
+    # Standard clean SVG offline status for non-responsive cameras (No simulations)
     fallback_svg = b"""<svg xmlns="http://www.w3.org/2000/svg" width="340" height="190" viewBox="0 0 340 190">
-    <rect width="340" height="190" fill="#0A0D18"/>
-    <rect x="2" y="2" width="336" height="186" rx="6" fill="none" stroke="#00E5FF" stroke-width="1" opacity="0.3"/>
-    <line x1="10" y1="20" x2="30" y2="20" stroke="#00E5FF" stroke-width="2"/>
-    <line x1="20" y1="10" x2="20" y2="30" stroke="#00E5FF" stroke-width="2"/>
-    <line x1="310" y1="170" x2="330" y2="170" stroke="#00E5FF" stroke-width="2"/>
-    <line x1="320" y1="160" x2="320" y2="180" stroke="#00E5FF" stroke-width="2"/>
-    <circle cx="170" cy="75" r="26" fill="none" stroke="#FF2D55" stroke-width="2" opacity="0.7"/>
-    <polygon points="162,67 178,75 162,83" fill="#FF2D55" opacity="0.6"/>
-    <text x="170" y="125" text-anchor="middle" fill="#FF2D55" font-family="monospace" font-size="12" font-weight="bold" letter-spacing="1">FEED TEMPORALMENTE NO DISPONIBLE</text>
-    <text x="170" y="145" text-anchor="middle" fill="#00E5FF" font-family="monospace" font-size="9" opacity="0.7">COBALTO C4I // RECONCILIANDO CONEXION</text>
+    <rect width="340" height="190" fill="#060913"/>
+    <rect x="2" y="2" width="336" height="186" rx="6" fill="none" stroke="#64748B" stroke-width="1" opacity="0.3"/>
+    <circle cx="170" cy="80" r="22" fill="none" stroke="#64748B" stroke-width="2" opacity="0.5"/>
+    <text x="170" y="85" text-anchor="middle" fill="#64748B" font-family="monospace" font-size="16">&#128249;</text>
+    <text x="170" y="130" text-anchor="middle" fill="#94A3B8" font-family="monospace" font-size="11" font-weight="bold">TRANSMISIO&#768;N NO DISPONIBLE</text>
+    <text x="170" y="148" text-anchor="middle" fill="#64748B" font-family="monospace" font-size="8">CA&#769;MARA FUERA DE LI&#769;NEA EN FUENTE REAL</text>
     </svg>"""
     return Response(
         content=fallback_svg,
         media_type="image/svg+xml",
-        headers={"Cache-Control": "no-cache, max-age=30", "Access-Control-Allow-Origin": "*"},
+        headers={"Cache-Control": "no-cache, max-age=10", "Access-Control-Allow-Origin": "*"},
     )
 
 

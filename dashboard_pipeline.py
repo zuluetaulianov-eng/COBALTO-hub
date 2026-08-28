@@ -127,13 +127,14 @@ async def _build_pipeline_async(priority_only: bool = False) -> Dict[str, Any]:
     external_raw = await fetch_external_news_async(priority_only=priority_only)
     own = get_own_intel()
 
-    from datetime import datetime, timedelta, timezone
     import hashlib
     import json
+    from datetime import timedelta, timezone
+
     import config
     import historical_store
-    from utils import parse_datetime
     from social_hub import canonicalize_url
+    from utils import parse_datetime
 
     def _normalize_dt(val: Any) -> Any:
         if not val:

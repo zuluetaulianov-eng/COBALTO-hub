@@ -8,13 +8,12 @@ rotación automática, circuit breaker y tolerancia a fallos para CometAPI, NVID
 import asyncio
 import hashlib
 import itertools
-import json
 import logging
 import os
 import random
 import threading
 import time
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
 from dotenv import load_dotenv
 from openai import AsyncOpenAI

@@ -11,8 +11,6 @@ import io
 import os
 import tempfile
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import List
 
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH

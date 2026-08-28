@@ -233,7 +233,7 @@ def extract_featured_media(entry, base_url):
     if content:
         try:
             soup = BeautifulSoup(content, "html.parser")
-            
+
             # JSON-LD Schema.org parsing (NewsArticle / VideoObject / ImageObject)
             for script in soup.find_all("script", type="application/ld+json"):
                 try:

@@ -9,7 +9,7 @@ SIN NECESIDAD DE CLAVES DE API.
 import asyncio
 import logging
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import aiohttp
 import feedparser

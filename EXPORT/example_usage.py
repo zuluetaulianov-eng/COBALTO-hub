@@ -8,7 +8,7 @@ import asyncio
 import json
 
 from ai_engine import ask_ai
-from report_generator import generar_debate_multiagente, generar_informe_masivo, generar_informe_sitrep
+from report_generator import generar_debate_multiagente, generar_informe_sitrep
 
 
 async def main():

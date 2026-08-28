@@ -158,6 +158,7 @@ async def test_osiris_rate_limit_enforcement():
             "/api/osiris/recon/dns?domain=example.com",
             headers={"X-Forwarded-For": fake_ip},
         )
+        assert resp.status_code == 429
     _rate_limit_map.pop(fake_ip, None)
 
 

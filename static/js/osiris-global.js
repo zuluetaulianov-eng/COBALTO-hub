@@ -11,6 +11,8 @@ window.OsirisGlobal = {
         cctvValid: 0,
         cctvCols: 2,
         cctvSelected: null,
+        liveVision: true,
+        liveVisionTimer: null,
     },
 
     init: function() {
@@ -20,6 +22,15 @@ window.OsirisGlobal = {
         var filter = document.getElementById('osiris-cctv-filter');
         if (filter) {
             filter.addEventListener('change', function() { self.setCCTVFilter(this.value); });
+        }
+
+        var searchInput = document.getElementById('osiris-cctv-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                self.state.searchQuery = this.value;
+                self.state.cctvPage = 0;
+                self._renderCCTV();
+            });
         }
 
         this.loadCCTV();
@@ -34,12 +45,88 @@ window.OsirisGlobal = {
         if (refreshBtn) {
             refreshBtn.addEventListener('click', function() { self.loadCCTV(); });
         }
+
+        this.startLiveVisionStream();
     },
 
     destroy: function() {
         this.state.active = false;
         this.state.pollTimers.forEach(function(t) { clearInterval(t); });
         this.state.pollTimers = [];
+        if (this.state.liveVisionTimer) {
+            clearInterval(this.state.liveVisionTimer);
+            this.state.liveVisionTimer = null;
+        }
+    },
+
+    toggleLiveVision: function() {
+        this.state.liveVision = !this.state.liveVision;
+        var btn = document.getElementById('osiris-cctv-live-btn');
+        if (btn) {
+            if (this.state.liveVision) {
+                btn.style.background = 'rgba(0,255,170,0.12)';
+                btn.style.borderColor = 'rgba(0,255,170,0.4)';
+                btn.style.color = '#00FFAA';
+                btn.textContent = '🔴 LIVE STREAM: ON';
+                this.startLiveVisionStream();
+            } else {
+                btn.style.background = 'rgba(255,255,255,0.05)';
+                btn.style.borderColor = 'rgba(255,255,255,0.1)';
+                btn.style.color = '#64748B';
+                btn.textContent = '⚪ LIVE STREAM: OFF';
+                if (this.state.liveVisionTimer) {
+                    clearInterval(this.state.liveVisionTimer);
+                    this.state.liveVisionTimer = null;
+                }
+            }
+        }
+    },
+
+    captureSnapshot: function(camObj) {
+        var cam = camObj || this.state.cctvSelected;
+        if (!cam || !cam.feed_url) return;
+        var proxyUrl = '/api/osiris/cctv/image?url=' + encodeURIComponent(cam.feed_url) + '&_t=' + Date.now();
+        var a = document.createElement('a');
+        a.href = proxyUrl;
+        var cleanName = (cam.name || 'cctv_snapshot').replace(/[^a-zA-Z0-9_-]/g, '_');
+        a.download = cleanName + '_' + Date.now() + '.jpg';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        if (typeof showTacticalToast === 'function') {
+            showTacticalToast('📸 Snapshot descargado: ' + cleanName + '.jpg', 'success');
+        }
+    },
+
+    startLiveVisionStream: function() {
+        var self = this;
+        if (this.state.liveVisionTimer) clearInterval(this.state.liveVisionTimer);
+        this.state.liveVisionTimer = setInterval(function() {
+            if (!self.state.active || !self.state.liveVision) return;
+            var imgs = document.querySelectorAll('.cctv-img');
+            var now = Date.now();
+            for (var i = 0; i < imgs.length; i++) {
+                var img = imgs[i];
+                var baseSrc = img.getAttribute('data-base-src') || img.src;
+                if (!img.getAttribute('data-base-src')) {
+                    img.setAttribute('data-base-src', baseSrc);
+                }
+                var cleanUrl = baseSrc.replace(/([?&])_t=\d+/, '');
+                var sep = cleanUrl.indexOf('?') !== -1 ? '&' : '?';
+                img.src = cleanUrl + sep + '_t=' + now;
+            }
+            var modalImg = document.getElementById('cctv-modal-img');
+            var modal = document.getElementById('cctv-modal');
+            if (modal && modal.style.display !== 'none' && modalImg && modalImg.src) {
+                var modalBase = modalImg.getAttribute('data-base-src') || modalImg.src;
+                if (!modalImg.getAttribute('data-base-src')) {
+                    modalImg.setAttribute('data-base-src', modalBase);
+                }
+                var cleanModalUrl = modalBase.replace(/([?&])_t=\d+/, '');
+                var sepM = cleanModalUrl.indexOf('?') !== -1 ? '&' : '?';
+                modalImg.src = cleanModalUrl + sepM + '_t=' + now;
+            }
+        }, 3200);
     },
 
     // ── CCTV Layout ──────────────────────────────────────────
@@ -48,7 +135,6 @@ window.OsirisGlobal = {
         this.state.cctvCols = n;
         this.state.cctvPage = 0;
         this._renderCCTV();
-        // Update toggle button styles
         var btns = document.querySelectorAll('.cctv-layout-btn');
         for (var i = 0; i < btns.length; i++) {
             var b = btns[i];
@@ -115,8 +201,17 @@ window.OsirisGlobal = {
     _getFilteredCameras: function() {
         var cams = this.state.cameras || [];
         var filter = this.state.cctvFilter;
-        if (filter === 'all') return cams;
-        return cams.filter(function(c) { return (c.source || '') === filter; });
+        var query = (this.state.searchQuery || '').toLowerCase().trim();
+        return cams.filter(function(c) {
+            var matchSource = filter === 'all' || (c.source || '') === filter;
+            if (!matchSource) return false;
+            if (!query) return true;
+            var name = (c.name || '').toLowerCase();
+            var city = (c.city || '').toLowerCase();
+            var country = (c.country || '').toLowerCase();
+            var src = (c.source || '').toLowerCase();
+            return name.indexOf(query) !== -1 || city.indexOf(query) !== -1 || country.indexOf(query) !== -1 || src.indexOf(query) !== -1;
+        });
     },
 
     selectCamera: function(cam) {
@@ -133,13 +228,15 @@ window.OsirisGlobal = {
 
         name.textContent = cam.name || 'Unknown';
         var proxyUrl = '/api/osiris/cctv/image?url=' + encodeURIComponent(cam.feed_url || '');
-        img.src = proxyUrl;
+        img.setAttribute('data-base-src', proxyUrl);
+        img.src = proxyUrl + '&_t=' + Date.now();
         meta.innerHTML =
             '<div><span style="color:#64748B;">Source:</span> ' + this._esc(cam.source || '') + '</div>' +
             '<div><span style="color:#64748B;">Location:</span> ' + this._esc(cam.city || '') + (cam.country ? ', ' + this._esc(cam.country) : '') + '</div>' +
-            '<div><span style="color:#64748B;">Lat:</span> ' + (cam.lat || 0) + '</div>' +
-            '<div><span style="color:#64748B;">Lng:</span> ' + (cam.lng || 0) + '</div>' +
-            (cam.feed_url ? '<div style="margin-top:4px;font-size:8px;color:#555;">' + this._esc(cam.feed_url) + '</div>' : '');
+            '<div><span style="color:#64748B;">Lat:</span> ' + (cam.lat || 0) + ' <span style="color:#64748B;">Lng:</span> ' + (cam.lng || 0) + '</div>' +
+            '<div style="margin-top:8px;display:flex;gap:6px;justify-content:center;">' +
+            '<button onclick="if(window.OsirisGlobal)window.OsirisGlobal.captureSnapshot()" style="background:rgba(0,229,255,0.12);border:1px solid rgba(0,229,255,0.4);border-radius:4px;color:#00E5FF;padding:4px 10px;font-size:10px;font-family:monospace;cursor:pointer;">📸 CAPTURAR SNAPSHOT</button>' +
+            '</div>';
         modal.style.display = 'flex';
     },
 
@@ -195,7 +292,7 @@ window.OsirisGlobal = {
             html += '<div class="cctv-card" data-cam=\'' + camData + '\'>' +
                 '<div class="cctv-preview" id="' + camId + '-wrapper">' +
                 '<div class="cctv-ph" id="' + camId + '-ph">⟳</div>' +
-                '<img id="' + camId + '-img" class="cctv-img" src="' + proxyUrl + '" />' +
+                '<img id="' + camId + '-img" class="cctv-img" data-base-src="' + proxyUrl + '" src="' + proxyUrl + '" />' +
                 '<div class="cctv-badge-src">' + this._esc(cam.source || '') + '</div>' +
                 '<div class="cctv-dot" id="' + camId + '-dot"></div>' +
                 '</div>' +
@@ -211,7 +308,6 @@ window.OsirisGlobal = {
             grid.innerHTML = html;
         }
 
-        // Attach image handlers + click/dblclick
         for (var i = 0; i < page.length; i++) {
             var idx = start + i;
             var camId = 'cam-' + idx + '-' + ts;
@@ -226,35 +322,30 @@ window.OsirisGlobal = {
 
                     img.onload = function() {
                         try { ph.style.display = 'none'; } catch(e) {}
+                        try { img.style.display = 'block'; } catch(e) {}
                         try { if (dot) { dot.style.background = '#00FFAA'; dot.style.boxShadow = '0 0 8px #00FFAA'; } } catch(e) {}
                     };
                     img.onerror = function() {
-                        try { ph.innerHTML = '📹'; ph.style.color = '#FF4444'; ph.style.fontSize = '16px'; } catch(e) {}
-                        try { this.style.display = 'none'; } catch(e) {}
-                        try { if (dot) { dot.style.background = '#FF4444'; dot.style.boxShadow = '0 0 8px #FF4444'; } } catch(e) {}
+                        try {
+                            var base = this.getAttribute('data-base-src') || this.src;
+                            this.src = base + (base.indexOf('?') !== -1 ? '&' : '?') + '_r=' + Date.now();
+                        } catch(e) {}
+                        try { if (dot) { dot.style.background = '#FF9500'; dot.style.boxShadow = '0 0 8px #FF9500'; } } catch(e) {}
                     };
-                    if (img.complete) {
-                        if (img.naturalHeight > 1) {
-                            try { ph.style.display = 'none'; } catch(e) {}
-                            try { if (dot) { dot.style.background = '#00FFAA'; dot.style.boxShadow = '0 0 8px #00FFAA'; } } catch(e) {}
-                        } else {
-                            try { ph.innerHTML = '📹'; ph.style.color = '#FF4444'; ph.style.fontSize = '16px'; } catch(e) {}
-                            try { if (dot) { dot.style.background = '#FF4444'; dot.style.boxShadow = '0 0 8px #FF4444'; } } catch(e) {}
-                        }
+                    if (img.complete && img.naturalHeight > 1) {
+                        try { ph.style.display = 'none'; } catch(e) {}
+                        try { if (dot) { dot.style.background = '#00FFAA'; dot.style.boxShadow = '0 0 8px #00FFAA'; } } catch(e) {}
                     }
 
-                    // Click → select (show metadata)
                     if (card) {
                         card.onclick = function(e) {
                             e.stopPropagation();
                             if (window.OsirisGlobal) window.OsirisGlobal.selectCamera(camObj);
-                            // Highlight selected card
                             var all = document.querySelectorAll('.cctv-card');
                             for (var ci = 0; ci < all.length; ci++) { all[ci].style.borderColor = 'rgba(255,255,255,0.05)'; }
                             var parent = card.closest('.cctv-card');
                             if (parent) parent.style.borderColor = '#00E5FF';
                         };
-                        // Double-click → expand
                         card.ondblclick = function(e) {
                             e.stopPropagation();
                             if (window.OsirisGlobal) window.OsirisGlobal.expandCamera(camObj);
@@ -289,10 +380,11 @@ window.OsirisGlobal = {
             '<div class="cctv-meta-row"><span class="cctv-meta-label">Lng</span><span>' + (typeof cam.lng === 'number' ? cam.lng.toFixed(4) : cam.lng) + '</span></div>' +
             '<div class="cctv-meta-row"><span class="cctv-meta-label">Stream</span><span style="color:#76FF03;">' + (cam.stream_type || 'jpg').toUpperCase() + '</span></div>' +
             (cam.feed_url ? '<div style="margin-top:8px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.04);"><div style="color:#64748B;font-size:7px;margin-bottom:2px;">FEED URL</div><div style="font-size:7px;color:#555;word-break:break-all;">' + this._esc(cam.feed_url) + '</div></div>' : '') +
-            '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">' +
-            '<button onclick="if(window.OsirisGlobal)window.OsirisGlobal.expandCamera(window.OsirisGlobal.state.cctvSelected)" style="flex:1;min-width:70px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:4px;color:#00E5FF;padding:5px;font-size:8px;font-family:monospace;cursor:pointer;">🔍 EXPAND VIEW</button>' +
-            '<button onclick="if(window.OsirisGlobal)window.OsirisGlobal.analyzeCCTV(window.OsirisGlobal.state.cctvSelected)" style="flex:1;min-width:70px;background:rgba(255,45,85,0.12);border:1px solid rgba(255,45,85,0.3);border-radius:4px;color:#FF2D55;padding:5px;font-size:8px;font-family:monospace;cursor:pointer;">⚡ YOLOv8 AI</button>' +
-            '<button onclick="if(window.OsirisGlobal&&window.OsirisGlobal.state.cctvSelected){var c=window.OsirisGlobal.state.cctvSelected;if(window.UnifiedMap&&window.UnifiedMap.focusLocation)window.UnifiedMap.focusLocation(c.lat,c.lng,c.name);}" style="flex:1;min-width:70px;background:rgba(0,255,170,0.08);border:1px solid rgba(0,255,170,0.2);border-radius:4px;color:#00FFAA;padding:5px;font-size:8px;font-family:monospace;cursor:pointer;">📍 MAPA</button>' +
+            '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">' +
+            '<button onclick="if(window.OsirisGlobal)window.OsirisGlobal.expandCamera(window.OsirisGlobal.state.cctvSelected)" style="flex:1;min-width:65px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:4px;color:#00E5FF;padding:5px 2px;font-size:8px;font-family:monospace;cursor:pointer;">🔍 EXPANDIR</button>' +
+            '<button onclick="if(window.OsirisGlobal)window.OsirisGlobal.captureSnapshot(window.OsirisGlobal.state.cctvSelected)" style="flex:1;min-width:65px;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:4px;color:#FFD700;padding:5px 2px;font-size:8px;font-family:monospace;cursor:pointer;">📸 CAPTURAR</button>' +
+            '<button onclick="if(window.OsirisGlobal)window.OsirisGlobal.analyzeCCTV(window.OsirisGlobal.state.cctvSelected)" style="flex:1;min-width:65px;background:rgba(255,45,85,0.12);border:1px solid rgba(255,45,85,0.3);border-radius:4px;color:#FF2D55;padding:5px 2px;font-size:8px;font-family:monospace;cursor:pointer;">⚡ YOLOv8 AI</button>' +
+            '<button onclick="if(window.OsirisGlobal&&window.OsirisGlobal.state.cctvSelected){var c=window.OsirisGlobal.state.cctvSelected;if(window.switchTab)window.switchTab(\'tab-map\');setTimeout(function(){if(window.UnifiedMap&&window.UnifiedMap.focusLocation)window.UnifiedMap.focusLocation(c.lat,c.lng,c.name);},150);}" style="flex:1;min-width:65px;background:rgba(0,255,170,0.08);border:1px solid rgba(0,255,170,0.2);border-radius:4px;color:#00FFAA;padding:5px 2px;font-size:8px;font-family:monospace;cursor:pointer;">📍 MAPA</button>' +
             '</div>' +
             '<div id="cctv-ai-panel" style="margin-top:6px;display:none;padding:6px;background:rgba(255,45,85,0.05);border:1px dashed rgba(255,45,85,0.3);border-radius:4px;font-size:8px;"></div>';
     },

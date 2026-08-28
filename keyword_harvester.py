@@ -11,8 +11,6 @@ from collections import Counter
 from datetime import datetime, timedelta
 from typing import Any, Dict, List, Optional
 
-from database import get_connection
-
 logger = logging.getLogger(__name__)
 
 # Stopwords comunes en español y términos genéricos a ignorar

@@ -1,13 +1,23 @@
-# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v15.2
+# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v15.3
 
 > **Sistema de Mando y Control de Inteligencia (C4I)** en tiempo real con **Arquitectura Multipaís (Multi-Theater OSINT)**,  
-> **Target Dossier Engine (360° Risk Score)**, **TLS Fingerprinting Evasion (JA3/HTTP2)**, **Singleton Browser Pool Manager**, **Extracción Semántica JSON-LD/OpenGraph**, **Reproducción de Video Táctico Nativa (Flutter/Web)**, **Persistencia Histórica Deduplicada**, **OSIRIS Diagnostic Doctor Engine**, **Zero-Key Semantic Web Search & Jina Reader** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
+> **Target Dossier Engine (360° Risk Score)**, **TLS Fingerprinting Evasion (JA3/HTTP2)**, **Singleton Browser Pool Manager**, **Visión Táctica CCTV 100% Real & Motor Proxy Resiliente**, **Extracción Semántica JSON-LD/OpenGraph**, **Reproducción de Video Táctico Nativa (Flutter/Web)**, **Persistencia Histórica Deduplicada**, **OSIRIS Diagnostic Doctor Engine**, **Zero-Key Semantic Web Search & Jina Reader** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
 > Consolida fuentes RSS, canales de Telegram, redes sociales, ciberseguridad, rastreo de aeronaves/buques, telemetría de campo en vivo y análisis geopolítico multiagente con IA.  
-> **v15.2** — Absorción de capacidades Agent Reach: Diagnóstico Táctico en Tiempo Real (`OSIRIS Doctor`), Búsqueda Web Semántica Zero-Key (`s.jina.ai`), Extractor de Transcripciones y Metadatos de YouTube (`youtube_intel`), Validador y Lector Directo de Feeds RSS/Atom (`rss_reader`), y Extractor Web Limpio en Markdown (`jina_web_read`).
+> **v15.3** — Visión Táctica CCTV 100% Real: Ingesta asíncrona paralela (`asyncio.gather`), Evasión SSL & Exploración Adaptativa IP, Caché en Memoria Anti-Parpadeo (90s), Búsqueda Instantánea, Captura Táctica de Snapshots (`📸`), Enlace Bi-direccional con Mapa Leaflet y Analítica Visual YOLOv8-Nano.
 
 ---
 
-## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v15.2)
+## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v15.3)
+
+- **📹 Visión Táctica CCTV 100% Real & Motor Proxy Resiliente (`osiris_bridge.py` & `osiris-global.js`):**
+  - **Política Cero Simulación:** Eliminación completa de generadores sintéticos. Las transmisiones muestran exclusivamente fuentes en vivo o un indicador SVG neutro de fuera de línea si la cámara cae en origen.
+  - **Ingesta Paralela Asíncrona:** Integración de `asyncio.gather` para consultar simultáneamente más de 350+ cámaras de fuentes como TfL Londres, Singapur LTA, WSDOT Washington, NYC DOT TMC, Caltrans CA y redes LATAM (Venezuela/Colombia).
+  - **Motor Proxy con Bypass TLS/SSL & Cabeceras de Navegador:** Conexión flexibilizada (`ssl=False`) para webcams públicas con certificados vencidos y emulación de cabeceras Chrome de escritorio para evadir bloqueos de WAF/Cloudflare.
+  - **Exploración Adaptativa de Rutas IP:** Sondeo automático de subrutas estándar (`/mjpg/video.mjpg`, `/axis-cgi/mjpg/video.cgi`, `/video.mjpg`, `/image.jpg`) al conectar con hosts IP directos.
+  - **Caché en Memoria Anti-Parpadeo (90s):** Almacenamiento de fotogramas válidos recientes en memoria para prevenir cortes visuales durante micro-caídas de red.
+  - **Búsqueda Táctica Instantánea:** Barra de búsqueda en tiempo real por texto (`🔍 Search camera, city...`) para filtrar por ciudad, país o nombre de cámara sin recargar la página.
+  - **Captura Táctica de Snapshots:** Botón **`📸 CAPTURAR SNAPSHOT`** en la barra lateral y en el visor fullscreen para descargar imágenes al instante con marca de agua UTC.
+  - **Enlace Bi-direccional con Mapa Leaflet:** Botón **`📹 VER EN VISOR FULLSCREEN CCTV`** en popups de Leaflet y botón **`📍 MAPA`** en el visor global para saltar entre la vista geoespacial y el visor de video.
 
 - **🩺 Motor de Diagnóstico Táctico `OSIRIS Doctor` (`osiris_bridge.py` & `osiris_recon.py`):**
   - Chequeos de salud concurrentes sobre 10 fuentes principales OSINT (DNS DoH, WHOIS RDAP, BGP ip-api, crt.sh, MITRE CVE, Shodan, GitHub, Leaks, AlienVault OTX, Jina Reader).

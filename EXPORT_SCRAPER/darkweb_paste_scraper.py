@@ -6,7 +6,6 @@ Soporta proxy Tor SOCKS5, detección de billeteras cripto (BTC, ETH, TRON, SOL, 
 y análisis sintáctico de credenciales filtradas y sanciones (OFAC).
 """
 
-import asyncio
 import logging
 import os
 import re

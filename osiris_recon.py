@@ -497,12 +497,12 @@ async def jina_web_read(url: str) -> dict:
     content = await _fetch_text(jina_url, headers=hdrs, timeout=35)
     if not content:
         return {"error": "Failed to fetch page via Jina Reader", "url": url, "content": None}
-    
+
     # Check for antibot / challenge response
     sample = content[:4096].lower()
     if "just a moment..." in sample or "attention required! | cloudflare" in sample:
         return {"error": "Cloudflare/Anti-bot challenge encountered", "url": url, "content": None}
-    
+
     return {
         "url": url,
         "content": content,
@@ -522,7 +522,7 @@ async def jina_web_search(query: str) -> dict:
     content = await _fetch_text(search_url, headers=hdrs, timeout=35)
     if not content:
         return {"query": query, "error": "Search failed or rate-limited", "content": None}
-    
+
     return {
         "query": query,
         "content": content,
@@ -537,21 +537,21 @@ async def youtube_intel(url_or_id: str) -> dict:
     """Extract YouTube video metadata, thumbnail, embed info and transcript via Jina."""
     if not url_or_id:
         return {"error": "No URL or ID provided"}
-    
+
     # Normalize URL
     video_id = url_or_id.strip()
     if "youtube.com" in video_id or "youtu.be" in video_id:
         m = re.search(r"(?:v=|\/)([a-zA-Z0-9_-]{11})", video_id)
         if m:
             video_id = m.group(1)
-    
+
     target_url = f"https://www.youtube.com/watch?v={video_id}"
     oembed_url = f"https://www.youtube.com/oembed?url={target_url}&format=json"
     meta = await _fetch_json(oembed_url, timeout=15) or {}
-    
+
     # Fetch transcript / text via Jina
     transcript = await jina_web_read(target_url)
-    
+
     return {
         "video_id": video_id,
         "target_url": target_url,
@@ -573,16 +573,16 @@ async def rss_reader(url: str) -> dict:
         return {"error": "No RSS URL provided"}
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
-    
+
     raw_xml = await _fetch_text(url, timeout=20)
     if not raw_xml:
         return {"error": "Failed to fetch RSS feed", "url": url}
-    
+
     items = []
     try:
         import xml.etree.ElementTree as ET
         root = ET.fromstring(raw_xml)
-        
+
         # Standard RSS 2.0
         for item in root.findall(".//item")[:20]:
             t = item.findtext("title", "").strip()
@@ -591,7 +591,7 @@ async def rss_reader(url: str) -> dict:
             p = item.findtext("pubDate", "").strip()
             if t or l:
                 items.append({"title": t, "link": l, "description": d[:300], "published": p})
-        
+
         # Atom fallback
         if not items:
             for entry in root.findall(".//{http://www.w3.org/2005/Atom}entry")[:20]:
@@ -604,7 +604,7 @@ async def rss_reader(url: str) -> dict:
                     items.append({"title": t, "link": l, "description": d[:300], "published": p})
     except Exception as parse_err:
         logger.warning(f"[RSS READER] XML parse error for {url}: {parse_err}")
-    
+
     return {
         "url": url,
         "total_items": len(items),
@@ -630,13 +630,13 @@ async def osiris_doctor() -> dict:
         "threats": threats_lookup(),
         "web_reader": jina_web_read("example.com"),
     }
-    
+
     keys = list(checks.keys())
     results = await asyncio.gather(*checks.values(), return_exceptions=True)
-    
+
     services = []
     healthy_count = 0
-    
+
     for key, res in zip(keys, results):
         if isinstance(res, Exception) or not res or (isinstance(res, dict) and res.get("error") and "Rate limited" in str(res.get("error"))):
             services.append({"name": key, "status": "OFFLINE", "detail": str(res)})
@@ -646,10 +646,10 @@ async def osiris_doctor() -> dict:
         else:
             services.append({"name": key, "status": "ONLINE", "detail": "Operational"})
             healthy_count += 1
-            
+
     elapsed_ms = round((datetime.utcnow() - start_time).total_seconds() * 1000)
     overall_status = "ONLINE" if healthy_count == len(keys) else "DEGRADED" if healthy_count > 0 else "CRITICAL"
-    
+
     return {
         "status": overall_status,
         "healthy_services": healthy_count,

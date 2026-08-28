@@ -11,6 +11,7 @@
                                 <span id="osiris-cctv-count" style="color:var(--text-muted);font-family:monospace;font-size:0.6rem;">0</span>
                             </div>
                             <div style="display:flex;gap:6px;align-items:center;">
+                                <input id="osiris-cctv-search" type="text" placeholder="🔍 Search camera, city..." style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:#fff;padding:3px 8px;font-size:0.6rem;font-family:monospace;width:150px;outline:none;" />
                                 <div style="display:flex;gap:2px;margin-right:4px;">
                                     <button class="cctv-layout-btn" data-cols="1" onclick="if(window.OsirisGlobal)window.OsirisGlobal.setCCTVCols(1)" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:3px;color:#64748B;padding:2px 6px;font-size:9px;cursor:pointer;">1×1</button>
                                     <button class="cctv-layout-btn" data-cols="2" onclick="if(window.OsirisGlobal)window.OsirisGlobal.setCCTVCols(2)" style="background:none;border:1px solid rgba(0,229,255,0.5);border-radius:3px;color:#00E5FF;padding:2px 6px;font-size:9px;cursor:pointer;">2×2</button>
@@ -20,6 +21,7 @@
                                 <select id="osiris-cctv-filter" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text-muted);padding:3px 6px;font-size:0.6rem;font-family:monospace;cursor:pointer;">
                                     <option value="all">ALL SOURCES</option>
                                 </select>
+                                <button id="osiris-cctv-live-btn" onclick="if(window.OsirisGlobal)window.OsirisGlobal.toggleLiveVision()" style="background:rgba(0,255,170,0.12);border:1px solid rgba(0,255,170,0.4);border-radius:4px;color:#00FFAA;padding:3px 8px;font-size:0.6rem;font-family:monospace;cursor:pointer;font-weight:bold;" title="Alternar actualización de video en vivo">🔴 LIVE STREAM: ON</button>
                                 <button id="osiris-cctv-refresh" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text-muted);padding:3px 8px;font-size:0.6rem;font-family:monospace;cursor:pointer;">⟳</button>
                             </div>
                         </div>

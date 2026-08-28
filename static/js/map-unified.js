@@ -362,6 +362,8 @@ window.UnifiedMap = {
             } else {
                 html += '<div style="margin-bottom:6px;padding:16px;text-align:center;color:#64748B;font-size:10px;font-family:monospace;background:#050505;border-radius:4px;">📹 TRANSMISIÓN EN VIVO NO DISPONIBLE</div>';
             }
+            var itemJsonEscStr = JSON.stringify(item).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            html += '<button onclick="if(window.switchTab)window.switchTab(\'tab-osiris-global\');setTimeout(function(){if(window.OsirisGlobal){var c=' + itemJsonEscStr + ';window.OsirisGlobal.selectCamera(c);window.OsirisGlobal.expandCamera(c);}},200);" style="width:100%;margin-top:4px;margin-bottom:6px;background:rgba(255,215,0,0.12);border:1px solid rgba(255,215,0,0.4);color:#FFD700;border-radius:4px;padding:4px;font-size:9px;font-family:monospace;cursor:pointer;">📹 VER EN VISOR FULLSCREEN CCTV</button>';
         }
 
         for (var f in fields) {

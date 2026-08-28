@@ -7,9 +7,7 @@ SIN DEPENDENCIAS DE IA.
 """
 
 import io
-import json
 import logging
-import os
 import re
 from datetime import datetime
 
@@ -101,8 +99,8 @@ def generate_sitrep_docx_bytes(contexto: dict) -> bytes:
     meta_table = doc.add_table(rows=2, cols=2)
     meta_table.cell(0, 0).paragraphs[0].text = f"Total Entradas Analizadas: {len(entries)}"
     meta_table.cell(0, 1).paragraphs[0].text = f"Alertas Activas: {len(alerts)}"
-    meta_table.cell(1, 0).paragraphs[0].text = f"Estado del Sistema: OPERATIVO (100% Determinista)"
-    meta_table.cell(1, 1).paragraphs[0].text = f"Modo de Generación: Reglas Heurísticas (Sin IA)"
+    meta_table.cell(1, 0).paragraphs[0].text = "Estado del Sistema: OPERATIVO (100% Determinista)"
+    meta_table.cell(1, 1).paragraphs[0].text = "Modo de Generación: Reglas Heurísticas (Sin IA)"
 
     for row in meta_table.rows:
         for cell in row.cells:
@@ -133,7 +131,7 @@ def generate_sitrep_docx_bytes(contexto: dict) -> bytes:
             row_cells[0].paragraphs[0].text = str(i + 1)
             row_cells[1].paragraphs[0].text = _sanitizar(entry.get("title", entry.get("titulo", "Sin título")))[:60]
             row_cells[2].paragraphs[0].text = _sanitizar(entry.get("source", entry.get("fuente", "N/A")))
-            
+
             analisis = entry.get("analisis_determinista", {})
             amenaza = analisis.get("nivel_amenaza", "MEDIA")
             row_cells[3].paragraphs[0].text = amenaza
