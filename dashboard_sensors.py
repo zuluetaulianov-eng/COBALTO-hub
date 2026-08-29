@@ -24,6 +24,8 @@ get_cyber_scanner_data = load_function("osint_cyber_scanner", "get_cyber_scanner
 get_ransomware_data = load_function("osint_ransomware", "get_ransomware_data") or FALLBACKS["sources_dict"]
 get_vencert_data = load_function("osint_vencert", "get_vencert_data") or FALLBACKS["sources_dict"]
 get_ivss_data = load_function("osint_ivss", "get_ivss_data") or FALLBACKS["sources_dict"]
+get_saime_data = load_function("osint_saime", "get_saime_data") or FALLBACKS["sources_dict"]
+get_cne_data = load_function("osint_cne", "get_cne_data") or FALLBACKS["sources_dict"]
 
 # --- Backend Caching System (Evita sobrecarga en accesos multi-usuario) ---
 _realtime_cache = None
@@ -166,6 +168,8 @@ async def get_social_sensors_data() -> Dict:
             ("Ransomware", get_ransomware_data),
             ("VenCERT", get_vencert_data),
             ("IVSS Oficial", get_ivss_data),
+            ("SAIME Oficial", get_saime_data),
+            ("CNE Oficial", get_cne_data),
         ]
 
         async def _call_sensor(name, fn):

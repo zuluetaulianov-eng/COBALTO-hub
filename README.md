@@ -1,26 +1,47 @@
-# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v16.0
+# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v16.3
 
 > **Sistema de Mando y Control de Inteligencia (C4I)** en tiempo real con **Arquitectura Multipaís (Multi-Theater OSINT)**,  
-> **Target Dossier Engine (360° Risk Score)**, **Módulos OSINT Estatales Venezolanos (IVSS / SENIAT RIF)**, **Streaming de Video Continuo HLS.js en Visor CCTV**, **Pivot de Inteligencia en Grafo Táctico**, **TLS Fingerprinting Evasion (JA3/HTTP2)**, **Singleton Browser Pool Manager**, **Visión Táctica CCTV 100% Real & Motor Proxy Resiliente**, **Extracción Semántica JSON-LD/OpenGraph**, **Reproducción de Video Táctico Nativa (Flutter/Web)**, **Persistencia Histórica Deduplicada**, **OSIRIS Diagnostic Doctor Engine**, **Zero-Key Semantic Web Search & Jina Reader** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
+> **Target Dossier Engine (360° Risk Score)**, **Módulos OSINT Estatales Venezolanos (IVSS / SENIAT RIF / SAIME Institucional / CNE OSINT + Votación)**, **Streaming de Video Continuo HLS.js en Visor CCTV**, **Pivot de Inteligencia en Grafo Táctico**, **TLS Fingerprinting Evasion (JA3/HTTP2)**, **Singleton Browser Pool Manager**, **Visión Táctica CCTV 100% Real & Motor Proxy Resiliente**, **Extracción Semántica JSON-LD/OpenGraph**, **Reproducción de Video Táctico Nativa (Flutter/Web)**, **Persistencia Histórica Deduplicada**, **OSIRIS Diagnostic Doctor Engine**, **Zero-Key Semantic Web Search & Jina Reader** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
 > Consolida fuentes RSS, canales de Telegram, redes sociales, ciberseguridad, rastreo de aeronaves/buques, telemetría de campo en vivo y análisis geopolítico multiagente con IA.  
-> **v16.0** — Integración OSINT Estatal Venezolana & Video Continuo HLS.js: Extracción automatizada IVSS (Cédula/Patrono) y SENIAT (RIF/Condición Fiscal/Domicilio), reproductor HLS.js integrado en visor CCTV, navegación pivot 1-clic en el Grafo Táctico y suite de 160 pruebas pasadas al 100%.
+> **v16.3** — Integración de **Fallback Histórico de Centros de Votación del CNE vía Wayback Machine (CDX API)** en `osint_cne.py` y `osiris-recon.js` para recuperación de Registro Electoral por Cédula, módulo OSINT Institucional CNE (comunicados, avisos oficiales y normativa), integración OSINT Institucional SAIME (movilidad fronteriza y trámites), reconstrucción OSINT Institucional IVSS (pensiones, salud y comunicados), reconstrucción OSINT Institucional SENIAT (API REST, Unidad Tributaria y RIF público), reproductor HLS.js integrado en visor CCTV, navegación pivot 1-clic en Grafo Táctico y suite completa de pruebas pasadas al 100%.
 
 ---
 
-## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v16.0)
+## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v16.3)
 
-- **🏛️ Extractor OSINT IVSS Venezuela (`osint_ivss.py` & `osiris-recon.js`):**
-  - Consulta de filiación individual por cédula (`V-` / `E-`), extracción de patrono registrado, caja regional asignada y estatus de pensión.
-  - Ingesta automática en el sensor de *Radar Social* (`dashboard_sensors.py`) para detectar anuncios socioeconómicos y de movilidad urbana del portal oficial `ivss.gob.ve`.
-- **📜 Módulo OSINT SENIAT RIF & Condición Fiscal (`osint_seniat.py` & `osiris-recon.js`):**
-  - Perfilamiento tributario por RIF (`V-`, `J-`, `E-`, `G-`), obtención de Razón Social / Nombre Oficial, condición de Sujeto Pasivo Especial (Agente de Retención IVA), porcentaje de retención y domicilio fiscal nacional.
-  - Circuito de evasión de errores SSL gubernamentales (`verify=False`) y `CircuitBreaker` adaptativo de 10 minutos.
+- **🗳️ Recuperación de Centros de Votación CNE vía Wayback Machine (`osint_cne.py` & `osiris-recon.js`):**
+  - **Motor Fallback CDX API**: `cne_voter_wayback_lookup(cedula)` realiza búsquedas dirigidas en los índices archivados del Internet Archive (Wayback Machine) sobre las URLs históricas del Registro Electoral del CNE (`ce.php?nacionalidad=V&cedula=...`).
+  - **Parser HTML con Resiliencia Estructural (`parse_cne_voter_html`)**: Extrae y descompone datos de identidad e infraestructura de votación (*Nombre, Cédula, Estado, Municipio, Parroquia, Centro de Votación, Dirección y Mesa*).
+  - **Filtro y Alertas de Diagnóstico**: En caso de no existir captura indexada para un documento, la UI informa claramente el estatus (`SIN_REGISTRO_ARCHIVADO`) y orienta sobre la alternativa **Opción A (Base de Datos Local SQLite en `data/cne_registro_electoral.db`)**.
+  - **Interfaz Táctica OSIRIS RECON**: Tab actualizado a **`CNE OSINT / Votación`** con buscador paramétrico por cédula (ej. `V-12345678`), visualización de tarjetas geográficas y enlace directo al snapshot web original archivado.
+- **🗳️ Módulo OSINT Institucional CNE (`osint_cne.py` & `osiris-recon.js`):**
+  - Inteligencia **a nivel institucional público** del Consejo Nacional Electoral (CNE) de Venezuela: ingesta de **comunicados y noticias oficiales**, **avisos oficiales (actos públicos + PDFs `ao_documents`)** y catálogo de secciones institucionales (normativa electoral, gacetas, resultados agregados por mesa).
+  - **Cauce vivo + fallback Wayback Machine:** intenta primero el portal oficial (`cne.gov.ve`); si está inaccesible, ingesta el snapshot archivado (API CDX) con normalización de enlaces (`_normalize_link`).
+  - Clasificador heurístico por categorías (convocatoria, resultados, normativa, aviso oficial, institucional/institucional diplomático) y `CircuitBreaker` adaptativo de 10 minutos.
+  - Sensor de *Radar Social* `get_cne_data()` (`dashboard_sensors.py`), endpoint `GET /api/osiris/recon/cne` (parámetros `scope` y `cedula`) y botón de pivot en el Grafo Táctico (`intel-graph.js`).
+- **🏛️ Extractor OSINT Institucional IVSS (`osint_ivss.py` & `osiris-recon.js`):**
+  - Inteligencia **a nivel institucional público** del Instituto Venezolano de los Seguros Sociales: ingesta de comunicados oficiales, clasificación de **alertas de pensiones/pagos**, **salud** y **trámites/servicios**, con catálogo de servicios oficiales.
+  - Parser real del portal oficial (carrusel de comunicados + fechas), clasificador heurístico por categorías y `CircuitBreaker` adaptativo de 10 minutos.
+  - **Alcance responsable:** el portal público IVSS no expone expedientes individuales. Este módulo NO fabrica ni consulta datos personales; los documentos (`V-`/`E-`) solo reciben validación estructural de formato.
+  - Ingesta automática en el sensor de *Radar Social* (`dashboard_sensors.py`) y endpoint `GET /api/osiris/recon/ivss` (parámetros opcionales `cedula` y `scope`).
+- **🏛️ Módulo OSINT Institucional SENIAT (`osint_seniat.py` & `osiris-recon.js`):**
+  - Reconstruido como **herramienta OSINT institucional** del Servicio Nacional Integrado de Administración Aduanera y Tributaria: ingesta de **comunicados oficiales** vía API REST WordPress (`/wp-json/wp/v2/posts`) con clasificación por categorías (fiscalización, digitalización, banca y alianzas, aduanas, tributario, institucional).
+  - **Unidad Tributaria (UT) en tiempo real**: valor vigente **Bs. 43,00** + histórico de 8 providencias/gacetas oficiales.
+  - **Calendario de obligaciones tributarias** (12 meses 2026) y catálogo de servicios oficiales.
+  - Consulta pública de **RIF** (registro tributario institucional: razón social, condición IVA, retención) sin exponer datos personales.
+  - Sensor `get_seniat_data()` con datos reales, endpoint `GET /api/osiris/recon/seniat/institucional` (parámetros `rif` y `scope`) y botón de pivot en el Grafo Táctico.
+- **🛂 Módulo OSINT Institucional SAIME (`osint_saime.py` & `osiris-recon.js`):**
+  - Inteligencia **a nivel institucional público** del Servicio Administrativo de Identificación, Migración y Extranjería (SAIME Venezuela): ingesta de comunicados y noticias oficiales, clasificación de **alertas de movilidad fronteriza** públicas y catálogo de servicios/trámites oficiales.
+  - Cauce estructurado del portal oficial (feed RSS `/feed/` + lista institucional de noticias), con parsing BeautifulSoup, `CircuitBreaker` adaptativo de 10 minutos y bypass de errores SSL gubernamentales.
+  - **Alcance responsable:** este módulo NO realiza perfilamiento de personas físicas (no consulta ni expone registros personales de ciudadanos). Los documentos (`V-`/`E-`) solo reciben validación estructural de formato.
+  - Ingesta automática en el sensor de *Radar Social* (`dashboard_sensors.py`) y endpoint `GET /api/osiris/recon/saime` (parámetros opcionales `cedula` y `scope`).
+  - Botón de pivot 1-clic en el Grafo Táctico (`intel-graph.js`).
 - **📹 Streaming Video Continuo HLS.js para CCTV Grid & Modal (`templates/partials/_head.html` & `osiris-global.js`):**
   - Integración de `Hls.js` para la reproducción fluida de streams de video en tiempo real (`.m3u8`) en el visor CCTV de OSIRIS Global.
   - Conmutación inteligente entre fotogramas estáticos y reproductor HTML5 con control de errores y recuperación automática de cortes de búfer.
 - **🕸️ Enlace Bi-direccional y Pivot OSINT en Grafo Táctico (`intel-graph.js`):**
-  - Integración de botones de acción rápida en el panel de detalle de cualquier nodo en el Grafo Social: salto en 1-clic hacia las herramientas **IVSS Cédula** y **SENIAT RIF** dentro de OSIRIS RECON.
-- **🧪 Cobertura del 100% en Suite de Pruebas (`tests/`):** **160/160 tests pasados exitosamente**.
+  - Integración de botones de acción rápida en el panel de detalle de cualquier nodo en el Grafo Social: salto en 1-clic hacia las herramientas **IVSS Institucional**, **SENIAT RIF**, **SAIME Institucional** y **CNE Institucional** dentro de OSIRIS RECON.
+- **🧪 Cobertura del 100% en Suite de Pruebas (`tests/`):** **191/191 tests pasados exitosamente**.
 
 - **📹 Visión Táctica CCTV 100% Real & Motor Proxy Resiliente (`osiris_bridge.py` & `osiris-global.js`):**
   - **Política Cero Simulación:** Eliminación completa de generadores sintéticos. Las transmisiones muestran exclusivamente fuentes en vivo o un indicador SVG neutro de fuera de línea si la cámara cae en origen.

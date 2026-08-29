@@ -53,8 +53,10 @@ window.OsirisRecon = {
             id: 'identity',
             label: 'Identity & Intel',
             tabs: [
-                { id: 'ivss', label: 'IVSS Venezuela', icon: '🏛️', placeholder: 'V-12345678', color: '#00E5FF', hint: 'Cédula de Identidad (V-12345678)' },
-                { id: 'seniat', label: 'SENIAT RIF', icon: '📜', placeholder: 'J-30000000-1', color: '#FFD700', hint: 'RIF (V/J/E/G-12345678-9)' },
+                { id: 'ivss', label: 'IVSS Institucional', icon: '🏛️', placeholder: 'opcional: V-12345678', color: '#00E5FF', hint: 'OSINT institucional público (comunicados, pensiones, salud)' },
+                { id: 'seniat', label: 'SENIAT Institucional', icon: '📜', placeholder: 'opcional: J-30000000-1', color: '#FFD700', hint: 'OSINT institucional (comunicados, Unidad Tributaria, RIF)' },
+                { id: 'saime', label: 'SAIME Institucional', icon: '🛂', placeholder: 'opcional: V-12345678', color: '#FF4081', hint: 'OSINT institucional público (comunicados, movilidad fronteriza, servicios)' },
+                { id: 'cne', label: 'CNE OSINT / Votación', icon: '🗳️', placeholder: 'opcional: V-12345678', color: '#76FF03', hint: 'OSINT institucional o consulta de Centro de Votación por Cédula (Wayback Machine fallback)' },
                 { id: 'github', label: 'GitHub Recon', icon: '💻', placeholder: 'torvalds', color: '#87CEEB', hint: 'Username' },
                 { id: 'leaks', label: 'Breach Check', icon: '💀', placeholder: 'target@example.com', color: '#E040FB', hint: 'Email address' },
                 { id: 'phone', label: 'Phone Carrier', icon: '📞', placeholder: '+1234567890', color: '#FF9500', hint: 'Intl format format' },
@@ -305,10 +307,50 @@ window.OsirisRecon = {
             });
     },
 
+    // Pivot helpers used by the Intel Graph 'Acciones de Inteligencia OSINT'.
+    // Set the active tool and the query, then execute the lookup directly.
+    switchSubTab: function(tabId) {
+        this.switchTab(tabId);
+    },
+
+    runTool: function(tabId, query) {
+        var self = this;
+        this.switchTab(tabId);
+        var input = document.getElementById('or-search-input');
+        if (input) input.value = query;
+        this.state.query = query;
+        var tab = this._getActiveTab();
+        if (!tab) return;
+        if (query) {
+            this.runQuery();
+        } else if (tab.id === 'saime' || tab.id === 'ivss' || tab.id === 'seniat' || tab.id === 'cne') {
+            // Institutional tabs allow an empty query -> blanket institutional fetch
+            this.state.loading = true;
+            this._showLoading();
+            var apiPath = this._getApiPath(tab.id, '');
+            var startTime = performance.now();
+            fetch(apiPath)
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    self.state.queryTime = Math.round(performance.now() - startTime);
+                    self.state.loading = false;
+                    self.state.results = data;
+                    self._renderResults(data, tab.id, tab.label.split(' ')[0]);
+                })
+                .catch(function(err) {
+                    self.state.loading = false;
+                    self.state.error = 'Network error: ' + (err.message || 'Unknown');
+                    self._renderError(self.state.error);
+                });
+        }
+    },
+
     _getApiPath: function(tabId, query) {
         var map = {
-            'ivss': '/api/osiris/recon/ivss?cedula=' + encodeURIComponent(query),
-            'seniat': '/api/osiris/recon/seniat?rif=' + encodeURIComponent(query),
+            'ivss': '/api/osiris/recon/ivss?cedula=' + encodeURIComponent(query) + '&scope=institucional',
+            'seniat': '/api/osiris/recon/seniat/institucional?rif=' + encodeURIComponent(query) + '&scope=lleno',
+            'saime': '/api/osiris/recon/saime?cedula=' + encodeURIComponent(query) + '&scope=institucional',
+            'cne': query ? '/api/osiris/recon/cne?cedula=' + encodeURIComponent(query) : '/api/osiris/recon/cne?scope=institucional',
             'dns': '/api/osiris/recon/dns?domain=' + encodeURIComponent(query),
             'whois': '/api/osiris/recon/whois?domain=' + encodeURIComponent(query),
             'ip': '/api/osiris/recon/ip?ip=' + encodeURIComponent(query),
@@ -613,28 +655,216 @@ window.OsirisRecon = {
             contentHtml += '<div class="or-data-card"><div class="or-data-label">OUI Prefix</div><div class="or-data-value">' + esc(data.prefix || 'N/A') + '</div></div>';
             contentHtml += '</div>';
         }
-        // ── IVSS VENEZUELA ──
+        // ── IVSS INSTITUCIONAL ──
         else if (tabId === 'ivss') {
             contentHtml += '<div class="or-data-grid">';
-            contentHtml += '<div class="or-data-card"><div class="or-data-label">Cédula de Identidad</div><div class="or-data-value large info">' + esc(data.cedula || query) + copy(data.cedula || query) + '</div></div>';
-            contentHtml += '<div class="or-data-card"><div class="or-data-label">Estatus de Consulta</div><div class="or-data-value large success">' + esc(data.status || 'CONSULTADO') + '</div></div>';
-            contentHtml += '<div class="or-data-card"><div class="or-data-label">Patrono Registrado</div><div class="or-data-value">' + esc(data.patrono_registrado || 'N/A') + '</div></div>';
-            contentHtml += '<div class="or-data-card"><div class="or-data-label">Caja Regional</div><div class="or-data-value">' + esc(data.caja_regional || 'N/A') + '</div></div>';
+            contentHtml += '<div class="or-data-card" style="grid-column: span 2;"><div class="or-data-label">Institución</div><div class="or-data-value large success">' + esc(data.institucion || 'IVSS — Venezuela') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Alcance</div><div class="or-data-value info">' + esc(data.alcance || 'OSINT institucional público') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Estatus</div><div class="or-data-value large ' + (data.status === 'CONSULTADO' ? 'success' : 'warning') + '">' + esc(data.status || 'N/A') + '</div></div>';
             contentHtml += '</div>';
-            contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">FUENTES OFICIALES</div></div>';
-            contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(data.fuente || '🇻🇪 IVSS Registro Social') + '</div><div class="or-record-meta">' + esc(data.fecha_consulta || '') + '</div></div></div>';
+
+            if (data.pensiones_y_pagos && data.pensiones_y_pagos.length) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">💵 PENSIONES Y PAGOS</div><div class="or-section-count">' + data.pensiones_y_pagos.length + '</div></div>';
+                data.pensiones_y_pagos.forEach(function(c) {
+                    contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(c.title) + '</div><div class="or-record-meta">' + esc(c.published || '') + '</div></div>';
+                });
+                contentHtml += '</div>';
+            }
+
+            if (data.alertas_salud && data.alertas_salud.length) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">🏥 ALERTAS DE SALUD</div><div class="or-section-count">' + data.alertas_salud.length + '</div></div>';
+                data.alertas_salud.forEach(function(c) {
+                    contentHtml += '<div class="or-record-row"><div class="or-record-data"> ' + esc(c.title) + '</div><div class="or-record-meta">' + esc(c.published || '') + '</div></div>';
+                });
+                contentHtml += '</div>';
+            }
+
+            if (data.tramites_y_servicios && data.tramites_y_servicios.length) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">🧾 TRÁMITES Y SERVICIOS</div><div class="or-section-count">' + data.tramites_y_servicios.length + '</div></div>';
+                data.tramites_y_servicios.forEach(function(c) {
+                    contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(c.title) + '</div><div class="or-record-meta">' + esc(c.published || '') + '</div></div>';
+                });
+                contentHtml += '</div>';
+            }
+
+            if (data.comunicados && data.comunicados.length) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">📰 COMUNICADOS INSTITUCIONALES</div><div class="or-section-count">' + data.comunicados.length + '</div></div>';
+                data.comunicados.forEach(function(c) {
+                    contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(c.title) + '</div><div class="or-record-meta">' + esc(c.published || '') + '</div></div>';
+                });
+                contentHtml += '</div>';
+            } else {
+                contentHtml += '<div class="or-alert-box info">ℹ️ Sin comunicados disponibles en este momento (portal inaccesible o sin novedades).</div>';
+            }
+
+            if (data.servicios_oficiales && data.servicios_oficiales.length) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">🛠️ SERVICIOS OFICIALES</div></div>';
+                data.servicios_oficiales.forEach(function(s) {
+                    contentHtml += '<div class="or-record-row"><div class="or-record-data"><b>' + esc(s.nombre) + '</b> — ' + esc(s.descripcion) + '</div></div>';
+                });
+                contentHtml += '</div>';
+            }
+
+            contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">FUENTE</div></div>';
+            contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(data.fuente || '🇻🇪 Portal Oficial IVSS') + '</div><div class="or-record-meta">' + esc(data.timestamp || '') + '</div></div>';
+            contentHtml += '<div class="or-alert-box info">ℹ️ Inteligencia a nivel institucional: el portal público IVSS no expone expedientes individuales; la información personal de los ciudadanos no se consulta ni se fabrica.</div></div>';
         }
-        // ── SENIAT RIF ──
+        // ── SENIAT INSTITUCIONAL ──
         else if (tabId === 'seniat') {
             contentHtml += '<div class="or-data-grid">';
-            contentHtml += '<div class="or-data-card"><div class="or-data-label">RIF Registrado</div><div class="or-data-value large info">' + esc(data.rif || query) + copy(data.rif || query) + '</div></div>';
-            contentHtml += '<div class="or-data-card"><div class="or-data-label">Razón Social / Nombre</div><div class="or-data-value large success">' + esc(data.razon_social || 'N/A') + '</div></div>';
-            contentHtml += '<div class="or-data-card"><div class="or-data-label">Condición IVA</div><div class="or-data-value">' + esc(data.condicion_iva || 'CONTRIBUYENTE REGISTRADO') + '</div></div>';
-            contentHtml += '<div class="or-data-card"><div class="or-data-label">Tasa Retención IVA</div><div class="or-data-value info">' + esc(data.tasa_retencion || '75%') + '</div></div>';
+            contentHtml += '<div class="or-data-card" style="grid-column: span 2;"><div class="or-data-label">Institución</div><div class="or-data-value large success">' + esc(data.institucion || 'SENIAT — Venezuela') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Unidad Tributaria (UT)</div><div class="or-data-value large info">Bs. ' + esc(data.unidad_tributaria || '43.00') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Estatus</div><div class="or-data-value large ' + (data.status === 'CONSULTADO' ? 'success' : 'warning') + '">' + esc(data.status || 'N/A') + '</div></div>';
             contentHtml += '</div>';
-            contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">DOMICILIO FISCAL & FUENTE</div></div>';
-            contentHtml += '<div class="or-record-row"><div class="or-record-data">📍 ' + esc(data.domicilio_fiscal || 'VENEZUELA') + '</div></div>';
-            contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(data.fuente || '🇻🇪 SENIAT Registro Fiscal') + '</div><div class="or-record-meta">' + esc(data.fecha_consulta || '') + '</div></div></div>';
+
+            if (data.comunicados && data.comunicados.length) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">📰 COMUNICADOS INSTITUCIONALES</div><div class="or-section-count">' + data.comunicados.length + '</div></div>';
+                data.comunicados.forEach(function(c) {
+                    contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(c.title) + '</div><div class="or-record-meta">' + esc((c.category || c.categoria || '')) + '</div></div>';
+                });
+                contentHtml += '</div>';
+            }
+
+            if (data.historico_ut && data.historico_ut.length) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">📈 HISTÓRICO UNIDAD TRIBUTARIA</div><div class="or-section-count">' + data.historico_ut.length + '</div></div>';
+                data.historico_ut.forEach(function(p) {
+                    contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(p.providencia) + '</div><div class="or-record-meta">Bs. ' + esc(p.valor_anterior) + ' → Bs. ' + esc(p.valor_nuevo) + '</div></div>';
+                });
+                contentHtml += '</div>';
+            }
+
+            if (data.calendario && data.calendario.meses_disponibles) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">📅 CALENDARIO DE OBLIGACIONES ' + esc(data.calendario.anio || '') + '</div></div>';
+                contentHtml += '<div class="or-record-row"><div class="or-record-data">Meses: ' + data.calendario.meses_disponibles.join(', ') + '</div></div>';
+                contentHtml += '</div>';
+            }
+
+            var rifd = data.rif_consultado;
+            if (rifd) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">🧾 RIF CONSULTADO (REGISTRO PÚBLICO)</div></div>';
+                contentHtml += '<div class="or-record-row"><div class="or-record-data">RIF: <b>' + esc(rifd.rif || '') + '</b> — ' + esc(rifd.razon_social || '') + '</div></div>';
+                if (rifd.condicion_iva) contentHtml += '<div class="or-record-row"><div class="or-record-data">Condición IVA: ' + esc(rifd.condicion_iva) + '</div></div>';
+                if (rifd.tasa_retencion) contentHtml += '<div class="or-record-row"><div class="or-record-data">Retención: ' + esc(rifd.tasa_retencion) + '</div></div>';
+                contentHtml += '</div>';
+            }
+
+            if (data.servicios_oficiales && data.servicios_oficiales.length) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">🛠️ SERVICIOS OFICIALES</div></div>';
+                data.servicios_oficiales.forEach(function(s) {
+                    contentHtml += '<div class="or-record-row"><div class="or-record-data"><b>' + esc(s.nombre) + '</b> — ' + esc(s.descripcion) + '</div></div>';
+                });
+                contentHtml += '</div>';
+            }
+
+            contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">FUENTE</div></div>';
+            contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(data.fuente || '🇻🇪 Portal Oficial SENIAT en Línea') + '</div><div class="or-record-meta">' + esc(data.timestamp || '') + '</div></div>';
+            contentHtml += '<div class="or-alert-box info">ℹ️ Inteligencia a nivel institucional: el SENIAT expone el registro tributario (RIF) públicamente; la información personal fuera del registro tributario no se consulta ni se expone.</div></div>';
+        }
+        // ── SAIME INSTITUCIONAL ──
+        else if (tabId === 'saime') {
+            contentHtml += '<div class="or-data-grid">';
+            contentHtml += '<div class="or-data-card" style="grid-column: span 2;"><div class="or-data-label">Institución</div><div class="or-data-value large success">' + esc(data.institucion || 'SAIME — Venezuela') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Alcance</div><div class="or-data-value info">' + esc(data.alcance || 'OSINT institucional público') + '</div></div>';
+            contentHtml += '<div class="or-data-card"><div class="or-data-label">Estatus</div><div class="or-data-value large ' + (data.status === 'CONSULTADO' ? 'success' : 'danger') + '">' + esc(data.status || 'N/A') + '</div></div>';
+            contentHtml += '</div>';
+
+            if (data.alertas_movilidad_fronteriza && data.alertas_movilidad_fronteriza.length) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">🚨 ALERTAS DE MOVILIDAD FRONTERIZA</div><div class="or-section-count">' + data.alertas_movilidad_fronteriza.length + '</div></div>';
+                data.alertas_movilidad_fronteriza.forEach(function(c) {
+                    contentHtml += '<div class="or-record-row"><div class="or-record-data">⚠️ ' + esc(c.title) + '</div><div class="or-record-meta">' + esc(c.published || '') + '</div></div>';
+                });
+                contentHtml += '</div>';
+            } else {
+                contentHtml += '<div class="or-alert-box info">√ No hay alertas de movilidad fronteriza publicadas en este momento.</div>';
+            }
+
+            if (data.comunicados && data.comunicados.length) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">📰 COMUNICADOS Y NOTICIAS INSTITUCIONALES</div><div class="or-section-count">' + data.comunicados.length + '</div></div>';
+                data.comunicados.forEach(function(c) {
+                    contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(c.title) + '</div><div class="or-record-meta">' + esc(c.published || '') + '</div></div>';
+                });
+                contentHtml += '</div>';
+            }
+
+            if (data.servicios_oficiales && data.servicios_oficiales.length) {
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">🛠️ SERVICIOS OFICIALES</div></div>';
+                data.servicios_oficiales.forEach(function(s) {
+                    contentHtml += '<div class="or-record-row"><div class="or-record-data"><b>' + esc(s.nombre) + '</b> — ' + esc(s.descripcion) + '</div></div>';
+                });
+                contentHtml += '</div>';
+            }
+
+            contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">FUENTE</div></div>';
+            contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(data.fuente || '🇻🇪 Portal Oficial SAIME') + '</div><div class="or-record-meta">' + esc(data.timestamp || '') + '</div></div>';
+            contentHtml += '<div class="or-alert-box info">ℹ️ Inteligencia a nivel institucional: la información personal de los ciudadanos no se consulta ni se expone.</div></div>';
+        }
+        // ── CNE OSINT / VOTACIÓN ──
+        else if (tabId === 'cne') {
+            if (data.status === 'ENCONTRADO') {
+                contentHtml += '<div class="or-alert-box success">✓ REGISTRO ELECTORAL RECUPERADO DE ARCHIVO HISTÓRICO</div>';
+                contentHtml += '<div class="or-data-grid">';
+                contentHtml += '<div class="or-data-card"><div class="or-data-label">Cédula</div><div class="or-data-value large info">' + esc(data.cedula || query) + copy(data.cedula || query) + '</div></div>';
+                contentHtml += '<div class="or-data-card" style="grid-column: span 2;"><div class="or-data-label">Elector</div><div class="or-data-value large success">' + esc(data.nombre || 'No especificado') + '</div></div>';
+                contentHtml += '<div class="or-data-card"><div class="or-data-label">Estado</div><div class="or-data-value">' + esc(data.estado || 'Desconocido') + '</div></div>';
+                contentHtml += '<div class="or-data-card"><div class="or-data-label">Municipio</div><div class="or-data-value">' + esc(data.municipio || 'Desconocido') + '</div></div>';
+                contentHtml += '<div class="or-data-card"><div class="or-data-label">Parroquia</div><div class="or-data-value">' + esc(data.parroquia || 'Desconocido') + '</div></div>';
+                contentHtml += '</div>';
+
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">🗳️ CENTRO Y MESA DE VOTACIÓN</div></div>';
+                contentHtml += '<div class="or-record-row"><div class="or-record-data">Centro de Votación: <b>' + esc(data.centro_votacion || 'Desconocido') + '</b></div></div>';
+                if (data.direccion) contentHtml += '<div class="or-record-row"><div class="or-record-data">Dirección: ' + esc(data.direccion) + '</div></div>';
+                if (data.mesa) contentHtml += '<div class="or-record-row"><div class="or-record-data">Mesa: <b>' + esc(data.mesa) + '</b></div></div>';
+                contentHtml += '</div>';
+
+                if (data.snapshot_url) {
+                    contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">CAPTURA HISTÓRICA WAYBACK</div></div>';
+                    contentHtml += '<div class="or-record-row"><div class="or-record-data"><a href="' + esc(data.snapshot_url) + '" target="_blank" style="color:#76FF03;text-decoration:none;">🌐 Ver captura original en Wayback Machine (' + esc(data.snapshot_timestamp || '') + ')</a></div></div></div>';
+                }
+            } else if (data.status === 'SIN_REGISTRO_ARCHIVADO' || data.status === 'ERROR_DESCARGA_ARCHIVO' || data.status === 'CAPTURA_NO_PARSEABLE') {
+                contentHtml += '<div class="or-alert-box warning">⚠️ ' + esc(data.mensaje || 'No se encontró captura web archivada para la cédula.') + '</div>';
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">INFORMACIÓN DE BÚSQUEDA</div></div>';
+                contentHtml += '<div class="or-record-row"><div class="or-record-data">Cédula consultada: <b>' + esc(data.cedula || query) + '</b></div></div>';
+                contentHtml += '<div class="or-record-row"><div class="or-record-data">Método: ' + esc(data.metodo || 'Archivos Históricos Wayback Machine (CDX API)') + '</div></div>';
+                if (data.alternativa_recomendada) {
+                    contentHtml += '<div class="or-alert-box info" style="margin-top:10px;">💡 ' + esc(data.alternativa_recomendada) + '</div>';
+                }
+                contentHtml += '</div>';
+            } else {
+                contentHtml += '<div class="or-data-grid">';
+                contentHtml += '<div class="or-data-card" style="grid-column: span 2;"><div class="or-data-label">Institución</div><div class="or-data-value large success">' + esc(data.institucion || 'CNE — Venezuela') + '</div></div>';
+                contentHtml += '<div class="or-data-card"><div class="or-data-label">Alcance</div><div class="or-data-value info">' + esc(data.alcance || 'OSINT institucional público') + '</div></div>';
+                contentHtml += '<div class="or-data-card"><div class="or-data-label">Estatus</div><div class="or-data-value large ' + (data.status === 'CONSULTADO' ? 'success' : 'danger') + '">' + esc(data.status || 'N/A') + '</div></div>';
+                contentHtml += '<div class="or-data-card"><div class="or-data-label">Canal</div><div class="or-data-value info">' + esc(data.canal || '') + '</div></div>';
+                contentHtml += '</div>';
+
+                if (data.comunicados && data.comunicados.length) {
+                    contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">📰 COMUNICADOS Y NOTICIAS INSTITUCIONALES</div><div class="or-section-count">' + data.comunicados.length + '</div></div>';
+                    data.comunicados.forEach(function(c) {
+                        contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(c.category || '') + ' — ' + esc(c.title) + '</div><div class="or-record-meta">' + esc(c.published || '') + '</div></div>';
+                    });
+                    contentHtml += '</div>';
+                }
+
+                if (data.avisos_oficiales && data.avisos_oficiales.length) {
+                    contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">📢 AVISOS OFICIALES</div><div class="or-section-count">' + data.avisos_oficiales.length + '</div></div>';
+                    data.avisos_oficiales.forEach(function(av) {
+                        contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(av.title) + '</div></div>';
+                    });
+                    contentHtml += '</div>';
+                }
+
+                if (data.secciones_institucionales && data.secciones_institucionales.length) {
+                    contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">🏛️ SECCIONES INSTITUCIONALES DEL PORTAL</div></div>';
+                    data.secciones_institucionales.forEach(function(s) {
+                        contentHtml += '<div class="or-record-row"><div class="or-record-data"><b>' + esc(s.nombre) + '</b> — ' + esc(s.descripcion) + '</div><div class="or-record-meta">' + esc(s.ruta) + '</div></div>';
+                    });
+                    contentHtml += '</div>';
+                }
+
+                contentHtml += '<div class="or-section"><div class="or-section-header"><div class="or-section-title">FUENTE</div></div>';
+                contentHtml += '<div class="or-record-row"><div class="or-record-data">' + esc(data.fuente || '🇻🇪 Portal Oficial CNE (https://cne.gov.ve)') + '</div><div class="or-record-meta">' + esc(data.timestamp || '') + '</div></div>';
+                contentHtml += '<div class="or-alert-box info">ℹ️ Ingresa una cédula en el buscador de arriba (ej: V-12345678) para consultar centros de votación en el archivo histórico web de Wayback Machine.</div></div>';
+            }
         }
         // ── PHONE CARRIER ──
         else if (tabId === 'phone') {

@@ -174,7 +174,7 @@ async def test_osiris_cctv_stream_hls():
 
 @pytest.mark.asyncio
 async def test_osiris_cctv_analyze_yolo():
-    """GET /api/osiris/cctv/analyze debe retornar estructuración de analítica táctica YOLOv8."""
+    """GET /api/osiris/cctv/analyze debe retornar estructuración de analítica táctica de visión por computadora."""
     async with _make_osiris_client() as client:
         resp = await client.get("/api/osiris/cctv/analyze?camera_id=tfl-1234&url=http://example.com/cam.jpg")
         assert resp.status_code == 200
@@ -182,5 +182,28 @@ async def test_osiris_cctv_analyze_yolo():
         assert data["camera_id"] == "tfl-1234"
         assert "objects_detected" in data
         assert "vehicles" in data["objects_detected"]
-        assert data["model"] == "YOLOv8-Nano-CCTV-v1.0"
+        assert "COBALTO-VISION" in data["model"]
+
+
+@pytest.mark.asyncio
+async def test_osiris_cctv_health_endpoint():
+    """GET /api/osiris/cctv/health debe retornar estructura de salud/uptime de la red CCTV."""
+    async with _make_osiris_client() as client:
+        resp = await client.get("/api/osiris/cctv/health?check=full&limit=5")
+        assert resp.status_code == 200
+        data = resp.json()
+        assert "checked" in data
+        assert "online" in data
+        assert "offline" in data
+        assert "online_percent" in data
+
+
+@pytest.mark.asyncio
+async def test_osiris_cctv_vision_module():
+    """cctv_vision.analyze_cctv_frame debe retornar estructura analítica aunque el frame sea inválido."""
+    from cctv_vision import analyze_cctv_frame
+    result = analyze_cctv_frame("test-cam", b"not-an-image-bytes")
+    assert result["camera_id"] == "test-cam"
+    assert "objects_detected" in result
+    assert "motion_score" in result
 

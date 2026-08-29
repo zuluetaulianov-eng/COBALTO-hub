@@ -13,6 +13,10 @@ window.OsirisGlobal = {
         cctvSelected: null,
         liveVision: true,
         liveVisionTimer: null,
+        healthMap: {},
+        healthOnline: 0,
+        healthTotal: 0,
+        healthLastCheck: null,
     },
 
     init: function() {
@@ -36,10 +40,12 @@ window.OsirisGlobal = {
         this.loadCCTV();
         this.loadFeed();
         this.loadAerospace();
+        this.loadHealth();
 
         this.state.pollTimers.push(setInterval(function() { self.loadFeed(); }, 120000));
         this.state.pollTimers.push(setInterval(function() { self.loadCCTV(); }, 300000));
         this.state.pollTimers.push(setInterval(function() { self.loadAerospace(); }, 120000));
+        this.state.pollTimers.push(setInterval(function() { self.loadHealth(); }, 120000));
 
         var refreshBtn = document.getElementById('osiris-cctv-refresh');
         if (refreshBtn) {
@@ -103,7 +109,7 @@ window.OsirisGlobal = {
         if (this.state.liveVisionTimer) clearInterval(this.state.liveVisionTimer);
         this.state.liveVisionTimer = setInterval(function() {
             if (!self.state.active || !self.state.liveVision) return;
-            var imgs = document.querySelectorAll('.cctv-img');
+            var imgs = document.querySelectorAll('img.cctv-img');
             var now = Date.now();
             for (var i = 0; i < imgs.length; i++) {
                 var img = imgs[i];
@@ -160,6 +166,78 @@ window.OsirisGlobal = {
             .catch(function(err) {
                 console.warn('[OSIRIS] CCTV load failed:', err);
             });
+    },
+
+    loadHealth: function() {
+        var self = this;
+        if (!this.state.active) return;
+        fetch('/api/osiris/cctv/health?check=auto&limit=120')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                var map = {};
+                var on = 0;
+                var online = data.online_cameras || [];
+                var offline = data.offline_cameras || [];
+                for (var i = 0; i < online.length; i++) {
+                    map[online[i].id] = { online: true, http: online[i].http_status };
+                    on++;
+                }
+                for (var j = 0; j < offline.length; j++) {
+                    map[offline[j].id] = { online: false, reason: offline[j].reason || 'offline' };
+                }
+                self.state.healthMap = map;
+                self.state.healthOnline = on;
+                self.state.healthTotal = data.checked || (online.length + offline.length);
+                self.state.healthLastCheck = data.timestamp;
+                self._renderHealthStatus();
+                self._applyHealthDots();
+            })
+            .catch(function(err) {
+                console.warn('[OSIRIS] Health load failed:', err);
+            });
+    },
+
+    _renderHealthStatus: function() {
+        var countEl = document.getElementById('osiris-cctv-count');
+        if (!countEl) return;
+        var online = this.state.healthOnline;
+        var total = this.state.healthTotal;
+        var text = this.state.cctvTotal + ' CÁMARAS';
+        if (this.state.cctvFilter !== 'all') {
+            text += ' [' + this.state.cctvFilter + ']';
+        }
+        if (this.state.healthLastCheck) {
+            text += ' · <span style="color:#00FFAA;">' + online + ' online</span>/' + total + '';
+        }
+        countEl.innerHTML = text;
+    },
+
+    _applyHealthDots: function() {
+        var self = this;
+        var cards = document.querySelectorAll('.cctv-card');
+        for (var i = 0; i < cards.length; i++) {
+            var card = cards[i];
+            var camData = card.getAttribute('data-cam');
+            if (!camData) continue;
+            var dot = card.querySelector('.cctv-dot');
+            var cam;
+            try { cam = JSON.parse(camData.replace(/&quot;/g, '"').replace(/&#39;/g, "'")); } catch(e) { continue; }
+            var h = self.state.healthMap[cam.id];
+            if (!h) continue;
+            if (dot) {
+                if (h.online) {
+                    dot.style.background = '#00FFAA';
+                    dot.style.boxShadow = '0 0 8px #00FFAA';
+                } else {
+                    dot.style.background = '#FF4444';
+                    dot.style.boxShadow = '0 0 8px #FF4444';
+                }
+            }
+            var img = card.querySelector('.cctv-img');
+            if (img && !h.online && !img.getAttribute('data-offline-badge')) {
+                img.setAttribute('data-offline-badge', '1');
+            }
+        }
     },
 
     _updateCCTVStats: function() {
@@ -319,7 +397,10 @@ window.OsirisGlobal = {
             statusText += ' [' + this.state.cctvFilter + ']';
         }
         statusText += ' · ' + validCams.length + ' feeds';
-        if (countEl) countEl.textContent = statusText;
+        if (countEl) {
+            countEl.textContent = statusText;
+            this._renderHealthStatus();
+        }
 
         if (!validCams.length) {
             grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);font-family:monospace;font-size:11px;">' +
@@ -340,12 +421,20 @@ window.OsirisGlobal = {
             var camId = 'cam-' + idx + '-' + ts;
             var proxyUrl = '/api/osiris/cctv/image?url=' + encodeURIComponent(cam.feed_url);
             var camData = this._esc(JSON.stringify(cam).replace(/'/g, '&#39;').replace(/"/g, '&quot;'));
+            var isHls = this._isHlsStream(cam.feed_url);
+
+            var mediaHtml;
+            if (isHls) {
+                mediaHtml = '<video id="' + camId + '-vid" class="cctv-img" data-hls="' + this._esc(cam.feed_url) + '" muted playsinline preload="metadata" style="display:none;width:100%;height:100%;object-fit:cover;"></video>';
+            } else {
+                mediaHtml = '<img id="' + camId + '-img" class="cctv-img" data-base-src="' + proxyUrl + '" src="' + proxyUrl + '" />';
+            }
 
             html += '<div class="cctv-card" data-cam=\'' + camData + '\'>' +
                 '<div class="cctv-preview" id="' + camId + '-wrapper">' +
                 '<div class="cctv-ph" id="' + camId + '-ph">⟳</div>' +
-                '<img id="' + camId + '-img" class="cctv-img" data-base-src="' + proxyUrl + '" src="' + proxyUrl + '" />' +
-                '<div class="cctv-badge-src">' + this._esc(cam.source || '') + '</div>' +
+                mediaHtml +
+                '<div class="cctv-badge-src">' + this._esc(cam.source || '') + ' ' + (isHls ? '<span style="color:#00E5FF;">▶HLS</span>' : '') + '</div>' +
                 '<div class="cctv-dot" id="' + camId + '-dot"></div>' +
                 '</div>' +
                 '<div class="cctv-info">' +
@@ -368,25 +457,69 @@ window.OsirisGlobal = {
                 setTimeout(function() {
                     var card = document.getElementById(id + '-wrapper');
                     var img = document.getElementById(id + '-img');
+                    var vid = document.getElementById(id + '-vid');
                     var ph = document.getElementById(id + '-ph');
                     var dot = document.getElementById(id + '-dot');
-                    if (!img || !ph) return;
 
-                    img.onload = function() {
-                        try { ph.style.display = 'none'; } catch(e) {}
-                        try { img.style.display = 'block'; } catch(e) {}
-                        try { if (dot) { dot.style.background = '#00FFAA'; dot.style.boxShadow = '0 0 8px #00FFAA'; } } catch(e) {}
-                    };
-                    img.onerror = function() {
+                    var isHlsCam = window.OsirisGlobal && window.OsirisGlobal._isHlsStream(camObj.feed_url);
+
+                    if (vid) {
+                        // Real HLS playback in grid via hls.js (or native HLS)
+                        var media = vid;
                         try {
-                            var base = this.getAttribute('data-base-src') || this.src;
-                            this.src = base + (base.indexOf('?') !== -1 ? '&' : '?') + '_r=' + Date.now();
-                        } catch(e) {}
-                        try { if (dot) { dot.style.background = '#FF9500'; dot.style.boxShadow = '0 0 8px #FF9500'; } } catch(e) {}
-                    };
-                    if (img.complete && img.naturalHeight > 1) {
-                        try { ph.style.display = 'none'; } catch(e) {}
-                        try { if (dot) { dot.style.background = '#00FFAA'; dot.style.boxShadow = '0 0 8px #00FFAA'; } } catch(e) {}
+                            if (window.Hls && Hls.isSupported()) {
+                                var hls = new Hls({ enableWorker: true, lowLatencyMode: true, backBufferLength: 20 });
+                                (function(h) {
+                                    h.loadSource(camObj.feed_url);
+                                    h.attachMedia(media);
+                                    h.on(Hls.Events.MANIFEST_PARSED, function() {
+                                        media.play().catch(function() {});
+                                        if (ph) ph.style.display = 'none';
+                                        media.style.display = 'block';
+                                        if (dot) { dot.style.background = '#00FFAA'; dot.style.boxShadow = '0 0 8px #00FFAA'; }
+                                    });
+                                    h.on(Hls.Events.ERROR, function(e, data) {
+                                        if (data.fatal) {
+                                            if (data.type === Hls.ErrorTypes.NETWORK_ERROR) h.startLoad();
+                                            else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) h.recoverMediaError();
+                                            else h.destroy();
+                                        }
+                                    });
+                                })(hls);
+                            } else if (media.canPlayType('application/vnd.apple.mpegurl')) {
+                                media.src = camObj.feed_url;
+                                media.addEventListener('loadedmetadata', function() {
+                                    media.play().catch(function() {});
+                                    if (ph) ph.style.display = 'none';
+                                    media.style.display = 'block';
+                                    if (dot) { dot.style.background = '#00FFAA'; dot.style.boxShadow = '0 0 8px #00FFAA'; }
+                                });
+                            } else {
+                                if (ph) { ph.textContent = 'HLS N/D'; ph.style.color = '#FF9500'; }
+                                if (dot) { dot.style.background = '#FF9500'; dot.style.boxShadow = '0 0 8px #FF9500'; }
+                            }
+                        } catch(e) {
+                            if (dot) { dot.style.background = '#FF9500'; dot.style.boxShadow = '0 0 8px #FF9500'; }
+                        }
+                    }
+
+                    if (img) {
+                        img.onload = function() {
+                            try { ph.style.display = 'none'; } catch(e) {}
+                            try { img.style.display = 'block'; } catch(e) {}
+                            try { if (dot) { dot.style.background = '#00FFAA'; dot.style.boxShadow = '0 0 8px #00FFAA'; } } catch(e) {}
+                        };
+                        img.onerror = function() {
+                            try {
+                                var base = this.getAttribute('data-base-src') || this.src;
+                                this.src = base + (base.indexOf('?') !== -1 ? '&' : '?') + '_r=' + Date.now();
+                            } catch(e) {}
+                            try { if (dot) { dot.style.background = '#FF9500'; dot.style.boxShadow = '0 0 8px #FF9500'; } } catch(e) {}
+                        };
+                        if (img.complete && img.naturalHeight > 1) {
+                            try { ph.style.display = 'none'; } catch(e) {}
+                            try { if (dot) { dot.style.background = '#00FFAA'; dot.style.boxShadow = '0 0 8px #00FFAA'; } } catch(e) {}
+                        }
                     }
 
                     if (card) {
@@ -413,6 +546,8 @@ window.OsirisGlobal = {
             moreBtn.innerHTML = 'LOAD MORE (' + (validCams.length - end) + ' remaining)';
             moreBtn.onclick = function() { window.OsirisGlobal.loadMoreCCTV(); };
         }
+
+        this._applyHealthDots();
     },
 
     _renderCCTVInfo: function() {
@@ -423,8 +558,20 @@ window.OsirisGlobal = {
             panel.innerHTML = '<div style="text-align:center;padding:20px;color:#64748B;font-size:9px;font-family:monospace;">SELECT A CAMERA</div>';
             return;
         }
+        var h = this.state.healthMap[cam.id];
+        var healthHtml = '';
+        if (h) {
+            if (h.online) {
+                healthHtml = '<div class="cctv-meta-row"><span class="cctv-meta-label">Estado</span><span style="color:#00FFAA;">● EN LÍNEA' + (h.http ? ' (HTTP ' + h.http + ')' : '') + '</span></div>';
+            } else {
+                healthHtml = '<div class="cctv-meta-row"><span class="cctv-meta-label">Estado</span><span style="color:#FF4444;">● FUERA DE LÍNEA' + (h.reason ? ' — ' + this._esc(h.reason) : '') + '</span></div>';
+            }
+        } else {
+            healthHtml = '<div class="cctv-meta-row"><span class="cctv-meta-label">Estado</span><span style="color:#64748B;">POR VERIFICAR</span></div>';
+        }
         panel.innerHTML =
             '<div style="color:#00E5FF;font-weight:bold;font-size:10px;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,0.06);padding-bottom:6px;">📹 ' + this._esc(cam.name || 'Unknown') + '</div>' +
+            healthHtml +
             '<div class="cctv-meta-row"><span class="cctv-meta-label">Source</span><span>' + this._esc(cam.source || '') + '</span></div>' +
             '<div class="cctv-meta-row"><span class="cctv-meta-label">City</span><span>' + this._esc(cam.city || '') + '</span></div>' +
             '<div class="cctv-meta-row"><span class="cctv-meta-label">Country</span><span>' + this._esc(cam.country || '') + '</span></div>' +
@@ -435,7 +582,7 @@ window.OsirisGlobal = {
             '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:4px;">' +
             '<button onclick="if(window.OsirisGlobal)window.OsirisGlobal.expandCamera(window.OsirisGlobal.state.cctvSelected)" style="flex:1;min-width:65px;background:rgba(0,229,255,0.08);border:1px solid rgba(0,229,255,0.2);border-radius:4px;color:#00E5FF;padding:5px 2px;font-size:8px;font-family:monospace;cursor:pointer;">🔍 EXPANDIR</button>' +
             '<button onclick="if(window.OsirisGlobal)window.OsirisGlobal.captureSnapshot(window.OsirisGlobal.state.cctvSelected)" style="flex:1;min-width:65px;background:rgba(255,215,0,0.1);border:1px solid rgba(255,215,0,0.3);border-radius:4px;color:#FFD700;padding:5px 2px;font-size:8px;font-family:monospace;cursor:pointer;">📸 CAPTURAR</button>' +
-            '<button onclick="if(window.OsirisGlobal)window.OsirisGlobal.analyzeCCTV(window.OsirisGlobal.state.cctvSelected)" style="flex:1;min-width:65px;background:rgba(255,45,85,0.12);border:1px solid rgba(255,45,85,0.3);border-radius:4px;color:#FF2D55;padding:5px 2px;font-size:8px;font-family:monospace;cursor:pointer;">⚡ YOLOv8 AI</button>' +
+            '<button onclick="if(window.OsirisGlobal)window.OsirisGlobal.analyzeCCTV(window.OsirisGlobal.state.cctvSelected)" style="flex:1;min-width:65px;background:rgba(255,45,85,0.12);border:1px solid rgba(255,45,85,0.3);border-radius:4px;color:#FF2D55;padding:5px 2px;font-size:8px;font-family:monospace;cursor:pointer;">🧠 VISIÓN AI</button>' +
             '<button onclick="if(window.OsirisGlobal&&window.OsirisGlobal.state.cctvSelected){var c=window.OsirisGlobal.state.cctvSelected;if(window.switchTab)window.switchTab(\'tab-map\');setTimeout(function(){if(window.UnifiedMap&&window.UnifiedMap.focusLocation)window.UnifiedMap.focusLocation(c.lat,c.lng,c.name);},150);}" style="flex:1;min-width:65px;background:rgba(0,255,170,0.08);border:1px solid rgba(0,255,170,0.2);border-radius:4px;color:#00FFAA;padding:5px 2px;font-size:8px;font-family:monospace;cursor:pointer;">📍 MAPA</button>' +
             '</div>' +
             '<div id="cctv-ai-panel" style="margin-top:6px;display:none;padding:6px;background:rgba(255,45,85,0.05);border:1px dashed rgba(255,45,85,0.3);border-radius:4px;font-size:8px;"></div>';
@@ -446,18 +593,22 @@ window.OsirisGlobal = {
         var panel = document.getElementById('cctv-ai-panel');
         if (!panel) return;
         panel.style.display = 'block';
-        panel.innerHTML = '<span style="color:#FF2D55;">⚡ EJECUTANDO ANALÍTICA YOLOv8-NANO...</span>';
+        panel.innerHTML = '<span style="color:#FF2D55;">⚡ EJECUTANDO VISIÓN POR COMPUTADORA (OpenCV HOG+MOG2)...</span>';
 
         fetch('/api/osiris/cctv/analyze?camera_id=' + encodeURIComponent(cam.id || 'cam') + '&url=' + encodeURIComponent(cam.feed_url || ''))
             .then(function(r) { return r.json(); })
             .then(function(res) {
                 var objs = res.objects_detected || {};
                 var statusColor = res.anomaly_detected ? '#FF2D55' : '#00FFAA';
+                var motion = typeof res.motion_score === 'number' ? res.motion_score.toFixed(1) : '?';
+                var model = res.model || 'COBALTO-VISION';
                 panel.innerHTML =
-                    '<div style="color:#FF2D55;font-weight:bold;margin-bottom:4px;">YOLOv8-NANO ANALYTICS (' + (res.confidence * 100).toFixed(0) + '% CONF)</div>' +
-                    '<div>🚗 Vehículos: <b>' + (objs.vehicles || 0) + '</b> · 🚶 Peatones: <b>' + (objs.pedestrians || 0) + '</b></div>' +
-                    '<div>Tráfico: <b style="color:' + statusColor + ';">' + (res.traffic_density || 'NORMAL') + '</b> · Estado: <b style="color:' + statusColor + ';">' + (res.tactical_status || 'NORMAL') + '</b></div>';
-            })
+                    '<div style="color:#FF2D55;font-weight:bold;margin-bottom:4px;">🧠 VISIÓN COMPUTADORA (' + (res.confidence * 100).toFixed(0) + '% CONF)</div>' +
+                    '<div>🚗 Vehículos: <b>' + (objs.vehicles || 0) + '</b> · 🚶 Peatones: <b>' + (objs.pedestrians || 0) + '</b> · 🚲 Bicis: <b>' + (objs.bicycles || 0) + '</b></div>' +
+                    '<div>📊 Movimiento: <b style="color:#00E5FF;">' + motion + '%</b></div>' +
+                    '<div>Tráfico: <b style="color:' + statusColor + ';">' + (res.traffic_density || 'NORMAL') + '</b> · Estado: <b style="color:' + statusColor + ';">' + (res.tactical_status || 'NORMAL') + '</b></div>' +
+                    '<div style="margin-top:4px;color:#64748B;font-size:7px;">Modelo: ' + this._esc(model) + '</div>';
+            }.bind(this))
             .catch(function() {
                 panel.innerHTML = '<span style="color:#FF4444;">❌ Error en servidor de analítica</span>';
             });

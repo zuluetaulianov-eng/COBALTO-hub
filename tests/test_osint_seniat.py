@@ -4,7 +4,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import pytest
-from osint_seniat import normalize_rif, parse_seniat_response, get_seniat_data, lookup_seniat_rif
+from osint_seniat import (
+    normalize_rif,
+    parse_seniat_response,
+    get_seniat_data,
+    lookup_seniat_rif,
+    _classify_news,
+    seniat_institucional,
+)
 
 
 def test_normalize_rif():
@@ -22,14 +29,37 @@ def test_parse_seniat_response():
     assert res["tasa_retencion"] == "75%"
 
 
-@pytest.mark.asyncio
-async def test_lookup_seniat_rif_empty():
-    res = await lookup_seniat_rif("")
+def test_lookup_seniat_rif_empty():
+    res = lookup_seniat_rif("")
     assert res["status"] == "error"
 
 
-@pytest.mark.asyncio
-async def test_lookup_seniat_rif_valid():
-    res = await lookup_seniat_rif("J300000001")
+def test_lookup_seniat_rif_valid():
+    res = lookup_seniat_rif("J300000001")
     assert "rif" in res
     assert "razon_social" in res
+
+
+def test_classify_news_categories():
+    assert _classify_news("Seniat inicia plan de formación para fiscales") == "fiscalizacion"
+    assert _classify_news("Seniat presenta nueva identidad visual en su digitalización") == "digitalizacion"
+    assert _classify_news("Seniat y la banca privada afianzan alianza") == "banca_y_alianzas"
+    assert _classify_news("Comunicado institucional general del Seniat") == "institucional"
+
+
+def test_seniat_institutional_structure():
+    """Ensure institutional lookup never fabricates personal identity data."""
+    res = seniat_institucional(scope="institucional", cedula="V-12345678")
+    assert res["status"] == "CONSULTADO"
+    assert res["alcance"] == "OSINT institucional público — sin perfilamiento de personas naturales"
+    doc = res["documento_consultado"]
+    assert doc["validacion_formato"]["valida"] is True
+    assert "no se consulta" in doc["nota"]
+
+
+def test_get_seniat_data_structure():
+    data = get_seniat_data()
+    assert "timestamp" in data
+    assert "sources" in data
+    assert "count" in data
+    assert "🇻🇪 SENIAT Comunicados" in data["sources"]

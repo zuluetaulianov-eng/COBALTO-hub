@@ -662,17 +662,61 @@ async def osiris_doctor() -> dict:
 
 
 # ── IVSS Verification (Venezuela OSINT) ──
-async def ivss_lookup(cedula: str, nationality: str = "V") -> dict:
-    """IVSS Account & Employer verification."""
-    from osint_ivss import lookup_ivss_individual
-    return lookup_ivss_individual(cedula, nationality)
+async def ivss_lookup(cedula: str | None = None, nationality: str = "V", scope: str = "institucional") -> dict:
+    """
+    IVSS institutional OSINT lookup — comunicados oficiales, alertas de pensiones,
+    salud y trámites. Inteligencia institucional pública; NO perfilamiento de personas.
+    """
+    from osint_ivss import ivss_lookup as _ivss
+    return _ivss(cedula=cedula, scope=scope)
 
 
-# ── SENIAT RIF Verification (Venezuela OSINT) ──
+# ── SENIAT Verification (Venezuela OSINT) ──
 async def seniat_lookup(rif: str) -> dict:
-    """SENIAT RIF Tax condition & Legal Address lookup."""
+    """SENIAT RIF Tax condition & Legal Address lookup (public tax registry)."""
     from osint_seniat import lookup_seniat_rif
-    return await lookup_seniat_rif(rif)
+    return lookup_seniat_rif(rif)
+
+
+async def seniat_institutional(scope: str = "institucional", rif: str | None = None, cedula: str | None = None) -> dict:
+    """
+    SENIAT institutional OSINT — comunicados oficiales, valor de la Unidad Tributaria,
+    calendario de obligaciones y catálogo. Inteligencia institucional pública.
+    """
+    from osint_seniat import seniat_institucional as _si
+    return _si(scope=scope, rif=rif, cedula=cedula)
+
+
+async def seniat_unit():
+    """Valor actual de la Unidad Tributaria (UT) SENIAT."""
+    from osint_seniat import unidad_tributaria
+    return unidad_tributaria()
+
+
+# ── SAIME Institutional Lookup (Venezuela OSINT) ──
+async def saime_lookup(cedula: str | None = None, scope: str = "institucional") -> dict:
+    """
+    SAIME institutional OSINT lookup (comunicados, alertas de movilidad fronteriza
+    y servicios oficiales). Public institution-level intelligence only; does NOT
+    profile private individuals.
+    """
+    from osint_saime import saime_lookup as _saime
+    return await _saime(cedula=cedula, scope=scope)
+
+
+# ── CNE Institutional & Voter Lookup (Venezuela OSINT) ──
+async def cne_lookup(scope: str = "institucional", cedula: str | None = None) -> dict:
+    """
+    CNE (Consejo Nacional Electoral) OSINT lookup:
+    - Institutional intelligence (comunicados, avisos oficiales, normativa).
+    - Voter center fallback via Wayback Machine (CDX API) if cedula parameter is passed.
+    """
+    if cedula:
+        from osint_cne import cne_voter_wayback_lookup
+        return cne_voter_wayback_lookup(cedula=cedula)
+    from osint_cne import cne_lookup as _cne
+    return await _cne(scope=scope)
+
 
 
 def _is_valid_ip(ip: str) -> bool:

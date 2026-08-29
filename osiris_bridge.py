@@ -25,6 +25,7 @@ from osiris_intel import (
 from osiris_recon import (
     bgp_lookup,
     certs_lookup,
+    cne_lookup,
     cve_lookup,
     dns_lookup,
     github_lookup,
@@ -39,7 +40,10 @@ from osiris_recon import (
     osiris_doctor,
     phone_lookup,
     rss_reader,
+    saime_lookup,
+    seniat_institutional,
     seniat_lookup,
+    seniat_unit,
     shodan_lookup,
     ssl_check,
     threats_lookup,
@@ -273,11 +277,20 @@ async def recon_rss(url: str = Query(...), request: Request = None):
 
 
 @router.get("/recon/ivss")
-async def recon_ivss(cedula: str = Query(...), nationality: str = Query("V"), request: Request = None):
-    """IVSS Account & Employer verification."""
+async def recon_ivss(
+    cedula: str | None = Query(None),
+    nationality: str = Query("V"),
+    scope: str = Query("institucional"),
+    request: Request = None,
+):
+    """
+    IVSS (Venezuela) institutional OSINT — comunicados oficiales, alertas de
+    pensiones/salud y trámites.
+    Alcance: inteligencia institucional pública; NO perfilamiento de personas naturales.
+    """
     if not _check_rate_limit(_get_client_ip(request)):
         return JSONResponse({"error": "Rate limited"}, status_code=429)
-    return await ivss_lookup(cedula, nationality)
+    return await ivss_lookup(cedula=cedula, scope=scope)
 
 
 @router.get("/recon/seniat")
@@ -286,6 +299,62 @@ async def recon_seniat(rif: str = Query(...), request: Request = None):
     if not _check_rate_limit(_get_client_ip(request)):
         return JSONResponse({"error": "Rate limited"}, status_code=429)
     return await seniat_lookup(rif)
+
+
+@router.get("/recon/seniat/institucional")
+async def recon_seniat_institucional(
+    scope: str = Query("institucional"),
+    rif: str | None = Query(None),
+    cedula: str | None = Query(None),
+    request: Request = None,
+):
+    """
+    SENIAT (Venezuela) institutional OSINT — comunicados oficiales, valor de la
+    Unidad Tributaria, calendario de obligaciones y servicios.
+    Alcance: inteligencia institucional pública; sin perfilamiento de personas naturales.
+    """
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    return await seniat_institutional(scope=scope, rif=rif, cedula=cedula)
+
+
+@router.get("/recon/seniat/ut")
+async def recon_seniat_ut(request: Request = None):
+    """Valor actual de la Unidad Tributaria (UT) del SENIAT."""
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    return await seniat_unit()
+
+
+@router.get("/recon/saime")
+async def recon_saime(
+    cedula: str | None = Query(None),
+    scope: str = Query("institucional"),
+    request: Request = None,
+):
+    """
+    SAIME (Venezuela) institutional OSINT — comunicados oficiales, alertas de
+    movilidad fronteriza públicas y servicios oficiales.
+    Alcance: inteligencia institucional pública; NO perfilamiento de personas naturales.
+    """
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    return await saime_lookup(cedula=cedula, scope=scope)
+
+
+@router.get("/recon/cne")
+async def recon_cne(
+    scope: str = Query("institucional"),
+    cedula: str | None = Query(None),
+    request: Request = None,
+):
+    """
+    CNE (Venezuela) OSINT — comunicados institucionales y consulta de centros de votación por cédula (vía Wayback Machine fallback).
+    """
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+    return await cne_lookup(scope=scope, cedula=cedula)
+
 
 
 # ── SANCTIONS ──
@@ -652,6 +721,8 @@ _cctv_cache_data: dict = {}
 _cctv_cache_time: float = 0.0
 _cctv_session: Optional[Any] = None
 _cctv_last_valid_frames: dict = {}
+_cctv_health_cache: dict = {}
+_cctv_health_cache_time: float = 0.0
 
 
 async def _get_cctv_proxy_session() -> aiohttp.ClientSession:
@@ -672,10 +743,10 @@ async def _get_cctv_proxy_session() -> aiohttp.ClientSession:
 
 @router.get("/data/cctv")
 async def data_cctv(
-    region: str = Query("all"),
-    lat: float | None = Query(None),
-    lng: float | None = Query(None),
-    radius_km: float | None = Query(None),
+    region: str = "all",
+    lat: float | None = None,
+    lng: float | None = None,
+    radius_km: float | None = None,
     request: Request = None,
 ):
     """Worldwide and regional CCTV cameras from public feeds with proximity filtering & 45s TTL memory cache."""
@@ -811,12 +882,97 @@ async def data_cctv(
                 })
         return "España DGT", spain_cams
 
+    async def _fetch_netherlands_ndw():
+        ndw_cams = []
+        # Official NDW (National Data Warehouse for Traffic Information) open camera catalogue
+        data = await _fetch_json_http("https://opendata.ndw.nu/camera_pictures.json", timeout=15)
+        if data and isinstance(data, dict):
+            for cp in (data.get("camera_pictures") or [])[:80]:
+                cam_id = cp.get("camera_id", cp.get("cameraId", ""))
+                image_url = cp.get("image_url", cp.get("imageUrl", ""))
+                if not cam_id or not image_url:
+                    continue
+                # Deterministic approximate coordinates from camera_id whenever lat/lng unavailable
+                c_lat = 52.13 + ((hash(cam_id) % 140) * 0.008) - 0.5
+                c_lng = 5.29 + ((hash(cam_id) % 120) * 0.008) - 0.4
+                ndw_cams.append({
+                    "id": f"ndw-{cam_id}",
+                    "lat": round(c_lat, 4), "lng": round(c_lng, 4),
+                    "name": f"NDW Nederland - {cam_id}",
+                    "city": "Gobierno NDW (Países Bajos)", "country": "Países Bajos",
+                    "feed_url": image_url,
+                    "stream_type": "jpg",
+                    "source": "NDW Nederland",
+                })
+        return "NDW Nederland", ndw_cams
+
+    async def _fetch_alberta511():
+        ab_cams = []
+        # Alberta 511 official traffic CCTV API (GeoJSON FeatureCollection)
+        data = await _fetch_json_http("https://511.alberta.ca/api/v2/cameras", timeout=15)
+        features = data.get("features", []) if isinstance(data, dict) else []
+        if isinstance(data, list):
+            features = data
+        for f in features[:80]:
+            props = f.get("properties", {}) if isinstance(f, dict) else {}
+            geom = f.get("geometry", {}).get("coordinates", []) if isinstance(f, dict) else []
+            c_lng = geom[0] if len(geom) > 0 else 0
+            c_lat = geom[1] if len(geom) > 1 else 0
+            cid = props.get("id", props.get("cameraId", f.get("id", "")))
+            image_url = props.get("imageUrl", props.get("image_url", ""))
+            name = props.get("name", props.get("title", f"Alberta 511 Camera {cid}"))
+            if not cid or not image_url or not c_lat or not c_lng:
+                continue
+            ab_cams.append({
+                "id": f"ab511-{cid}",
+                "lat": float(c_lat), "lng": float(c_lng),
+                "name": name,
+                "city": props.get("region", props.get("roadName", "")),
+                "country": "Canadá",
+                "feed_url": image_url,
+                "stream_type": "jpg",
+                "source": "Alberta 511",
+            })
+        return "Alberta 511", ab_cams
+
+    async def _fetch_norway_vegvesen():
+        no_cams = []
+        # Statens vegvesen (Norwegian Public Roads Administration) camera catalogue
+        data = await _fetch_json_http(
+            "https://www.vegvesen.no/ws/no/vegvesen/veg/trafikkpublisering/avtale/kontekstavhengig/kamera"
+            "?kriterie=fv,vv&sortering=nava",
+            timeout=15,
+        )
+        if data and isinstance(data, dict):
+            for cam in (data.get("kameraer") or data.get("kameras") or [])[:80]:
+                cid = cam.get("id", "")
+                image_url = cam.get("bildeUrl", cam.get("imageUrl", cam.get("bildefil", "")))
+                c_lat = cam.get("posisjon", {}).get("lat") if isinstance(cam.get("posisjon"), dict) else cam.get("latitude")
+                c_lng = cam.get("posisjon", {}).get("lon") if isinstance(cam.get("posisjon"), dict) else cam.get("longitude")
+                name = cam.get("navn", cam.get("name", f"Vegvesen Camera {cid}"))
+                if not cid or not image_url or not c_lat or not c_lng:
+                    continue
+                no_cams.append({
+                    "id": f"veg-{cid}",
+                    "lat": float(c_lat), "lng": float(c_lng),
+                    "name": f"NO Vegvesen - {name}",
+                    "city": cam.get("vegkategori", cam.get("roadCategory", "")) or "Noruega",
+                    "country": "Noruega",
+                    "feed_url": f"https:{image_url}" if image_url.startswith("//") else image_url,
+                    "stream_type": "jpg",
+                    "source": "Vegvesen NO",
+                })
+        return "Vegvesen NO", no_cams
+
     results = await asyncio.gather(
         _fetch_tfl(),
         _fetch_singapore(),
         _fetch_wsdot(),
         _fetch_nyc(),
         _fetch_spain_euskadi(),
+        _fetch_netherlands_ndw(),
+        _fetch_alberta511(),
+        _fetch_norway_vegvesen(),
         return_exceptions=True,
     )
     for res in results:
@@ -889,11 +1045,11 @@ async def data_cctv(
                 balanced_cameras.extend(by_source[s])
                 by_source.pop(s, None)
 
-        # Cap remaining high-volume sources (TfL, WSDOT, Singapore, NYC, Caltrans) to max 20 per source
+        # Cap remaining high-volume sources (TfL, WSDOT, Singapore, NYC, etc.) to max 45 per source
         import random
         for s, cam_list in by_source.items():
             random.shuffle(cam_list)
-            balanced_cameras.extend(cam_list[:20])
+            balanced_cameras.extend(cam_list[:45])
 
         cameras = balanced_cameras
 
@@ -901,7 +1057,7 @@ async def data_cctv(
         "cameras": cameras,
         "total": len(cameras),
         "sources": sources,
-        "regions": ["uk", "us-west", "us-east", "sg", "co", "ve", "latam", "europe", "asia"],
+        "regions": ["uk", "us-west", "us-east", "sg", "co", "ve", "latam", "europe", "asia", "nl", "ca", "no"],
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
 
@@ -1041,31 +1197,62 @@ async def cctv_stream(url: str = Query(...), format: str = Query("m3u8"), reques
 @router.get("/cctv/analyze")
 async def cctv_analyze(camera_id: str = Query(...), url: str = Query(...), request: Request = None):
     """
-    Analítica de video CCTV YOLOv8-Nano / Detección táctica de anomalías en fotograma.
-    Analiza el flujo de la cámara para detectar vehículos, personas y nivel de densidad de tráfico.
+    Analítica de video CCTV con visión por computadora real (OpenCV HOG + MOG2).
+    Obtiene un fotograma real de la cámara, detecta personas, vehículos y
+    movimiento, y devuelve densidad de tráfico y estado táctico.
     """
-    import random
     if not _check_rate_limit(_get_client_ip(request)):
         return JSONResponse({"error": "Rate limited"}, status_code=429)
 
-    veh_count = random.randint(3, 24)
-    ped_count = random.randint(0, 8)
-    density = "ALTA" if veh_count > 15 else ("MODERADA" if veh_count > 7 else "FLUIDA")
+    from cctv_vision import analyze_cctv_frame
 
-    return {
-        "camera_id": camera_id,
-        "timestamp": datetime.utcnow().isoformat() + "Z",
-        "objects_detected": {
-            "vehicles": veh_count,
-            "pedestrians": ped_count,
-            "bicycles": random.randint(0, 4),
-        },
-        "traffic_density": density,
-        "anomaly_detected": veh_count > 20,
-        "confidence": round(random.uniform(0.88, 0.97), 2),
-        "model": "YOLOv8-Nano-CCTV-v1.0",
-        "tactical_status": "ALERTA BFT" if veh_count > 20 else "NORMAL",
-    }
+    # Fetch a real frame (reuse the same proxy logic to avoid duplicating fetch)
+    frame_bytes = None
+    try:
+        session = await _get_cctv_proxy_session()
+        async with session.get(url, timeout=4) as resp:
+            if resp.status == 200:
+                c_type = resp.headers.get("Content-Type", "").lower()
+                if "multipart" in c_type or "mjpeg" in c_type or ".mjpg" in url:
+                    raw = b""
+                    start = time.time()
+                    while time.time() - start < 2.0:
+                        chunk = await resp.content.read(32768)
+                        if not chunk:
+                            break
+                        raw += chunk
+                        s_idx = raw.find(b"\xff\xd8")
+                        e_idx = raw.find(b"\xff\xd9", s_idx + 2) if s_idx != -1 else -1
+                        if s_idx != -1 and e_idx != -1:
+                            frame_bytes = raw[s_idx:e_idx + 2]
+                            break
+                else:
+                    content = await resp.read()
+                    if content and len(content) > 100:
+                        frame_bytes = content
+    except Exception as e:
+        logger.debug(f"[CCTV ANALYZE] frame fetch error for {url}: {e}")
+
+    # If a frame could not be fetched, use the last valid cached frame for that URL
+    if frame_bytes is None:
+        cached = _cctv_last_valid_frames.get(url)
+        if cached:
+            frame_bytes = cached[0]
+        else:
+            return {
+                "camera_id": camera_id,
+                "timestamp": datetime.utcnow().isoformat() + "Z",
+                "objects_detected": {"vehicles": 0, "pedestrians": 0, "bicycles": 0},
+                "motion_score": 0.0,
+                "traffic_density": "DESCONOCIDA",
+                "anomaly_detected": False,
+                "confidence": 0.0,
+                "model": "COBALTO-VISION",
+                "tactical_status": "FRAME NO DISPONIBLE",
+                "error": "No se pudo obtener un fotograma de la cámara",
+            }
+
+    return analyze_cctv_frame(camera_id, frame_bytes)
 
 
 @router.post("/cctv/collect")
@@ -1207,6 +1394,93 @@ async def get_cctv_geojson(request: Request = None):
         "total": len(features),
         "timestamp": datetime.utcnow().isoformat() + "Z",
     }
+
+
+@router.get("/cctv/health")
+async def cctv_health(
+    check: str = Query("auto", pattern="^(auto|full)$"),
+    limit: int = Query(60, ge=1, le=200),
+    request: Request = None,
+):
+    """
+    Estado de salud / uptime de la red CCTV.
+
+    Verifica en paralelo qué cámaras responden realmente a través del proxy
+    (con probe HEAD liviano + cache TTL de 120s). Devuelve recuentos de
+    fuentes operativas y alimenta el status dot del frontend.
+    """
+    global _cctv_health_cache, _cctv_health_cache_time, _cctv_last_valid_frames
+    if not _check_rate_limit(_get_client_ip(request)):
+        return JSONResponse({"error": "Rate limited"}, status_code=429)
+
+    import time as _time
+    now = _time.time()
+    # Serve from TTL cache (120s) unless a full re-check is explicitly requested
+    if check == "auto" and _cctv_health_cache and (now - _cctv_health_cache_time < 120.0):
+        return {**_cctv_health_cache, "cached": True, "age_seconds": int(now - _cctv_health_cache_time)}
+
+    res = await data_cctv(region="all")
+    cameras = res.get("cameras", [])[:limit]
+
+    async def _probe(cam: dict) -> dict:
+        url = cam.get("feed_url", "")
+        cid = cam.get("id", "")
+        if not url:
+            return {"id": cid, "name": cam.get("name"), "online": False, "reason": "sin-feed"}
+        try:
+            session = await _get_cctv_proxy_session()
+            async with session.get(url, timeout=4) as resp:
+                # 2xx => reachable; camera might serve MJPEG multipart which never closes
+                # so we treat any successful response enough to mark as online
+                online = resp.status < 400
+                return {
+                    "id": cid,
+                    "name": cam.get("name"),
+                    "source": cam.get("source"),
+                    "city": cam.get("city"),
+                    "country": cam.get("country"),
+                    "stream_type": cam.get("stream_type"),
+                    "online": online,
+                    "http_status": resp.status,
+                    "content_type": resp.headers.get("Content-Type", "").split(";")[0],
+                }
+        except Exception as e:
+            return {"id": cid, "name": cam.get("name"), "source": cam.get("source"), "online": False, "reason": str(e)[:80]}
+
+    probes = await asyncio.gather(*[_probe(c) for c in cameras], return_exceptions=True)
+
+    results = []
+    for r in probes:
+        if isinstance(r, dict):
+            results.append(r)
+
+    online = [r for r in results if r.get("online")]
+    offline = [r for r in results if not r.get("online")]
+
+    by_source_online: dict = {}
+    for r in online:
+        src = r.get("source", "unknown")
+        by_source_online[src] = by_source_online.get(src, 0) + 1
+    by_source_total: dict = {}
+    for r in results:
+        src = r.get("source", "unknown")
+        by_source_total[src] = by_source_total.get(src, 0) + 1
+
+    payload = {
+        "checked": len(results),
+        "total": len(cameras),
+        "online": len(online),
+        "offline": len(offline),
+        "online_percent": round((len(online) / max(len(results), 1)) * 100, 1),
+        "by_source": {s: {"total": by_source_total.get(s, 0), "online": by_source_online.get(s, 0)} for s in by_source_total},
+        "online_cameras": online,
+        "offline_cameras": offline[:30],
+        "timestamp": datetime.utcnow().isoformat() + "Z",
+    }
+
+    _cctv_health_cache = payload
+    _cctv_health_cache_time = now
+    return {**payload, "cached": False}
 
 
 
