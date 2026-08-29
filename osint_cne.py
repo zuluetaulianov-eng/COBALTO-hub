@@ -361,10 +361,13 @@ def parse_cne_voter_html(html_text: str) -> dict | None:
 
         # 1. Direct table/element cell extraction
         for tag in soup.find_all(["td", "b", "strong", "div", "span", "p"]):
-            t_str = tag.get_text(strip=True)
-            if ":" in t_str and len(t_str) < 200:
+            t_str = tag.get_text(strip=True) if tag else ""
+            if t_str and ":" in t_str and len(t_str) < 200:
                 parts = t_str.split(":", 1)
-                k, v = parts[0].strip().lower(), parts[1].strip()
+                k = (parts[0] or "").strip().lower()
+                v = (parts[1] or "").strip() if len(parts) > 1 and parts[1] else ""
+                if not v and hasattr(tag, "find_next_sibling") and tag.find_next_sibling():
+                    v = tag.find_next_sibling().get_text(strip=True)
                 if "cédula" in k or "cedula" in k:
                     if not data.get("cedula") and v:
                         data["cedula"] = v
@@ -393,7 +396,7 @@ def parse_cne_voter_html(html_text: str) -> dict | None:
         # 2. Regex fallback extraction from flat body text
         def extract_regex(label_pat: str) -> str:
             m = re.search(rf"{label_pat}\s*:?\s*([^<\n\r]+)", text, re.IGNORECASE)
-            if m:
+            if m and m.group(1):
                 val = m.group(1).strip()
                 for kw in ["Cédula", "Cedula", "Nombre", "Estado", "Municipio", "Parroquia", "Centro", "Dirección", "Direccion", "Mesa"]:
                     if kw.lower() in val.lower():

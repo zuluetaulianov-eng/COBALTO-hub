@@ -32,6 +32,13 @@ RSS_FEEDS = {
     "Alnavío": "https://alnavio.com/feed/",
     "Undercode News": "https://undercodenews.com/feed/",
     "Descifrado": "https://www.descifrado.com/feed/",
+    # Noticias en Video - Canales YouTube RSS
+    "VPItv (YouTube)": "https://www.youtube.com/feeds/videos.xml?channel_id=UC15Yh-tI6Uo9mD4o4e7YyJg",
+    "EVTV Miami (YouTube)": "https://www.youtube.com/feeds/videos.xml?channel_id=UC2S7j6aN0sTstW_p4nJj6xA",
+    "Noticias Caracol (YouTube)": "https://www.youtube.com/feeds/videos.xml?channel_id=UC2R3YxZInB2hTzO8p5o7Nsg",
+    "DW Español (YouTube)": "https://www.youtube.com/feeds/videos.xml?channel_id=UCl-Jjbdv98TawfE7t43A6aw",
+    "France 24 Español (YouTube)": "https://www.youtube.com/feeds/videos.xml?channel_id=UCudedFDkjBo77y0-N0Bmt3w",
+    "NTN24 (YouTube)": "https://www.youtube.com/feeds/videos.xml?channel_id=UCJ8vS-tFw1H267kX_K52w6g",
     # Venezuela - Estatales/Oficiales
     "teleSUR": "https://www.telesurtv.net/rss/",
     # "AVN": "https://www.avn.info.ve/rss", # Desactivado: RSS roto (retorna HTML)

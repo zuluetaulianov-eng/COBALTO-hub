@@ -120,6 +120,18 @@ async def _on_cache_changed():
     source = new_context.get("_cache_source", "desconocido")
     logger.info(f"[WATCHER] Contexto actualizado desde cache ({source}): {entry_count} entradas")
 
+    # Auto-sincronizar entradas hacia la bandeja de Venezuela Noticias
+    try:
+        import venezuela_noticias as vn
+        all_sync_entries = list(new_context.get("all_entries", []))
+        if "social_data" in new_context and "sources" in new_context["social_data"]:
+            for items in new_context["social_data"]["sources"].values():
+                if isinstance(items, list):
+                    all_sync_entries.extend(items)
+        await asyncio.to_thread(vn.sync_cobalto_entries_to_inbox, all_sync_entries)
+    except Exception as e:
+        logger.warning(f"[WATCHER] Error en auto-sync Venezuela Noticias: {e}")
+
     # Notificar al frontend via WebSocket
     await _safe_broadcast()
 
@@ -228,6 +240,7 @@ from routers.rt_export import router as export_router
 from routers.rt_finint import router as finint_router
 from routers.rt_humint import router as humint_router
 from routers.rt_predictive import router as predictive_router
+from routers.rt_venezuela_noticias import router as venezuela_noticias_router
 
 app.include_router(humint_router)
 app.include_router(finint_router)
@@ -236,6 +249,7 @@ app.include_router(predictive_router)
 app.include_router(agents_router)
 app.include_router(analytics_router)
 app.include_router(export_router)
+app.include_router(venezuela_noticias_router)
 
 if getattr(sys, 'frozen', False):
     BASE_DIR = Path(getattr(sys, '_MEIPASS', Path(sys.executable).parent))

@@ -22,6 +22,7 @@ from dotenv import load_dotenv
 from lxml_html_clean import Cleaner
 
 from config import RESIDENTIAL_PROXY_URL
+from extractor import normalize_video_embed_url
 from osint_deep_scraper import scraper
 from osint_tls_backend import tls_manager
 from tiktok_extractor import get_tiktok_all, get_tiktok_profiles
@@ -454,6 +455,20 @@ def get_social_hub_data() -> Dict[str, Any]:
                 items = future.result(timeout=15)
                 if items:
                     for item in items:
+                        if not item.get("video"):
+                            lnk = item.get("link", "")
+                            if lnk and lnk != "#":
+                                norm_vid = normalize_video_embed_url(lnk)
+                                if norm_vid and (
+                                    "youtube" in norm_vid
+                                    or "vimeo" in norm_vid
+                                    or "tiktok" in norm_vid
+                                    or "dailymotion" in norm_vid
+                                    or "rumble" in norm_vid
+                                    or norm_vid.endswith((".mp4", ".webm", ".m3u8", ".mov"))
+                                ):
+                                    item["video"] = norm_vid
+
                         if "country_tags" not in item:
                             txt = f"{item.get('title', '')} {item.get('summary', '')}"
                             dom = item.get("link", "")

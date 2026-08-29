@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMS Admin — Venezuela Noticias</title>
+    <link rel="icon" type="image/png" href="/static/img/vn_logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #07090e;
+            --panel-bg: rgba(15, 23, 42, 0.85);
+            --primary: #00E5FF;
+            --primary-glow: rgba(0, 229, 255, 0.25);
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-yellow: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.5;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.03) 0%, transparent 60%);
+        }
+
+        .tricolor-bar {
+            height: 3.5px;
+            background: linear-gradient(90deg, #FCD116 0%, #FCD116 33%, #0033A0 33%, #0033A0 66%, #CE1126 66%, #CE1126 100%);
+            width: 100%;
+        }
+
+        header {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.9rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            text-decoration: none;
+            color: #fff;
+        }
+        .logo-img {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+        .logo-box h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 800;
+            letter-spacing: -0.3px;
+            background: linear-gradient(135deg, #ffffff 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .user-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: rgba(255,255,255,0.05);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            color: #fff;
+        }
+        .role-chip {
+            font-size: 0.7rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .role-chip.admin { background: rgba(0, 229, 255, 0.2); color: var(--primary); border: 1px solid var(--primary); }
+        .role-chip.reporter { background: rgba(245, 158, 11, 0.2); color: var(--accent-yellow); border: 1px solid var(--accent-yellow); }
+
+        .btn-action {
+            background: rgba(0, 229, 255, 0.15);
+            border: 1px solid rgba(0, 229, 255, 0.4);
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.2s ease;
+        }
+        .btn-action:hover {
+            background: var(--primary);
+            color: #000;
+            box-shadow: 0 0 12px var(--primary-glow);
+        }
+
+        .btn-green { background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: var(--accent-green); }
+        .btn-green:hover { background: var(--accent-green); color: #000; box-shadow: 0 0 12px rgba(16, 185, 129, 0.3); }
+
+        .btn-red { background: rgba(239, 68, 68, 0.15); border-color: rgba(239, 68, 68, 0.4); color: var(--accent-red); }
+        .btn-red:hover { background: var(--accent-red); color: #fff; box-shadow: 0 0 12px rgba(239, 68, 68, 0.3); }
+
+        main {
+            max-width: 1300px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        .kpi-card {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            padding: 1.2rem 1.4rem;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .kpi-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(0, 229, 255, 0.3);
+        }
+        .kpi-val {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-top: 4px;
+        }
+
+        .tabs-nav {
+            display: flex;
+            gap: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 10px 18px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover { color: #fff; }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .panel-box {
+            background: var(--panel-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 1.8rem;
+            backdrop-filter: blur(12px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+        }
+
+        .inbox-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .inbox-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 1.1rem 1.3rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .inbox-item:hover {
+            border-color: rgba(0, 229, 255, 0.3);
+            background: rgba(255,255,255,0.05);
+        }
+        .inbox-title {
+            font-weight: 700;
+            font-size: 0.98rem;
+            color: #fff;
+            margin-bottom: 4px;
+            line-height: 1.3;
+        }
+        .inbox-sub {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .user-table th, .user-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+        .user-table th {
+            color: var(--text-muted);
+            font-weight: 700;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* MODALS */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.82);
+            backdrop-filter: blur(8px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-box {
+            background: #0f172a;
+            border: 1px solid var(--primary);
+            padding: 2rem;
+            border-radius: 14px;
+            max-width: 620px;
+            width: 90%;
+            box-shadow: 0 25px 60px rgba(0, 229, 255, 0.2);
+            animation: modalFade 0.25s ease-out;
+        }
+        @keyframes modalFade {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .form-group {
+            margin-bottom: 1.1rem;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            padding: 10px 14px;
+            color: #fff;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 12px var(--primary-glow);
+            background: rgba(0, 0, 0, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="tricolor-bar"></div>
+
+    <header>
+        <a href="/noticias" class="logo-box">
+            <img src="/static/img/vn_logo.png" alt="Logo VN" class="logo-img" onerror="this.src='https://ui-avatars.com/api/?name=VN&background=00E5FF&color=000';">
+            <h2>CMS ADMIN — VENEZUELA NOTICIAS</h2>
+        </a>
+        <div style="display:flex; align-items:center; gap:0.8rem; flex-wrap:wrap;">
+            <div class="user-badge">
+                <span>👤 {{ current_user.username if current_user else 'admin' }}</span>
+                <span class="role-chip {{ current_user.role if current_user else 'admin' }}">
+                    {% if current_user and current_user.role == 'admin' %}👑 ADMINISTRADOR{% else %}✍️ REPORTERO{% endif %}
+                </span>
+            </div>
+            <a href="/noticias" target="_blank" class="btn-action">🌐 Ver Portal ↗</a>
+            <button class="btn-action btn-red" onclick="logoutAdmin()">🚪 Cerrar Sesión</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">📥 BANDEJA DE COBALTO / INBOX</div>
+                <div class="kpi-val" id="kpi-inbox">{{ inbox|length if inbox else 0 }}</div>
+            </div>
+            <div class="kpi-card">
+                <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">📰 NOTICIAS PUBLICADAS EN PORTAL</div>
+                <div class="kpi-val" style="color:var(--accent-green);" id="kpi-published">{{ published|length if published else 0 }}</div>
+            </div>
+            {% if current_user and current_user.role == 'admin' %}
+            <div class="kpi-card">
+                <div style="font-size:0.75rem; color:var(--text-muted); font-weight:700;">👥 EQUIPO Y USUARIOS CMS</div>
+                <div class="kpi-val" style="color:var(--primary);" id="kpi-users">{{ users|length if users else 1 }}</div>
+            </div>
+            {% endif %}
+        </div>
+
+        <nav class="tabs-nav" aria-label="Secciones del panel de administración">
+            <button class="tab-btn active" onclick="switchTab('inbox', this)">📥 Bandeja Ingesta Inbox ({{ inbox|length if inbox else 0 }})</button>
+            <button class="tab-btn" onclick="switchTab('cms', this)">📰 Noticias Publicadas ({{ published|length if published else 0 }})</button>
+            {% if current_user and current_user.role == 'admin' %}
+            <button class="tab-btn" onclick="switchTab('users', this)">👥 Gestión de Usuarios y Roles ({{ users|length if users else 1 }})</button>
+            {% endif %}
+        </nav>
+
+        <!-- TAB BANDEJA DE ENTRADA INBOX -->
+        <section id="tab-inbox" class="panel-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
+                <div>
+                    <h3 style="font-family:'Outfit', sans-serif; font-size:1.25rem;">Sugerencias de Noticias Ingestadas desde COBALTO</h3>
+                    <p style="font-size:0.82rem; color:var(--text-muted);">Solo Administradores pueden aprobar y otorgar visto bueno para publicar</p>
+                </div>
+            </div>
+
+            <div class="inbox-list" id="inbox-container">
+                {% for item in inbox %}
+                <div class="inbox-item" id="inbox-item-{{ item.id }}">
+                    <div style="flex:1;">
+                        <div class="inbox-title">
+                            {% if item.video %}🎬 {% endif %}{{ item.title }}
+                        </div>
+                        <div class="inbox-sub">
+                            <span>Fuente: {{ item.source }}</span> • 
+                            <span>Recibido: {{ item.received_at[:16] }}</span>
+                        </div>
+                    </div>
+
+                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                        {% if current_user and current_user.role == 'admin' %}
+                        <button class="btn-action btn-green" onclick="approveDirect({{ item.id }})">⚡ Aprobar & Publicar Directo</button>
+                        <button class="btn-action btn-red" onclick="rejectItem({{ item.id }})">🗑️ Descartar</button>
+                        {% else %}
+                        <span style="font-size:0.75rem; color:var(--accent-yellow); background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.3); padding:5px 10px; border-radius:6px; font-weight:600;">
+                            🔒 Requiere Visto Bueno del Superadministrador
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div style="text-align:center; padding:3rem; color:var(--text-muted);">
+                    <div style="font-size:2.2rem; margin-bottom:0.4rem;">📥</div>
+                    <p>No hay noticias pendientes en la bandeja de entrada.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- TAB GESTIÓN DE NOTICIAS -->
+        <section id="tab-cms" class="panel-box" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; flex-wrap:wrap; gap:1rem;">
+                <div>
+                    <h3 style="font-family:'Outfit', sans-serif; font-size:1.25rem;">Gestión de Noticias Publicadas</h3>
+                    <p style="font-size:0.82rem; color:var(--text-muted);">Los reporteros gestionan únicamente sus propias noticias; Administradores moderan todo</p>
+                </div>
+                <button class="btn-action btn-green" onclick="openCreateModal()">+ Crear Noticia Manual</button>
+            </div>
+
+            <div class="inbox-list">
+                {% for article in published %}
+                <div class="inbox-item" id="art-item-{{ article.id }}">
+                    <div style="flex:1;">
+                        <div class="inbox-title">
+                            {% if article.is_featured %}⭐ {% endif %}{{ article.title }}
+                        </div>
+                        <div class="inbox-sub">
+                            <span>Categoría: {{ article.category }}</span> • 
+                            <span>Autor: <b style="color:#fff;">{{ article.author_name or article.source_name }}</b></span> • 
+                            <span>Publicado: {{ article.published_at[:10] }}</span>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                        {% if (current_user and current_user.role == 'admin') or (current_user and article.author_name == current_user.username) %}
+                        <button class="btn-action" style="font-size:0.8rem;" onclick="openEditModal({{ article.id }}, '{{ article.title|replace('\'', '\\\'') }}', '{{ article.category }}', '{{ (article.summary or '')|replace('\'', '\\\'') }}', '{{ article.video_url or '' }}', '{{ article.image_url or '' }}')">✏️ Editar</button>
+                        <button class="btn-action btn-red" style="font-size:0.8rem;" onclick="deleteArticle({{ article.id }})">🗑️ Eliminar</button>
+                        {% else %}
+                        <span style="font-size:0.75rem; color:var(--text-muted); background:rgba(255,255,255,0.05); padding:5px 10px; border-radius:6px; border:1px solid var(--border-color);">
+                            🔒 Propietario: {{ article.author_name or 'Admin' }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div style="text-align:center; padding:3rem; color:var(--text-muted);">
+                    <div style="font-size:2.2rem; margin-bottom:0.4rem;">📰</div>
+                    <p>No hay noticias creadas en el sistema.</p>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+
+        <!-- TAB GESTIÓN DE USUARIOS Y ROLES (ADMIN ONLY) -->
+        {% if current_user and current_user.role == 'admin' %}
+        <section id="tab-users" class="panel-box" style="display:none;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; flex-wrap:wrap; gap:1rem;">
+                <div>
+                    <h3 style="font-family:'Outfit', sans-serif; font-size:1.25rem;">Gestión de Usuarios del Sistema</h3>
+                    <p style="font-size:0.82rem; color:var(--text-muted);">Administra accesos para Reporteros y Administradores</p>
+                </div>
+                <button class="btn-action btn-green" onclick="openUserModal()">+ Crear Nuevo Usuario</button>
+            </div>
+
+            <table class="user-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Usuario</th>
+                        <th>Nombre Completo</th>
+                        <th>Rol / Permisos</th>
+                        <th>Fecha Registro</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="user-table-body">
+                    {% for u in users %}
+                    <tr id="user-row-{{ u.id }}">
+                        <td>#{{ u.id }}</td>
+                        <td style="font-weight:700; color:#fff;">{{ u.username }}</td>
+                        <td>{{ u.full_name or '—' }}</td>
+                        <td>
+                            <span class="role-chip {{ u.role }}">
+                                {% if u.role == 'admin' %}👑 ADMINISTRADOR{% else %}✍️ REPORTERO{% endif %}
+                            </span>
+                        </td>
+                        <td style="color:var(--text-muted);">{{ u.created_at[:10] if u.created_at else '—' }}</td>
+                        <td>
+                            <div style="display:flex; gap:0.4rem;">
+                                {% if u.role == 'admin' %}
+                                <button class="btn-action" style="font-size:0.75rem; padding:4px 8px;" onclick="changeRole({{ u.id }}, 'reporter')">Cambiar a Reportero</button>
+                                {% else %}
+                                <button class="btn-action btn-green" style="font-size:0.75rem; padding:4px 8px;" onclick="changeRole({{ u.id }}, 'admin')">Hacer Admin</button>
+                                {% endif %}
+                                <button class="btn-action btn-red" style="font-size:0.75rem; padding:4px 8px;" onclick="deleteUser({{ u.id }})">Eliminar</button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </section>
+        {% endif %}
+    </main>
+
+    <!-- MODAL CREACIÓN DE NOTICIA -->
+    <div class="modal-overlay" id="create-modal">
+        <div class="modal-box">
+            <h3 style="margin-bottom:1rem; font-family:'Outfit', sans-serif;">📝 Crear Nueva Noticia</h3>
+            <div class="form-group">
+                <label>Título de la Noticia</label>
+                <input type="text" id="new-title" class="form-input" placeholder="Ej. Nuevas medidas económicas anunciadas">
+            </div>
+            <div class="form-group">
+                <label>Categoría</label>
+                <select id="new-cat" class="form-select">
+                    <option value="Nacional">Nacional</option>
+                    <option value="Economía">Economía</option>
+                    <option value="Política">Política</option>
+                    <option value="Sucesos">Sucesos</option>
+                    <option value="Internacional">Internacional</option>
+                    <option value="Deportes">Deportes</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Resumen / Contenido</label>
+                <textarea id="new-summary" class="form-textarea" rows="4" placeholder="Escribe el resumen ejecutivo de la noticia..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>URL de Video Embed (YouTube, Vimeo, TikTok, MP4)</label>
+                <input type="text" id="new-video" class="form-input" placeholder="https://www.youtube.com/watch?v=...">
+            </div>
+            <div class="form-group">
+                <label>URL de Imagen Destacada</label>
+                <input type="text" id="new-image" class="form-input" placeholder="https://...">
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.8rem; margin-top:1.5rem;">
+                <button class="btn-action btn-red" onclick="closeCreateModal()">Cancelar</button>
+                <button class="btn-action btn-green" onclick="submitCreateArticle()">Guardar & Publicar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL EDICIÓN DE NOTICIA -->
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal-box">
+            <h3 style="margin-bottom:1rem; font-family:'Outfit', sans-serif;">✏️ Editar Noticia Propia</h3>
+            <input type="hidden" id="edit-article-id">
+            <div class="form-group">
+                <label>Título de la Noticia</label>
+                <input type="text" id="edit-title" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>Categoría</label>
+                <select id="edit-cat" class="form-select">
+                    <option value="Nacional">Nacional</option>
+                    <option value="Economía">Economía</option>
+                    <option value="Política">Política</option>
+                    <option value="Sucesos">Sucesos</option>
+                    <option value="Internacional">Internacional</option>
+                    <option value="Deportes">Deportes</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Resumen / Contenido</label>
+                <textarea id="edit-summary" class="form-textarea" rows="4"></textarea>
+            </div>
+            <div class="form-group">
+                <label>URL de Video Embed</label>
+                <input type="text" id="edit-video" class="form-input">
+            </div>
+            <div class="form-group">
+                <label>URL de Imagen Destacada</label>
+                <input type="text" id="edit-image" class="form-input">
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.8rem; margin-top:1.5rem;">
+                <button class="btn-action btn-red" onclick="closeEditModal()">Cancelar</button>
+                <button class="btn-action btn-green" onclick="submitEditArticle()">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CREACIÓN DE USUARIO -->
+    <div class="modal-overlay" id="user-modal">
+        <div class="modal-box">
+            <h3 style="margin-bottom:1rem; font-family:'Outfit', sans-serif;">👤 Registrar Nuevo Usuario</h3>
+            <div class="form-group">
+                <label>Nombre de Usuario (Login)</label>
+                <input type="text" id="user-username" class="form-input" placeholder="ej. maria_reporter">
+            </div>
+            <div class="form-group">
+                <label>Nombre Completo</label>
+                <input type="text" id="user-fullname" class="form-input" placeholder="ej. María Pérez">
+            </div>
+            <div class="form-group">
+                <label>Contraseña de Acceso</label>
+                <input type="password" id="user-password" class="form-input" placeholder="••••••••">
+            </div>
+            <div class="form-group">
+                <label>Rol y Nivel de Permisos</label>
+                <select id="user-role" class="form-select">
+                    <option value="reporter">✍️ Reportero (Crear y administrar solo sus noticias)</option>
+                    <option value="admin">👑 Administrador (Acceso total, visto bueno e ingestión)</option>
+                </select>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.8rem; margin-top:1.5rem;">
+                <button class="btn-action btn-red" onclick="closeUserModal()">Cancelar</button>
+                <button class="btn-action btn-green" onclick="submitCreateUser()">Crear Usuario</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function logoutAdmin() {
+            await fetch('/api/vn-admin/logout', { method: 'POST' });
+            document.cookie = "vn_token=; path=/; max-age=0;";
+            localStorage.removeItem('vn_token');
+            window.location.href = '/vn-login';
+        }
+
+        function switchTab(tab, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById('tab-inbox').style.display = (tab === 'inbox') ? 'block' : 'none';
+            document.getElementById('tab-cms').style.display = (tab === 'cms') ? 'block' : 'none';
+            const usersTab = document.getElementById('tab-users');
+            if (usersTab) usersTab.style.display = (tab === 'users') ? 'block' : 'none';
+        }
+
+        async function approveDirect(id) {
+            try {
+                const res = await fetch(`/api/vn-admin/inbox/approve/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ category: 'Nacional' })
+                });
+                if (res.ok) {
+                    document.getElementById(`inbox-item-${id}`).remove();
+                    alert('¡Noticia aprobada y publicada exitosamente por el Superadministrador!');
+                    window.location.reload();
+                } else {
+                    const err = await res.json();
+                    alert(err.detail || 'No tienes permiso para aprobar esta noticia.');
+                }
+            } catch (e) {
+                alert('Error aprobando noticia: ' + e);
+            }
+        }
+
+        async function rejectItem(id) {
+            try {
+                const res = await fetch(`/api/vn-admin/inbox/reject/${id}`, { method: 'POST' });
+                if (res.ok) {
+                    document.getElementById(`inbox-item-${id}`).remove();
+                } else {
+                    const err = await res.json();
+                    alert(err.detail || 'No tienes permiso para descartar esta noticia.');
+                }
+            } catch (e) {
+                alert('Error descartando noticia: ' + e);
+            }
+        }
+
+        function openCreateModal() { document.getElementById('create-modal').style.display = 'flex'; }
+        function closeCreateModal() { document.getElementById('create-modal').style.display = 'none'; }
+
+        function openEditModal(id, title, category, summary, videoUrl, imageUrl) {
+            document.getElementById('edit-article-id').value = id;
+            document.getElementById('edit-title').value = title;
+            document.getElementById('edit-cat').value = category || 'Nacional';
+            document.getElementById('edit-summary').value = summary || '';
+            document.getElementById('edit-video').value = videoUrl || '';
+            document.getElementById('edit-image').value = imageUrl || '';
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+        function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
+
+        function openUserModal() { document.getElementById('user-modal').style.display = 'flex'; }
+        function closeUserModal() { document.getElementById('user-modal').style.display = 'none'; }
+
+        async function submitCreateArticle() {
+            const title = document.getElementById('new-title').value;
+            const category = document.getElementById('new-cat').value;
+            const summary = document.getElementById('new-summary').value;
+            const video_url = document.getElementById('new-video').value;
+            const image_url = document.getElementById('new-image').value;
+
+            if (!title) { alert('El título es requerido'); return; }
+
+            try {
+                const res = await fetch('/api/vn-admin/articles', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, category, summary, video_url, image_url })
+                });
+                if (res.ok) {
+                    closeCreateModal();
+                    window.location.reload();
+                } else {
+                    const err = await res.json();
+                    alert(err.detail || 'Error al crear noticia');
+                }
+            } catch (e) {
+                alert('Error al crear noticia: ' + e);
+            }
+        }
+
+        async function submitEditArticle() {
+            const id = document.getElementById('edit-article-id').value;
+            const title = document.getElementById('edit-title').value;
+            const category = document.getElementById('edit-cat').value;
+            const summary = document.getElementById('edit-summary').value;
+            const video_url = document.getElementById('edit-video').value;
+            const image_url = document.getElementById('edit-image').value;
+
+            if (!title) { alert('El título es requerido'); return; }
+
+            try {
+                const res = await fetch(`/api/vn-admin/articles/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, category, summary, video_url, image_url })
+                });
+                if (res.ok) {
+                    closeEditModal();
+                    window.location.reload();
+                } else {
+                    const err = await res.json();
+                    alert(err.detail || 'No puedes editar esta noticia');
+                }
+            } catch (e) {
+                alert('Error al editar noticia: ' + e);
+            }
+        }
+
+        async function deleteArticle(id) {
+            if (!confirm('¿Estás seguro de eliminar esta noticia?')) return;
+            try {
+                const res = await fetch(`/api/vn-admin/articles/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    document.getElementById(`art-item-${id}`).remove();
+                } else {
+                    const err = await res.json();
+                    alert(err.detail || 'Solo puedes eliminar tus propias noticias.');
+                }
+            } catch (e) {
+                alert('Error al eliminar noticia: ' + e);
+            }
+        }
+
+        async function submitCreateUser() {
+            const username = document.getElementById('user-username').value;
+            const full_name = document.getElementById('user-fullname').value;
+            const password = document.getElementById('user-password').value;
+            const role = document.getElementById('user-role').value;
+
+            if (!username || !password) {
+                alert('Nombre de usuario y contraseña son requeridos');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/vn-admin/users', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, full_name, password, role })
+                });
+                if (res.ok) {
+                    closeUserModal();
+                    window.location.reload();
+                } else {
+                    const err = await res.json();
+                    alert(err.detail || 'Error al crear usuario');
+                }
+            } catch (e) {
+                alert('Error al crear usuario: ' + e);
+            }
+        }
+
+        async function changeRole(userId, newRole) {
+            try {
+                const res = await fetch(`/api/vn-admin/users/${userId}/role`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role: newRole })
+                });
+                if (res.ok) {
+                    window.location.reload();
+                } else {
+                    const err = await res.json();
+                    alert(err.detail || 'Error al cambiar rol');
+                }
+            } catch (e) {
+                alert('Error al cambiar rol: ' + e);
+            }
+        }
+
+        async function deleteUser(userId) {
+            if (!confirm('¿Estás seguro de eliminar este usuario del sistema?')) return;
+            try {
+                const res = await fetch(`/api/vn-admin/users/${userId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    document.getElementById(`user-row-${userId}`).remove();
+                } else {
+                    const err = await res.json();
+                    alert(err.detail || 'Error al eliminar usuario');
+                }
+            } catch (e) {
+                alert('Error al eliminar usuario: ' + e);
+            }
+        }
+    </script>
+</body>
+</html>

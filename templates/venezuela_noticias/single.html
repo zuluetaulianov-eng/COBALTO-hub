@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ article.title }} — Venezuela Noticias</title>
+    <meta name="description" content="{{ article.summary|striptags }}">
+    <meta property="og:title" content="{{ article.title }}">
+    <meta property="og:description" content="{{ article.summary|striptags }}">
+    <meta property="og:image" content="{{ article.image_url or '/static/img/vn_logo.png' }}">
+    <meta property="og:type" content="article">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" type="image/png" href="/static/img/vn_logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #07090e;
+            --bg-card: rgba(15, 23, 42, 0.75);
+            --primary: #00E5FF;
+            --accent-yellow: #FCD116;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.7;
+            min-height: 100vh;
+        }
+
+        .tricolor-bar {
+            height: 3px;
+            background: linear-gradient(90deg, #FCD116 0%, #FCD116 33%, #0033A0 33%, #0033A0 66%, #CE1126 66%, #CE1126 100%);
+            width: 100%;
+        }
+
+        header {
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.8rem 1.5rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-inner {
+            max-width: 920px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            text-decoration: none;
+            color: #fff;
+        }
+        .logo-img {
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+        }
+        .logo-text-box h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ffffff 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+
+        main {
+            max-width: 860px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .article-header {
+            margin-bottom: 1.8rem;
+        }
+        .tag-badge {
+            background: rgba(0, 229, 255, 0.12);
+            color: var(--primary);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 4px 12px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+        .article-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.3rem;
+            font-weight: 900;
+            line-height: 1.25;
+            color: #fff;
+            margin-bottom: 1.2rem;
+            letter-spacing: -0.5px;
+        }
+        .article-meta {
+            display: flex;
+            align-items: center;
+            gap: 1.2rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 1rem;
+        }
+
+        .media-container {
+            margin: 2rem 0;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #000;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.6);
+        }
+        .media-container iframe {
+            width: 100%;
+            aspect-ratio: 16/9;
+            border: 0;
+            display: block;
+        }
+        .media-container video, .media-container img {
+            width: 100%;
+            max-height: 520px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .article-summary-box {
+            font-size: 1.15rem;
+            color: #e2e8f0;
+            line-height: 1.7;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 4px solid var(--primary);
+            padding: 1.2rem 1.5rem;
+            border-radius: 0 10px 10px 0;
+            margin-bottom: 2rem;
+        }
+
+        .article-body {
+            font-size: 1.05rem;
+            color: #cbd5e1;
+            line-height: 1.8;
+            margin-bottom: 3rem;
+        }
+
+        .share-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+            padding: 1.2rem 0;
+            border-top: 1px solid var(--border-color);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 3rem;
+        }
+        .btn-share {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .btn-share:hover {
+            background: rgba(0,229,255,0.15);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .btn-wa:hover { background: rgba(37, 211, 102, 0.2); border-color: #25D366; color: #25D366; }
+        .btn-tg:hover { background: rgba(0, 136, 204, 0.2); border-color: #0088cc; color: #0088cc; }
+
+        footer {
+            border-top: 1px solid var(--border-color);
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-top: 4rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="tricolor-bar"></div>
+
+    <header>
+        <div class="header-inner">
+            <a href="/noticias" class="logo-box">
+                <img src="/static/img/vn_logo.png" alt="Logo VN" class="logo-img" onerror="this.src='https://ui-avatars.com/api/?name=VN&background=00E5FF&color=000';">
+                <div class="logo-text-box">
+                    <h1>VENEZUELA NOTICIAS</h1>
+                </div>
+            </a>
+            <a href="/noticias" class="btn-share">← Volver al Portal</a>
+        </div>
+    </header>
+
+    <main>
+        <article>
+            <div class="article-header">
+                <span class="tag-badge">{{ article.category or 'Nacional' }}</span>
+                <h1 class="article-title">{{ article.title }}</h1>
+                <div class="article-meta">
+                    <span>✍️ {{ article.source_name or 'Redacción VN' }}</span>
+                    <span>📅 {{ article.published_at[:10] }}</span>
+                </div>
+            </div>
+
+            {% if article.video_url %}
+            <div class="media-container">
+                {% if 'youtube' in article.video_url or 'vimeo' in article.video_url or 'tiktok' in article.video_url or 'dailymotion' in article.video_url or 'rumble' in article.video_url %}
+                <iframe src="{{ article.video_url }}" allowfullscreen></iframe>
+                {% else %}
+                <video src="{{ article.video_url }}" {% if article.image_url %}poster="{{ article.image_url }}"{% endif %} controls muted playsinline></video>
+                {% endif %}
+            </div>
+            {% elif article.image_url %}
+            <div class="media-container">
+                <img src="{{ article.image_url }}" alt="{{ article.title }}">
+            </div>
+            {% endif %}
+
+            <div class="article-summary-box">
+                {{ article.summary }}
+            </div>
+
+            {% if article.content and article.content != article.summary %}
+            <div class="article-body">
+                {{ article.content|safe }}
+            </div>
+            {% endif %}
+
+            <div class="share-bar">
+                <strong style="font-size:0.85rem; color:var(--text-muted); margin-right:0.4rem;">Compartir noticia:</strong>
+                <button class="btn-share btn-wa" onclick="window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(document.title + ' ' + window.location.href), '_blank');">🟢 WhatsApp</button>
+                <button class="btn-share btn-tg" onclick="window.open('https://t.me/share/url?url=' + encodeURIComponent(window.location.href) + '&text=' + encodeURIComponent(document.title), '_blank');">✈️ Telegram</button>
+                <button class="btn-share" onclick="navigator.clipboard.writeText(window.location.href); alert('¡Enlace copiado al portapapeles!');">📋 Copiar Enlace</button>
+                {% if article.canonical_url %}
+                <a href="{{ article.canonical_url }}" target="_blank" rel="noopener noreferrer" class="btn-share" style="margin-left:auto;">🔗 Fuente Original ↗</a>
+                {% endif %}
+            </div>
+        </article>
+    </main>
+
+    <footer>
+        <p><strong>VENEZUELA NOTICIAS</strong> — Cobertura informativa independiente.</p>
+    </footer>
+
+</body>
+</html>

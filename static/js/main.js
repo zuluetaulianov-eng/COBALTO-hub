@@ -15,6 +15,37 @@ function renderAgentCard(agent, esc) {
 }
 
 window.currentTheater = 'ALL';
+window.normalizeVideoEmbed = function(url) {
+    if (!url || typeof url !== 'string') return '';
+    url = url.trim();
+
+    // YouTube: watch?v=ID, shorts/ID, youtu.be/ID, embed/ID, m.youtube.com
+    var ytMatch = url.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/|m\.youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/i);
+    if (ytMatch && ytMatch[1]) {
+        return 'https://www.youtube-nocookie.com/embed/' + ytMatch[1];
+    }
+
+    // Vimeo
+    var vimeoMatch = url.match(/vimeo\.com\/(?:video\/)?(\d+)/i);
+    if (vimeoMatch && vimeoMatch[1]) {
+        return 'https://player.vimeo.com/video/' + vimeoMatch[1];
+    }
+
+    // Dailymotion
+    var dmotionMatch = url.match(/dailymotion\.com\/(?:video|embed\/video)\/([a-zA-Z0-9]+)/i);
+    if (dmotionMatch && dmotionMatch[1]) {
+        return 'https://www.dailymotion.com/embed/video/' + dmotionMatch[1];
+    }
+
+    // TikTok
+    var tiktokMatch = url.match(/tiktok\.com\/@[^\/]+\/video\/(\d+)/i);
+    if (tiktokMatch && tiktokMatch[1]) {
+        return 'https://www.tiktok.com/embed/v2/' + tiktokMatch[1];
+    }
+
+    return url;
+};
+
 window.switchTheater = function(code) {
     window.currentTheater = code || 'ALL';
     console.log('[THEATER] Switched operational theater to:', window.currentTheater);
@@ -749,8 +780,9 @@ window.CobaltoCore = {
 
             var mediaHtml = '';
             if (item.video) {
-                var vidSrc = this.utils.escapeHTML(item.video);
-                if (vidSrc.includes('youtube.com') || vidSrc.includes('youtu.be') || vidSrc.includes('vimeo') || vidSrc.includes('rumble')) {
+                var rawVid = item.video || '';
+                var vidSrc = window.normalizeVideoEmbed ? window.normalizeVideoEmbed(rawVid) : this.utils.escapeHTML(rawVid);
+                if (vidSrc.includes('youtube') || vidSrc.includes('youtu.be') || vidSrc.includes('vimeo') || vidSrc.includes('rumble') || vidSrc.includes('dailymotion') || vidSrc.includes('tiktok')) {
                     mediaHtml = `
                         <div class="video-preview-wrapper" style="position:relative; margin-bottom:0.8rem; border-radius:8px; overflow:hidden; border:1px solid rgba(0,229,255,0.3); background:#000;">
                             <div style="position:relative; padding-bottom:56.25%; height:0;">
@@ -3047,11 +3079,14 @@ window.openSitrepReader = function(card) {
     }
 
     var video = card.getAttribute('data-video') || card.querySelector('video')?.src || card.querySelector('iframe')?.src || '';
+    if (video && window.normalizeVideoEmbed) {
+        video = window.normalizeVideoEmbed(video);
+    }
 
     var imgWrapper = document.getElementById('sitrep-modal-img-wrapper');
     var imgEl = document.getElementById('sitrep-modal-img');
     if (video && imgWrapper) {
-        if (video.includes('youtube') || video.includes('youtu.be') || video.includes('vimeo') || video.includes('rumble')) {
+        if (video.includes('youtube') || video.includes('youtu.be') || video.includes('vimeo') || video.includes('rumble') || video.includes('dailymotion') || video.includes('tiktok')) {
             imgWrapper.innerHTML = `<div style="position:relative; padding-bottom:56.25%; height:0; border-radius:8px; overflow:hidden; border:1px solid rgba(0,229,255,0.3);"><iframe src="${video}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" allowfullscreen></iframe></div>`;
         } else {
             var poster = img ? `poster="${img}"` : '';

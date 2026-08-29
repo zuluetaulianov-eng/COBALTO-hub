@@ -193,9 +193,139 @@ def safe_published_datetime(parsed_tuple):
     return parse_datetime(parsed_tuple)
 
 
+def normalize_video_embed_url(url):
+    """Normaliza y convierte URLs de video (YouTube, Vimeo, Dailymotion, TikTok, Rumble, etc.) a formatos embeddables estandarizados."""
+    if not url or not isinstance(url, str):
+        return None
+    url = url.strip()
+
+    # YouTube: watch?v=ID, shorts/ID, youtu.be/ID, embed/ID, m.youtube.com
+    yt_match = re.search(
+        r"(?:youtube\.com/(?:watch\?v=|shorts/|embed/)|youtu\.be/|m\.youtube\.com/watch\?v=)([a-zA-Z0-9_-]{11})",
+        url,
+        re.I,
+    )
+    if yt_match:
+        video_id = yt_match.group(1)
+        return f"https://www.youtube-nocookie.com/embed/{video_id}"
+
+    # Vimeo
+    vimeo_match = re.search(r"vimeo\.com/(?:video/)?(\d+)", url, re.I)
+    if vimeo_match:
+        return f"https://player.vimeo.com/video/{vimeo_match.group(1)}"
+
+    # Dailymotion
+    dm_match = re.search(r"dailymotion\.com/(?:video|embed/video)/([a-zA-Z0-9]+)", url, re.I)
+    if dm_match:
+        return f"https://www.dailymotion.com/embed/video/{dm_match.group(1)}"
+
+    # TikTok
+    tiktok_match = re.search(r"tiktok\.com/@[^/]+/video/(\d+)", url, re.I)
+    if tiktok_match:
+        return f"https://www.tiktok.com/embed/v2/{tiktok_match.group(1)}"
+
+    return url
+
+
+VIDEO_INDICATOR_REGEX = re.compile(
+    r"\b(video|vídeo|vea|mira|grabó|grabado|imágenes|cámara|dron|reels?|tiktok|youtube|transmisión|en vivo|en directo|reportaje)\b|\[video\]|\(video\)",
+    re.I,
+)
+
+
+async def fetch_article_video_fallback(session, article_url):
+    """Scrapea la página del artículo periodístico para capturar videos (og:video, twitter:player, video/iframe) no incluidos en el XML RSS."""
+    if not is_valid_url(article_url):
+        return None, None
+    try:
+        headers = {
+            "User-Agent": random.choice(USER_AGENTS),
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        }
+        async with session.get(article_url, headers=headers, timeout=aiohttp.ClientTimeout(total=4), ssl=False) as resp:
+            if resp.status != 200:
+                return None, None
+            html = await resp.text()
+
+        soup = await asyncio.to_thread(BeautifulSoup, html, "html.parser")
+        video_url = None
+        image_url = None
+
+        # 1. OpenGraph / Twitter Cards
+        meta_vid = (
+            soup.find("meta", property="og:video")
+            or soup.find("meta", property="og:video:url")
+            or soup.find("meta", property="og:video:secure_url")
+            or soup.find("meta", attrs={"name": "twitter:player"})
+            or soup.find("meta", attrs={"name": "twitter:player:stream"})
+        )
+        if meta_vid and meta_vid.get("content"):
+            video_url = meta_vid["content"]
+
+        # 2. JSON-LD VideoObject
+        if not video_url:
+            for script in soup.find_all("script", type="application/ld+json"):
+                try:
+                    import json
+                    ld = json.loads(script.string or "{}")
+                    if isinstance(ld, list):
+                        ld = ld[0] if ld else {}
+                    if isinstance(ld, dict):
+                        if ld.get("@type") == "VideoObject" or "video" in ld:
+                            v = ld.get("video") or ld
+                            if isinstance(v, dict):
+                                video_url = v.get("contentUrl") or v.get("embedUrl")
+                            elif isinstance(v, list) and v:
+                                video_url = v[0].get("contentUrl") if isinstance(v[0], dict) else None
+                            if video_url:
+                                break
+                except Exception:
+                    pass
+
+        # 3. Native <video> tag
+        if not video_url:
+            vid = soup.find("video")
+            if vid:
+                src = vid.get("src") or (vid.find("source") and vid.find("source").get("src"))
+                if src:
+                    video_url = src
+
+        # 4. <iframe> Embeds
+        if not video_url:
+            for iframe in soup.find_all("iframe"):
+                src = iframe.get("src") or iframe.get("data-src")
+                if src and any(k in src.lower() for k in ["youtube", "youtu.be", "vimeo", "rumble", "dailymotion", "tiktok", "twitter", "instagram"]):
+                    video_url = src
+                    break
+
+        meta_img = soup.find("meta", property="og:image") or soup.find("meta", attrs={"name": "twitter:image"})
+        if meta_img and meta_img.get("content"):
+            image_url = meta_img["content"]
+
+        if video_url:
+            video_url = urljoin(article_url, video_url)
+            video_url = normalize_video_embed_url(video_url)
+
+        if image_url:
+            image_url = urljoin(article_url, image_url)
+
+        return image_url, video_url
+    except Exception as e:
+        logging.debug(f"[ARTICLE SCRAPE EXCEPTION] {article_url}: {e}")
+        return None, None
+
+
 def extract_featured_media(entry, base_url):
     image_url = None
     video_url = None
+
+    # 0. Inspeccionar el enlace principal de la entrada (p. ej. si es enlace directo a YouTube, Shorts, Rumble, Vimeo, TikTok, etc.)
+    link = entry.get("link", "")
+    if link:
+        if re.search(r"(?:youtube\.com/(?:watch|shorts)|youtu\.be/|vimeo\.com|dailymotion\.com|rumble\.com|tiktok\.com|streamable\.com)", link, re.I):
+            video_url = normalize_video_embed_url(link)
+        elif re.search(r"\.(mp4|webm|m3u8|mov)(\?.*)?$", link, re.I):
+            video_url = link
 
     # 1. Buscar en media_content
     if "media_content" in entry:
@@ -203,9 +333,10 @@ def extract_featured_media(entry, base_url):
             medium = media.get("medium") or media.get("type", "")
             url = media.get("url")
             if url:
-                if medium == "video" or re.search(r"\.(mp4|webm|m3u8|mov)(\?.*)?$", url, re.I):
-                    video_url = url
-                elif medium == "image" and not image_url:
+                if medium == "video" or re.search(r"\.(mp4|webm|m3u8|mov)(\?.*)?$", url, re.I) or re.search(r"(youtube|vimeo|rumble|dailymotion|tiktok)", url, re.I):
+                    if not video_url:
+                        video_url = normalize_video_embed_url(url)
+                elif (medium == "image" or "image" in str(media.get("type", ""))) and not image_url:
                     image_url = url
 
     # 2. Buscar en enclosures
@@ -214,8 +345,9 @@ def extract_featured_media(entry, base_url):
             href = enc.get("href") or enc.get("url")
             type_attr = enc.get("type", "")
             if href:
-                if "video" in type_attr or re.search(r"\.(mp4|webm|m3u8|mov)(\?.*)?$", href, re.I):
-                    video_url = href
+                if "video" in type_attr or re.search(r"\.(mp4|webm|m3u8|mov)(\?.*)?$", href, re.I) or re.search(r"(youtube|vimeo|rumble|dailymotion|tiktok)", href, re.I):
+                    if not video_url:
+                        video_url = normalize_video_embed_url(href)
                 elif "image" in type_attr and not image_url:
                     image_url = href
 
@@ -257,7 +389,7 @@ def extract_featured_media(entry, base_url):
                             elif isinstance(vid, list) and vid:
                                 vid = vid[0].get("contentUrl") if isinstance(vid[0], dict) else None
                             if isinstance(vid, str):
-                                video_url = vid
+                                video_url = normalize_video_embed_url(vid)
                 except Exception:
                     pass
 
@@ -271,23 +403,25 @@ def extract_featured_media(entry, base_url):
                 meta_vid = (
                     soup.find("meta", property="og:video")
                     or soup.find("meta", property="og:video:url")
+                    or soup.find("meta", property="og:video:secure_url")
                     or soup.find("meta", attrs={"name": "twitter:player"})
+                    or soup.find("meta", attrs={"name": "twitter:player:stream"})
                 )
                 if meta_vid and meta_vid.get("content"):
-                    video_url = meta_vid["content"]
+                    video_url = normalize_video_embed_url(meta_vid["content"])
 
             if not video_url:
                 vid = soup.find("video")
                 if vid:
                     src = vid.get("src") or (vid.find("source") and vid.find("source").get("src"))
                     if src:
-                        video_url = src
+                        video_url = normalize_video_embed_url(src)
                 if not video_url:
                     iframe = soup.find("iframe")
                     if iframe and iframe.get("src"):
                         src = iframe["src"]
-                        if any(k in src.lower() for k in ["youtube", "youtu.be", "vimeo", "rumble", "dailymotion"]):
-                            video_url = src
+                        if any(k in src.lower() for k in ["youtube", "youtu.be", "vimeo", "rumble", "dailymotion", "tiktok", "twitter", "instagram"]):
+                            video_url = normalize_video_embed_url(src)
             if not image_url:
                 img = soup.find("img")
                 if img and img.get("src"):
@@ -295,17 +429,14 @@ def extract_featured_media(entry, base_url):
         except Exception:
             pass
 
-    link = entry.get("link", "")
-    if not video_url and link and any(k in link.lower() for k in ["youtube.com/watch", "youtu.be/"]):
-        video_url = link
-
     if image_url:
         image_url = urljoin(base_url, image_url)
-        if not re.search(r"\.(jpe?g|png|webp|gif|bmp|svg)(\?.*)?$", image_url, re.I):
+        if not re.search(r"\.(jpe?g|png|webp|gif|bmp|svg)(\?.*)?$", image_url, re.I) and not image_url.startswith("http"):
             image_url = None
 
     if video_url:
         video_url = urljoin(base_url, video_url)
+        video_url = normalize_video_embed_url(video_url)
 
     return image_url, video_url
 
@@ -532,6 +663,14 @@ async def parse_single_feed_async(session, source, url, retry_count=0, problem_i
                 # Offload de parsing de imágenes y video (BeautifulSoup) a hilo separado
                 image_url, video_url = await asyncio.to_thread(extract_featured_media, entry, url)
 
+                # Fallback profundo: Si no se detectó video en el XML RSS, pero el título/resumen indica video o es fuente prioritaria, scrapeamos el artículo HTML
+                if not video_url and link and (VIDEO_INDICATOR_REGEX.search(title + " " + summary) or is_priority):
+                    article_img, article_vid = await fetch_article_video_fallback(session, link)
+                    if article_vid:
+                        video_url = article_vid
+                    if article_img and not image_url:
+                        image_url = article_img
+
                 try:
                     import theaters_config
                     c_tags = theaters_config.detect_country_tags(text=text, domain=url, source=source)
@@ -679,7 +818,7 @@ async def fetch_telegram_source(source_name, url):
                 summary = textwrap.shorten(text, width=280, placeholder="...")
 
                 # Extract featured image & video from Telegram post
-                photo_el = msg.select_one(".tgme_widget_message_photo_wrap")
+                photo_el = msg.select_one(".tgme_widget_message_photo_wrap, .tgme_widget_message_video_thumb")
                 tg_image_url = ""
                 if photo_el:
                     style = photo_el.get("style", "")
@@ -687,8 +826,15 @@ async def fetch_telegram_source(source_name, url):
                     if match:
                         tg_image_url = match.group(1)
 
-                video_el = msg.select_one(".tgme_widget_message_video_player video, .tgme_widget_message_video video")
-                tg_video_url = video_el.get("src") if video_el and video_el.get("src") else ""
+                video_el = msg.select_one(
+                    ".tgme_widget_message_video_player video, .tgme_widget_message_video video, .tgme_widget_message_roundvideo video, .tgme_widget_message_document_video video, video.tgme_widget_message_video"
+                )
+                tg_video_url = ""
+                if video_el and video_el.get("src"):
+                    tg_video_url = video_el["src"]
+                    if tg_video_url.startswith("/"):
+                        tg_video_url = urljoin("https://t.me", tg_video_url)
+                    tg_video_url = normalize_video_embed_url(tg_video_url)
 
                 entries.append(
                     {

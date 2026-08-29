@@ -15,6 +15,7 @@ import requests
 import urllib3
 
 from config import REDLIB_INSTANCES, RESIDENTIAL_PROXY_URL
+from extractor import normalize_video_embed_url
 from osint_tls_backend import tls_manager
 
 urllib3.disable_warnings()
@@ -309,13 +310,15 @@ def get_youtube_rss() -> List[Dict[str, Any]]:
                 thumbnail = ""
                 if hasattr(entry, "media_thumbnails") and entry.media_thumbnails:
                     thumbnail = entry.media_thumbnails[0].get("url", "")
+                link_url = entry.get("link", "#")
                 results.append(
                     {
                         "title": clean_text_summary(entry.get("title", "Sin título"), 140),
                         "summary": clean_text_summary(entry.get("summary", "") or entry.get("description", ""), 280),
-                        "link": entry.get("link", "#"),
+                        "link": link_url,
                         "published": entry.get("published", ""),
                         "image": thumbnail,
+                        "video": normalize_video_embed_url(link_url),
                         "source": f"YouTube: {name}",
                         "type": "youtube",
                     }
@@ -519,12 +522,14 @@ def get_video_platforms() -> List[Dict[str, Any]]:
             resp = safe_get(url)
             feed = feedparser.parse(resp.content)
             for entry in feed.entries[:3]:
+                link_url = entry.get("link", "#")
                 results.append(
                     {
                         "title": entry.get("title", "Sin título")[:140],
                         "summary": entry.get("summary", "")[:280],
-                        "link": entry.get("link", "#"),
+                        "link": link_url,
                         "published": entry.get("published", ""),
+                        "video": normalize_video_embed_url(link_url),
                         "source": name,
                         "type": "video",
                     }

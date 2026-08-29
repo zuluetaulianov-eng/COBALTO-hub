@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Admin — Venezuela Noticias</title>
+    <link rel="icon" type="image/png" href="/static/img/vn_logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #07090e;
+            --card-bg: rgba(15, 23, 42, 0.85);
+            --primary: #00E5FF;
+            --primary-glow: rgba(0, 229, 255, 0.25);
+            --accent-yellow: #FCD116;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-image: radial-gradient(circle at 50% 40%, rgba(0, 229, 255, 0.05) 0%, transparent 60%);
+        }
+
+        .tricolor-bar {
+            height: 4px;
+            background: linear-gradient(90deg, #FCD116 0%, #FCD116 33%, #0033A0 33%, #0033A0 66%, #CE1126 66%, #CE1126 100%);
+            width: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(16px);
+            text-align: center;
+        }
+
+        .brand-logo {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            object-fit: cover;
+            margin-bottom: 1rem;
+            border: 1px solid rgba(0, 229, 255, 0.4);
+            box-shadow: 0 0 20px var(--primary-glow);
+        }
+
+        .brand-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #ffffff 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.3rem;
+        }
+
+        .brand-subtitle {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 1.2rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+        }
+
+        input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--border-color);
+            padding: 0.75rem 1rem;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+            transition: all 0.25s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 15px var(--primary-glow);
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-submit {
+            width: 100%;
+            background: linear-gradient(135deg, var(--primary) 0%, #0088cc 100%);
+            color: #000;
+            border: none;
+            padding: 0.85rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 800;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            transition: all 0.25s;
+            box-shadow: 0 4px 15px var(--primary-glow);
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 229, 255, 0.4);
+        }
+
+        .error-msg {
+            color: #ef4444;
+            font-size: 0.8rem;
+            margin-top: 1rem;
+            min-height: 1.2em;
+        }
+
+        .back-link {
+            display: block;
+            margin-top: 1.5rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.8rem;
+            transition: color 0.2s;
+        }
+        .back-link:hover { color: var(--primary); }
+    </style>
+</head>
+<body>
+
+    <div class="tricolor-bar"></div>
+
+    <div class="login-card">
+        <img src="/static/img/vn_logo.png" alt="Logo VN" class="brand-logo" onerror="this.src='https://ui-avatars.com/api/?name=VN&background=00E5FF&color=000';">
+        <h1 class="brand-title">VENEZUELA NOTICIAS</h1>
+        <p class="brand-subtitle">Acceso Panel de Administración</p>
+
+        <form id="login-form">
+            <div class="form-group">
+                <label for="username">Usuario Administrador</label>
+                <input type="text" id="username" value="admin" required placeholder="admin" autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Contraseña de Acceso</label>
+                <input type="password" id="password" required placeholder="••••••••" autocomplete="current-password">
+            </div>
+
+            <button type="submit" class="btn-submit">Ingresar al CMS</button>
+
+            <div class="error-msg" id="error-msg"></div>
+        </form>
+
+        <a href="/noticias" class="back-link">← Volver al Portal Público</a>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const errorEl = document.getElementById('error-msg');
+
+            errorEl.textContent = '';
+
+            try {
+                const res = await fetch('/api/vn-admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.status === 'ok') {
+                    if (data.token) {
+                        document.cookie = `vn_token=${data.token}; path=/; max-age=86400; SameSite=Lax`;
+                        localStorage.setItem('vn_token', data.token);
+                    }
+                    window.location.href = '/vn-admin';
+                } else {
+                    errorEl.textContent = data.detail || data.error || 'Credenciales inválidas';
+                }
+            } catch (err) {
+                errorEl.textContent = 'Error de conexión con el servidor';
+            }
+        });
+    </script>
+</body>
+</html>

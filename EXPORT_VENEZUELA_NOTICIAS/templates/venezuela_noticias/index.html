@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Venezuela Noticias — Cobertura Informativa en Tiempo Real</title>
+    <meta name="description" content="Portal informativo independiente sobre Venezuela y el mundo. Noticias, videos en vivo, informes especiales y actualización 24/7.">
+    <meta property="og:title" content="Venezuela Noticias — Cobertura Informativa en Tiempo Real">
+    <meta property="og:description" content="Información verificada, videos en directo e inteligencia informativa sobre Venezuela.">
+    <meta property="og:image" content="/static/img/vn_logo.png">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
+
+    <link rel="icon" type="image/png" href="/static/img/vn_logo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #07090e;
+            --bg-card: rgba(15, 23, 42, 0.75);
+            --primary: #00E5FF;
+            --primary-glow: rgba(0, 229, 255, 0.25);
+            --accent-yellow: #FCD116;
+            --accent-blue: #0055A5;
+            --accent-red: #E10600;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.08);
+            --glass-bg: rgba(15, 23, 42, 0.85);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background-image: radial-gradient(circle at 50% 0%, rgba(0, 229, 255, 0.04) 0%, transparent 50%);
+        }
+
+        /* TRICOLOR HEADER STRIP */
+        .tricolor-bar {
+            height: 3.5px;
+            background: linear-gradient(90deg, #FCD116 0%, #FCD116 33%, #0033A0 33%, #0033A0 66%, #CE1126 66%, #CE1126 100%);
+            width: 100%;
+        }
+
+        /* TICKER BAR */
+        .ticker-bar {
+            background: rgba(15, 23, 42, 0.95);
+            border-bottom: 1px solid var(--border-color);
+            padding: 8px 16px;
+            font-size: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            overflow: hidden;
+        }
+        .ticker-badge {
+            background: linear-gradient(135deg, var(--accent-red), #990000);
+            color: #fff;
+            padding: 3px 10px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(0.98); }
+        }
+
+        /* HEADER NAV */
+        header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .header-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0.8rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            text-decoration: none;
+            color: #fff;
+        }
+        .logo-img {
+            width: 42px;
+            height: 42px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            box-shadow: 0 0 12px rgba(0, 229, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+        .logo-box:hover .logo-img { transform: scale(1.05); }
+
+        .logo-text-box h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.4rem;
+            font-weight: 900;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #ffffff 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+        .logo-text-box p {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+            max-width: 420px;
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            padding: 0.65rem 1rem 0.65rem 2.4rem;
+            border-radius: 24px;
+            color: #fff;
+            font-size: 0.85rem;
+            outline: none;
+            transition: all 0.25s ease;
+        }
+        .search-input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 18px var(--primary-glow);
+            background: rgba(0, 0, 0, 0.5);
+        }
+        .search-icon {
+            position: absolute;
+            left: 0.9rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            pointer-events: none;
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .btn-live-rss {
+            background: rgba(252, 209, 22, 0.12);
+            border: 1px solid rgba(252, 209, 22, 0.3);
+            color: var(--accent-yellow);
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.2s;
+        }
+        .btn-live-rss:hover {
+            background: var(--accent-yellow);
+            color: #000;
+            box-shadow: 0 0 12px rgba(252, 209, 22, 0.4);
+        }
+
+        .btn-admin-link {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid var(--border-color);
+            color: #fff;
+            padding: 7px 14px;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-admin-link:hover {
+            background: rgba(0, 229, 255, 0.15);
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        /* CATEGORIES NAV */
+        .categories-bar {
+            border-top: 1px solid var(--border-color);
+            background: rgba(7, 9, 14, 0.9);
+        }
+        .categories-inner {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0.6rem 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .cat-chip {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+        .cat-chip:hover, .cat-chip.active {
+            background: linear-gradient(135deg, rgba(0,229,255,0.2) 0%, rgba(0,85,165,0.2) 100%);
+            border-color: var(--primary);
+            color: #fff;
+            box-shadow: 0 0 12px rgba(0,229,255,0.25);
+        }
+
+        /* MAIN CONTENT */
+        main {
+            max-width: 1280px;
+            margin: 1.5rem auto;
+            padding: 0 1.5rem;
+            flex: 1;
+            width: 100%;
+        }
+
+        /* HERO FEATURED */
+        .hero-article {
+            display: grid;
+            grid-template-columns: 1.25fr 1fr;
+            gap: 1.5rem;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 2.5rem;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px);
+            transition: border-color 0.3s;
+        }
+        .hero-article:hover {
+            border-color: rgba(0, 229, 255, 0.3);
+        }
+        @media (max-width: 900px) {
+            .hero-article { grid-template-columns: 1fr; }
+        }
+        .hero-media {
+            position: relative;
+            background: #000;
+            min-height: 320px;
+        }
+        .hero-media iframe, .hero-media video, .hero-media img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border: 0;
+            display: block;
+        }
+        .hero-body {
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .tag-badge {
+            background: rgba(0, 229, 255, 0.12);
+            color: var(--primary);
+            border: 1px solid rgba(0, 229, 255, 0.3);
+            font-size: 0.72rem;
+            font-weight: 800;
+            padding: 3px 10px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            display: inline-block;
+            margin-bottom: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+        .hero-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.85rem;
+            font-weight: 800;
+            line-height: 1.25;
+            color: #fff;
+            margin-bottom: 1rem;
+        }
+        .hero-summary {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        /* GRID NEWS CARDS */
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.2rem;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.6rem;
+        }
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .news-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+        .card-news {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        .card-news:hover {
+            transform: translateY(-5px);
+            border-color: rgba(0, 229, 255, 0.4);
+            box-shadow: 0 12px 30px rgba(0, 229, 255, 0.15);
+        }
+        .card-media {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            background: #000;
+            overflow: hidden;
+        }
+        .card-media iframe, .card-media video, .card-media img {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
+            border: 0;
+            transition: transform 0.4s ease;
+        }
+        .card-news:hover .card-media img {
+            transform: scale(1.04);
+        }
+        .badge-video {
+            position: absolute;
+            top: 10px; right: 10px;
+            background: rgba(225, 6, 0, 0.9);
+            color: #fff;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 4px;
+            z-index: 2;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .card-body {
+            padding: 1.3rem;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            justify-content: space-between;
+        }
+        .card-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 0.6rem;
+            line-height: 1.35;
+        }
+        .card-summary {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 1.2rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.5;
+        }
+        .card-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-top: 1px solid var(--border-color);
+            padding-top: 0.8rem;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+        .btn-read {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 0.82rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: gap 0.2s;
+        }
+        .btn-read:hover { gap: 8px; }
+
+        /* FOOTER & NEWSLETTER */
+        .footer-banner {
+            background: linear-gradient(135deg, rgba(15,23,42,0.9) 0%, rgba(7,9,14,0.95) 100%);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 2.5rem 2rem;
+            margin-top: 3.5rem;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .footer-banner h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            color: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        footer {
+            background: #040508;
+            border-top: 1px solid var(--border-color);
+            padding: 2rem 1.5rem;
+            margin-top: 3rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="tricolor-bar"></div>
+
+    <!-- TICKER BAR -->
+    <div class="ticker-bar">
+        <span class="ticker-badge">🔴 ÚLTIMA HORA</span>
+        <span id="ticker-text" style="color: #cbd5e1; font-weight: 500;">Cargando información en tiempo real...</span>
+    </div>
+
+    <!-- HEADER NAV -->
+    <header>
+        <div class="header-inner">
+            <a href="/noticias" class="logo-box">
+                <img src="/static/img/vn_logo.png" alt="Logo Venezuela Noticias" class="logo-img" onerror="this.src='https://ui-avatars.com/api/?name=VN&background=00E5FF&color=000';">
+                <div class="logo-text-box">
+                    <h1>VENEZUELA NOTICIAS</h1>
+                    <p>PORTAL INFORMATIVO OFICIAL</p>
+                </div>
+            </a>
+
+            <div class="search-container">
+                <span class="search-icon">🔍</span>
+                <input type="text" class="search-input" id="search-input" placeholder="Buscar noticias, sucesos o entrevistas..." oninput="filterArticles()">
+            </div>
+
+            <div class="nav-actions">
+                <a href="/noticias/rss.xml" target="_blank" class="btn-live-rss">📡 RSS XML</a>
+                <a href="/vn-admin" class="btn-admin-link">⚙️ CMS Admin</a>
+            </div>
+        </div>
+
+        <!-- CATEGORIES BAR -->
+        <nav class="categories-bar" aria-label="Categorías de noticias">
+            <div class="categories-inner">
+                <button class="cat-chip active" onclick="filterCategory('ALL', this)">🌐 Todas</button>
+                <button class="cat-chip" onclick="filterCategory('Nacional', this)">🇻🇪 Nacional</button>
+                <button class="cat-chip" onclick="filterCategory('Economía', this)">📈 Economía</button>
+                <button class="cat-chip" onclick="filterCategory('Política', this)">🏛️ Política</button>
+                <button class="cat-chip" onclick="filterCategory('Sucesos', this)">🚨 Sucesos</button>
+                <button class="cat-chip" onclick="filterCategory('Internacional', this)">🌎 Internacional</button>
+                <button class="cat-chip" onclick="filterCategory('Deportes', this)">⚽ Deportes</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main>
+        {% if featured %}
+        <section class="hero-article">
+            <div class="hero-media">
+                {% if featured.video_url %}
+                    {% if 'youtube' in featured.video_url or 'vimeo' in featured.video_url or 'tiktok' in featured.video_url or 'dailymotion' in featured.video_url or 'rumble' in featured.video_url %}
+                    <iframe src="{{ featured.video_url }}" allowfullscreen loading="lazy" title="{{ featured.title }}"></iframe>
+                    {% else %}
+                    <video src="{{ featured.video_url }}" {% if featured.image_url %}poster="{{ featured.image_url }}"{% endif %} controls muted playsinline></video>
+                    {% endif %}
+                {% elif featured.image_url %}
+                <img src="{{ featured.image_url }}" alt="{{ featured.title }}">
+                {% else %}
+                <div style="display:flex; justify-content:center; align-items:center; height:100%; color:var(--text-muted); font-size:2.5rem;">📡</div>
+                {% endif %}
+            </div>
+            <div class="hero-body">
+                <div>
+                    <span class="tag-badge">{{ featured.category or 'Nacional' }}</span>
+                    <span style="font-size:0.78rem; color:var(--text-muted); margin-left:0.6rem;">📅 {{ featured.published_at[:10] }}</span>
+                </div>
+                <h2 class="hero-title">{{ featured.title }}</h2>
+                <p class="hero-summary">{{ featured.summary }}</p>
+                <div>
+                    <a href="/noticias/articulo/{{ featured.slug }}" style="background: linear-gradient(135deg, var(--primary) 0%, #0088cc 100%); color:#000; padding:10px 22px; border-radius:8px; font-weight:800; text-decoration:none; display:inline-block; box-shadow: 0 4px 15px var(--primary-glow);">Leer Reportaje Completo ➔</a>
+                </div>
+            </div>
+        </section>
+        {% endif %}
+
+        <div class="section-header">
+            <h3 class="section-title">
+                <span style="color:var(--primary);">📰</span> FEED GENERAL DE NOTICIAS
+            </h3>
+        </div>
+
+        <section class="news-grid" id="news-grid">
+            {% for item in articles %}
+            <article class="card-news" data-category="{{ item.category|upper }}" data-search="{{ (item.title ~ ' ' ~ item.summary)|lower }}">
+                <div class="card-media">
+                    {% if item.video_url %}
+                        <span class="badge-video">🎬 VIDEO</span>
+                        {% if 'youtube' in item.video_url or 'vimeo' in item.video_url or 'tiktok' in item.video_url or 'dailymotion' in item.video_url or 'rumble' in item.video_url %}
+                        <iframe src="{{ item.video_url }}" allowfullscreen loading="lazy" title="{{ item.title }}"></iframe>
+                        {% else %}
+                        <video src="{{ item.video_url }}" {% if item.image_url %}poster="{{ item.image_url }}"{% endif %} controls muted playsinline loading="lazy"></video>
+                        {% endif %}
+                    {% elif item.image_url %}
+                    <img src="{{ item.image_url }}" alt="{{ item.title }}" loading="lazy">
+                    {% else %}
+                    <div style="display:flex; justify-content:center; align-items:center; height:100%; color:var(--text-muted); font-size:1.8rem;">📡</div>
+                    {% endif %}
+                </div>
+
+                <div class="card-body">
+                    <div>
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
+                            <span class="tag-badge" style="font-size:0.68rem; margin:0;">{{ item.category or 'Nacional' }}</span>
+                            <span style="font-size:0.72rem; color:var(--text-muted);">{{ item.published_at[:10] }}</span>
+                        </div>
+                        <h4 class="card-title">{{ item.title }}</h4>
+                        <p class="card-summary">{{ item.summary }}</p>
+                    </div>
+
+                    <div class="card-footer">
+                        <span>✍️ {{ item.author_name or item.source_name or 'Redacción VN' }}</span>
+                        <a href="/noticias/articulo/{{ item.slug }}" class="btn-read">Leer ➔</a>
+                    </div>
+                </div>
+            </article>
+            {% else %}
+            <div style="grid-column: 1 / -1; text-align:center; padding:4rem; color:var(--text-muted); background: var(--bg-card); border-radius:12px; border:1px solid var(--border-color);">
+                <div style="font-size:2.5rem; margin-bottom:0.5rem;">🇻🇪</div>
+                <p>No hay noticias publicadas en este momento.</p>
+            </div>
+            {% endfor %}
+        </section>
+
+        <section class="footer-banner">
+            <h3>🇻🇪 Mantente Informado con Venezuela Noticias</h3>
+            <p style="color:var(--text-muted); font-size:0.9rem; max-width:600px; margin:0.5rem auto 1.5rem auto;">Recibe actualización continua y cobertura directa en nuestro feed de noticias oficial.</p>
+            <a href="/noticias/rss.xml" target="_blank" style="background:var(--accent-yellow); color:#000; padding:10px 24px; border-radius:24px; font-weight:800; text-decoration:none; display:inline-block; box-shadow: 0 4px 15px rgba(252, 209, 22, 0.3);">Suscribirse al Feed RSS XML</a>
+        </section>
+    </main>
+
+    <footer>
+        <p><strong>VENEZUELA NOTICIAS</strong> — Cobertura informativa independiente en tiempo real.</p>
+        <p style="margin-top:0.4rem; font-size:0.75rem;">© 2026 Venezuela Noticias. Todos los derechos reservados.</p>
+    </footer>
+
+    <script>
+        let currentCategory = 'ALL';
+
+        function filterCategory(cat, btn) {
+            currentCategory = cat.toUpperCase();
+            document.querySelectorAll('.cat-chip').forEach(c => c.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            filterArticles();
+        }
+
+        function filterArticles() {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.card-news');
+
+            cards.forEach(card => {
+                const cat = card.getAttribute('data-category') || '';
+                const search = card.getAttribute('data-search') || '';
+
+                const matchesCat = (currentCategory === 'ALL' || cat === currentCategory);
+                const matchesSearch = (!query || search.includes(query));
+
+                if (matchesCat && matchesSearch) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        const firstTitle = document.querySelector('.card-news .card-title');
+        if (firstTitle) {
+            document.getElementById('ticker-text').innerText = firstTitle.innerText;
+        }
+    </script>
+</body>
+</html>
