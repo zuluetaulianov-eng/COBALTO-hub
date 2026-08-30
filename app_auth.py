@@ -34,7 +34,7 @@ PUBLIC_PATHS = {
     "cortana.bmp",
 }
 
-PUBLIC_PREFIXES = {"/static/", "/api/login", "/api/forgot-password", "/noticias", "/api/vn"}
+PUBLIC_PREFIXES = {"/static/", "/api/login", "/api/forgot-password", "/noticias", "/api/vn", "/vn-login", "/vn-admin"}
 
 
 def _b64_encode(data: dict) -> str:
