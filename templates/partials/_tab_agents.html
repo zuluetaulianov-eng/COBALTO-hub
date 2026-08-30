@@ -4,7 +4,7 @@
             <h2 class="heading-2">🤖 Actividad de Agentes Autónomos</h2>
             <div class="flex" style="gap: 0.5rem; align-items: center;">
                 <span class="text-muted font-mono" style="font-size: 0.8rem;">Modo:</span>
-                <select id="agent-mode-select" class="config-select" style="width: auto;" onchange="AgentFeed.setMode(this.value)">
+                <select id="agent-mode-select" class="config-select" style="width: auto;" aria-label="Modo de ejecución de la flota de agentes" onchange="AgentFeed.setMode(this.value)">
                     <option value="suggest">💡 Sugerir solo</option>
                     <option value="approval">✅ Requiere aprobación</option>
                     <option value="auto">🤖 Automático</option>
@@ -18,8 +18,8 @@
         <div style="background: rgba(0,229,255,0.05); border: 1px dashed var(--primary); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
             <h4 style="margin-top:0; margin-bottom:0.5rem; color:var(--primary); font-size:0.85rem;" class="font-mono">⚡ Asignar Misión Directa a la Flota de Agentes</h4>
             <div class="flex flex-wrap" style="gap: 0.5rem; align-items: center;">
-                <input id="agent-custom-prompt" type="text" class="config-input" placeholder="Ej: Investigar IP 190.202.10.5 o Dominio pdvsa.com..." style="flex: 1; min-width: 250px;" onkeydown="if(event.key==='Enter') AgentFeed.createTask()">
-                <select id="agent-tool-select" class="config-select" style="width: auto;">
+                <input id="agent-custom-prompt" type="text" class="config-input" aria-label="Misión o instrucción directa para el agente" placeholder="Ej: Investigar IP 190.202.10.5 o Dominio pdvsa.com..." style="flex: 1; min-width: 250px;" onkeydown="if(event.key==='Enter') AgentFeed.createTask()">
+                <select id="agent-tool-select" class="config-select" aria-label="Herramienta OSINT a emplear por el agente" style="width: auto;">
                     <option value="">Auto-Detectar Herramienta OSINT</option>
                     <option value="recon_shodan">🔍 Shodan IP Scanner</option>
                     <option value="recon_whois">🌐 WHOIS Lookup</option>

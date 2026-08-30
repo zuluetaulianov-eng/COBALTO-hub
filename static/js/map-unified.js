@@ -154,7 +154,7 @@ window.UnifiedMap = {
     },
 
     searchVector: function(query) {
-        if (!query || !this.state.renderedMarkers.length || !this.state.map) return;
+        if (!query || !this.state.renderedMarkers.length || !this.state.map) return false;
         var q = query.toLowerCase().trim();
 
         var match = this.state.renderedMarkers.find(function(m) {
@@ -170,10 +170,12 @@ window.UnifiedMap = {
             if (typeof window.showTacticalToast === 'function') {
                 window.showTacticalToast('🎯 Vector encontrado: ' + (match.title || match.callsign || query), 'info');
             }
+            return true;
         } else {
             if (typeof window.showTacticalToast === 'function') {
                 window.showTacticalToast('⚠️ No se encontró vector coincidente para: ' + query, 'warning');
             }
+            return false;
         }
     },
 

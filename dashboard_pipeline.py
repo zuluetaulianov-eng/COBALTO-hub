@@ -68,7 +68,6 @@ def cluster_similar_entries(entries: List[Dict]) -> List[Dict]:
 
         matched_cluster = None
         for existing in clustered:
-            ex_title = existing.get("title", "")
             ex_norm_title = existing.get("_norm_title", "")
             ex_title_kw = existing.get("_title_kw", set())
             ex_kw = existing.get("_keywords", set())

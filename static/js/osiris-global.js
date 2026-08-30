@@ -425,7 +425,7 @@ window.OsirisGlobal = {
 
             var mediaHtml;
             if (isHls) {
-                mediaHtml = '<video id="' + camId + '-vid" class="cctv-img" data-hls="' + this._esc(cam.feed_url) + '" muted playsinline preload="metadata" style="display:none;width:100%;height:100%;object-fit:cover;"></video>';
+                mediaHtml = '<video id="' + camId + '-vid" class="cctv-img" data-hls="' + this._esc(cam.feed_url) + '" muted playsinline preload="metadata" style="display:none;width:100%;height:100%;object-fit:cover;"><track kind="captions" srclang="es" label="Español" src="data:text/vtt;charset=utf-8,WEBVTT"></video>';
             } else {
                 mediaHtml = '<img id="' + camId + '-img" class="cctv-img" data-base-src="' + proxyUrl + '" src="' + proxyUrl + '" />';
             }

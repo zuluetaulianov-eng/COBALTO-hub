@@ -19,7 +19,7 @@
 
                         <!-- Buscador de Vectores dentro del Mapa -->
                         <div class="map-hud-chip flex items-center gap-05 p-1 rounded-lg" style="background:rgba(10,12,18,0.9); border:1px solid rgba(0,229,255,0.3); backdrop-filter:blur(12px);">
-                            <input type="text" id="map-search-input" class="sitrep-search-input text-xs" placeholder="🔍 Buscar vector o evento..." style="width:170px; background:transparent; border:none; color:#fff;" onkeyup="if(event.key==='Enter')window.UnifiedMap.searchVector(this.value)">
+                            <input type="text" id="map-search-input" class="sitrep-search-input text-xs" placeholder="🔍 Buscar vector o evento..." aria-label="Buscar vector o evento en el mapa" style="width:170px; background:transparent; border:none; color:#fff;" onkeyup="if(event.key==='Enter')window.UnifiedMap.searchVector(this.value)">
                             <button class="btn-tactical text-xs" onclick="window.UnifiedMap.searchVector(document.getElementById('map-search-input').value)">Buscar</button>
                         </div>
                     </div>
@@ -28,7 +28,7 @@
                     <div class="flex items-center gap-05" style="pointer-events:auto;">
                         <div class="map-hud-chip flex items-center gap-05 p-1 rounded-lg" style="background:rgba(10,12,18,0.9); border:1px solid rgba(0,229,255,0.3); backdrop-filter:blur(12px);">
                             <span class="text-muted font-mono text-xs">CAPA BASE:</span>
-                            <select id="map-basemap-select" onchange="window.UnifiedMap.switchBasemap(this.value)" class="sitrep-select text-xs" style="background:rgba(0,0,0,0.5); color:#fff; border:1px solid rgba(255,255,255,0.1); border-radius:4px; padding:3px 6px;">
+                            <select id="map-basemap-select" onchange="window.UnifiedMap.switchBasemap(this.value)" class="sitrep-select text-xs" aria-label="Seleccionar capa base del mapa" style="background:rgba(0,0,0,0.5); color:#fff; border:1px solid rgba(255,255,255,0.1); border-radius:4px; padding:3px 6px;">
                                 <option value="dark">🌑 Oscuro Táctico (Esri Dark)</option>
                                 <option value="satellite">🛰️ Satélite HD (Esri World)</option>
                                 <option value="light">☀️ Táctico Claro (Esri Light)</option>

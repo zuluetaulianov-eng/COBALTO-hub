@@ -9,8 +9,8 @@
             </div>
         </div>
         <div class="flex flex-wrap gap-1" style="margin-bottom: 1rem;">
-            <input type="text" id="entity-search" placeholder="Buscar entidad por nombre o alias..." class="search-input" style="flex: 1; min-width: 200px;" oninput="EntityExplorer.search()">
-            <select id="entity-type-filter" class="config-select" onchange="EntityExplorer.filterType()">
+            <input type="text" id="entity-search" placeholder="Buscar entidad por nombre o alias..." aria-label="Buscar entidad por nombre o alias" class="search-input" style="flex: 1; min-width: 200px;" oninput="EntityExplorer.search()">
+            <select id="entity-type-filter" class="config-select" aria-label="Filtrar por tipo de entidad" onchange="EntityExplorer.filterType()">
                 <option value="">Todos los tipos</option>
                 <option value="person">Personas</option>
                 <option value="organization">Organizaciones</option>
@@ -21,7 +21,7 @@
                 <option value="crypto_wallet">🪙 Billeteras Cripto</option>
                 <option value="event">Eventos</option>
             </select>
-            <select id="entity-source-filter" class="config-select" onchange="EntityExplorer.filterSource()">
+            <select id="entity-source-filter" class="config-select" aria-label="Filtrar por fuente de entidad" onchange="EntityExplorer.filterSource()">
                 <option value="">Todas las fuentes</option>
                 <option value="social_graph">Social Graph</option>
                 <option value="ofac_sdn">OFAC SDN</option>

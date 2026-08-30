@@ -29,21 +29,21 @@
             <button class="btn-tactical btn-sm" onclick="HumintIntel.addSampleReport()" style="border-color:var(--primary); font-size:0.75rem;">⚡ Cargar Ejemplo Táctico</button>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;">
-            <input id="humint-title" class="config-input" placeholder="Título del reporte *">
-            <input id="humint-reporter" class="config-input" placeholder="Reportado por (ej: Agente-07)">
-            <input id="humint-lat" class="config-input" placeholder="Latitud (ej: 10.4806)">
-            <input id="humint-lon" class="config-input" placeholder="Longitud (ej: -66.9036)">
-            <input id="humint-location" class="config-input" placeholder="Nombre del lugar (ej: Sector Centro)">
-            <select id="humint-severity" class="config-select">
+            <input id="humint-title" class="config-input" placeholder="Título del reporte *" aria-label="Título del reporte HUMINT">
+            <input id="humint-reporter" class="config-input" placeholder="Reportado por (ej: Agente-07)" aria-label="Informante o agente reportante">
+            <input id="humint-lat" class="config-input" placeholder="Latitud (ej: 10.4806)" aria-label="Latitud de la ubicación">
+            <input id="humint-lon" class="config-input" placeholder="Longitud (ej: -66.9036)" aria-label="Longitud de la ubicación">
+            <input id="humint-location" class="config-input" placeholder="Nombre del lugar (ej: Sector Centro)" aria-label="Nombre del lugar del reporte">
+            <select id="humint-severity" class="config-select" aria-label="Nivel de severidad del reporte HUMINT">
                 <option value="info">ℹ️ Informativo</option>
                 <option value="medium">🟡 Medio</option>
                 <option value="high">🟠 Alto</option>
                 <option value="critical">🔴 Crítico</option>
             </select>
-            <input id="humint-photo" class="config-input" placeholder="URL de Foto / Evidencia (opcional)" style="grid-column: span 2;">
-            <input id="humint-tags" class="config-input" placeholder="Tags (ej: patrullaje, movilizacion, vehicular)" style="grid-column: span 2;">
+            <input id="humint-photo" class="config-input" placeholder="URL de Foto / Evidencia (opcional)" aria-label="URL de Foto o Evidencia" style="grid-column: span 2;">
+            <input id="humint-tags" class="config-input" placeholder="Tags (ej: patrullaje, movilizacion, vehicular)" aria-label="Etiquetas del reporte" style="grid-column: span 2;">
         </div>
-        <textarea id="humint-description" class="config-input" style="width:100%;min-height:80px;margin-top:0.5rem;" placeholder="Descripción detallada de la novedad en terreno..."></textarea>
+        <textarea id="humint-description" class="config-input" style="width:100%;min-height:80px;margin-top:0.5rem;" placeholder="Descripción detallada de la novedad en terreno..." aria-label="Descripción detallada del reporte HUMINT"></textarea>
         <div class="flex-between" style="margin-top:0.5rem;">
             <button class="btn-tactical" onclick="HumintIntel.submitReport()">📤 Enviar Reporte de Campo</button>
             <span class="text-muted font-mono" style="font-size:0.7rem;">Soporta captura en modo desconectado (Offline Queue)</span>

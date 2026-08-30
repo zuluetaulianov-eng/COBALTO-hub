@@ -1,15 +1,15 @@
-﻿            <!-- TAB: ALERTS -->
+            <!-- TAB: ALERTS -->
             <div id="tab-alerts" class="tab-content">
                 <div class="flex gap-1 flex-wrap items-center" style="margin-bottom: 1.5rem;">
-                    <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="alert-search" class="search-box" style="flex:1; min-width:200px;" placeholder="Filtrar alertas...">
-                    <select id="alert-level-filter" class="search-box" style="width:140px;">
+                    <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="alert-search" class="search-box" style="flex:1; min-width:200px;" placeholder="Filtrar alertas..." aria-label="Filtrar alertas por texto">
+                    <select id="alert-level-filter" class="search-box" style="width:140px;" aria-label="Filtrar alertas por nivel de severidad">
                         <option value="all">Todos los niveles</option>
                         <option value="🔴 CRÍTICO">Crítico</option>
                         <option value="🟠 URGENTE">Urgente</option>
                         <option value="🔵 CYBER">Cyber</option>
                         <option value="🟡 ATENCIÓN">Atención</option>
                     </select>
-                    <select id="alert-sort" class="search-box" style="width:120px;">
+                    <select id="alert-sort" class="search-box" style="width:120px;" aria-label="Ordenar lista de alertas">
                         <option value="level">Severidad</option>
                         <option value="time">Tiempo</option>
                         <option value="source">Fuente</option>

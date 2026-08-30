@@ -18,8 +18,8 @@
     <div id="finint-panel-wallets" class="finint-panel" style="display:block;">
         <div class="panel-glass" style="padding:1rem;margin-bottom:0.5rem;">
             <div class="flex" style="gap:0.5rem;">
-                <input id="finint-wallet-input" type="text" class="config-input" style="flex:1;font-family:monospace;" placeholder="Dirección wallet (BTC/ETH)...">
-                <select id="finint-chain-select" class="config-select" style="width:auto;">
+                <input id="finint-wallet-input" type="text" class="config-input" aria-label="Dirección de billetera cripto BTC o ETH" style="flex:1;font-family:monospace;" placeholder="Dirección wallet (BTC/ETH)...">
+                <select id="finint-chain-select" class="config-select" aria-label="Seleccionar blockchain o red de criptomonedas" style="width:auto;">
                     <option value="bitcoin">Bitcoin (BTC)</option>
                     <option value="ethereum">Ethereum (ETH)</option>
                     <option value="tron">TRON (TRC-20 USDT)</option>
@@ -53,7 +53,7 @@
     <div id="finint-panel-darkweb" class="finint-panel" style="display:none;">
         <div class="panel-glass" style="padding:1rem;margin-bottom:0.5rem;">
             <div class="flex" style="gap:0.5rem;">
-                <input id="finint-dw-input" type="text" class="config-input" style="flex:1;" placeholder="Buscar en paste sites (dominio, wallet, keyword)...">
+                <input id="finint-dw-input" type="text" class="config-input" aria-label="Término de búsqueda en Dark Web o paste sites" style="flex:1;" placeholder="Buscar en paste sites (dominio, wallet, keyword)...">
                 <button class="btn-tactical" onclick="FinintIntel.searchDarkWeb()">🌐 Buscar</button>
             </div>
         </div>
@@ -63,7 +63,7 @@
     <!-- Text Analyzer -->
     <div id="finint-panel-analyze" class="finint-panel" style="display:none;">
         <div class="panel-glass" style="padding:1rem;margin-bottom:0.5rem;">
-            <textarea id="finint-analyze-input" class="config-input" style="width:100%;min-height:150px;font-family:monospace;font-size:0.8rem;" placeholder="Pega texto para analizar (artículos, leaks, chats)..."></textarea>
+            <textarea id="finint-analyze-input" class="config-input" aria-label="Texto de entrada para análisis de inteligencia financiera FININT" style="width:100%;min-height:150px;font-family:monospace;font-size:0.8rem;" placeholder="Pega texto para analizar (artículos, leaks, chats)..."></textarea>
             <button class="btn-tactical" style="margin-top:0.5rem;" onclick="FinintIntel.analyzeText()">🔍 Analizar</button>
         </div>
         <div id="finint-analyze-result"></div>

@@ -33,21 +33,21 @@ window._newsPerPage = 30;
         {% include "partials/_tab_osiris_global.html" %}
         {% include "partials/_tab_config.html" %}
 
-        <!-- NEO4J FORCE GRAPH MODAL + TOAST -->
-        <div id="neo4j-graph-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 5, 10, 0.95); z-index: 100000; backdrop-filter: blur(5px);">
-            <div style="position: absolute; top: 20px; right: 30px; z-index: 100001; display: flex; gap: 1rem;">
-                <div style="background: rgba(0, 229, 255, 0.1); border: 1px solid #00e5ff; padding: 8px 15px; border-radius: 8px; color: #00e5ff; font-family: 'Roboto Mono', monospace; font-size: 0.8rem;">
-                    ⚡ ACELERACIÓN WEBGL ACTIVA
-                </div>
-                <button style="background: #FF2D55; color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-family: monospace;" onclick="if(window.closeNeo4jGraph)closeNeo4jGraph()">CERRAR VISOR (ESC)</button>
-            </div>
-            <div id="neo4j-graph-container" style="width: 100%; height: 100%;"></div>
-        </div>
-
-        <div id="tactical-toast-container" style="position: fixed; bottom: 35px; right: 30px; z-index: 200000; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
 
         {% include "partials/_telemetry_drawer.html" %}
     </main>
+
+    <!-- NEO4J FORCE GRAPH MODAL (nivel app-container, fuera de main) -->
+    <div id="neo4j-graph-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(5, 5, 10, 0.95); z-index: 100000; backdrop-filter: blur(5px);">
+        <div style="position: absolute; top: 20px; right: 30px; z-index: 100001; display: flex; gap: 1rem;">
+            <div style="background: rgba(0, 229, 255, 0.1); border: 1px solid #00e5ff; padding: 8px 15px; border-radius: 8px; color: #00e5ff; font-family: 'Roboto Mono', monospace; font-size: 0.8rem;">
+                ⚡ ACELERACIÓN WEBGL ACTIVA
+            </div>
+            <button style="background: #FF2D55; color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-family: monospace;" onclick="if(window.closeNeo4jGraph)closeNeo4jGraph()">CERRAR VISOR (ESC)</button>
+        </div>
+        <div id="neo4j-graph-container" style="width: 100%; height: 100%;"></div>
+    </div>
+
 
     <!-- RIGHT PANEL: AI COBALTO -->
     <aside class="ai-panel" id="ai-panel">
@@ -56,7 +56,7 @@ window._newsPerPage = 30;
             <div class="ai-title">ENLACE COBALTO</div>
             <div id="ai-model-badge" title="Modelo Ollama Activo" style="font-size:0.65rem; padding: 2px 6px; border-radius: 4px; background: rgba(0,229,255,0.1); border: 1px solid rgba(0,229,255,0.3); color: var(--primary); font-family: monospace; margin-left: auto; margin-right: 6px; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">OLLAMA LOCAL</div>
             <button class="ai-close-mobile" aria-label="Cerrar panel" onclick="if(window.CobaltoChat)CobaltoChat.toggleAI()">✕</button>
-            <button id="btn-clear-chat" class="btn-icon" title="Limpiar historial" onclick="if(window.CobaltoChat)CobaltoChat.clearChat()">🗑️</button>
+            <button id="btn-clear-chat" class="btn-icon" title="Limpiar historial">🗑️</button>
         </div>
         <div class="ai-chat-area" id="chat-box">
             <div class="msg msg-cobalto">
@@ -72,15 +72,15 @@ window._newsPerPage = 30;
                 <button type="button" class="btn-tactical" onclick="if(window.CobaltoChat)CobaltoChat.sendQuickPrompt('Radar de ciberseguridad y pastes')" style="font-size: 0.68rem; padding: 3px 8px; white-space: nowrap; border-radius: 12px; background: rgba(0,229,255,0.05);">🔒 Ciber</button>
             </div>
             <div class="chat-input-wrapper">
-                <select id="chat-persona-select" class="chat-input" style="width: auto; max-width: 110px; border-right: 1px solid var(--border-color); margin-right: 5px; background: transparent; color: var(--primary);">
+                <select id="chat-persona-select" class="chat-input" aria-label="Seleccionar perfil de IA para el chat táctico" style="width: auto; max-width: 110px; border-right: 1px solid var(--border-color); margin-right: 5px; background: transparent; color: var(--primary);">
                     <option value="GENERAL">General</option>
                     <option value="ARES">ARES (Militar)</option>
                     <option value="MINERVA">MINERVA (Geopolítica)</option>
                     <option value="NEXUS">NEXUS (OSINT)</option>
                 </select>
-                <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="chat-input" class="chat-input" placeholder="Pregúntale a Cobalto..." onkeypress="if(window.CobaltoChat)CobaltoChat.handleEnter(event)">
-                <button id="chat-mic-btn" type="button" class="btn-icon" title="Dictar por voz (Ctrl+Shift+V)" onclick="if(window.CobaltoVoice)window.CobaltoVoice.toggleListeningForInput('chat-input')" style="border-radius: 4px; padding: 0 8px; color: var(--primary); font-size: 0.9rem; background: transparent; border: none; cursor: pointer;">🎙️</button>
-                <button id="chat-send-btn" class="chat-send" onclick="if(window.CobaltoChat)CobaltoChat.sendMessage()">ENVIAR</button>
+                <input type="text" autocomplete="off" spellcheck="false" data-lpignore="true" id="chat-input" class="chat-input" placeholder="Pregúntale a Cobalto..." aria-label="Escribir consulta para la inteligencia artificial">
+                <button id="chat-mic-btn" type="button" class="btn-icon" title="Dictar por voz (Ctrl+Shift+V)" aria-label="Dictar por voz" style="border-radius: 4px; padding: 0 8px; color: var(--primary); font-size: 0.9rem; background: transparent; border: none; cursor: pointer;">🎙️</button>
+                <button id="chat-send-btn" class="chat-send" aria-label="Enviar mensaje a la IA">ENVIAR</button>
             </div>
         </div>
     </aside>
@@ -157,8 +157,11 @@ window._newsPerPage = 30;
                 window._appInitialized = true;
                 window.CobaltoCore.init("{{ now }}");
                 if (window.CobaltoLayout) window.CobaltoLayout.init();
-                if (window.CobaltoMap) window.CobaltoMap.init();
-                if (window.initSocialGraph) window.initSocialGraph();
+                // Map and SocialGraph lazily initialized on idle or tab activation
+                var idleInit = window.requestIdleCallback || function(cb) { setTimeout(cb, 1000); };
+                idleInit(function() {
+                    if (window.CobaltoMap && !window.CobaltoMap._map) window.CobaltoMap.init();
+                });
             }
         };
 
@@ -219,6 +222,6 @@ window._newsPerPage = 30;
 <script src="/static/js/voice-system.js?v={{ now|urlencode }}" defer></script>
 
 <!-- Toast Container -->
-<div id="tactical-toast-container" style="position:fixed; bottom:20px; right:20px; z-index:99998; display:flex; flex-direction:column-reverse; gap:8px; pointer-events:none; max-width:350px;"></div>
+
 </body>
 </html>

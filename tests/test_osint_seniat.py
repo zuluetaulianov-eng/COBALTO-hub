@@ -3,7 +3,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-import pytest
 from osint_seniat import (
     normalize_rif,
     parse_seniat_response,

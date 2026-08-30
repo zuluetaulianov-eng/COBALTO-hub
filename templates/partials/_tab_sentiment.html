@@ -19,7 +19,7 @@
                         <div style="display: flex; align-items: center; gap: 0.4rem;">
                             <span style="font-size:0.9rem;">📍</span>
                             <label for="sentiment-theater" style="font-family:'Roboto Mono',monospace; font-size:0.75rem; color:var(--primary); font-weight:bold;">TEATRO:</label>
-                            <select id="sentiment-theater" onchange="if(window.CobaltaSentiment)window.CobaltaSentiment.refresh()" style="background: rgba(10,11,16,0.9); border: 1px solid var(--primary); color: #fff; border-radius: 4px; padding: 0.35rem 0.6rem; font-family: 'Roboto Mono', monospace; font-size: 0.75rem; cursor: pointer;">
+                            <select id="sentiment-theater" aria-label="Filtrar análisis de sentimiento por teatro táctico" onchange="if(window.CobaltaSentiment)window.CobaltaSentiment.refresh()" style="background: rgba(10,11,16,0.9); border: 1px solid var(--primary); color: #fff; border-radius: 4px; padding: 0.35rem 0.6rem; font-family: 'Roboto Mono', monospace; font-size: 0.75rem; cursor: pointer;">
                                 <option value="todos">🌍 Todos los Teatros (Global)</option>
                                 <option value="frontera">🏔️ Teatro 1: Frontera Andina (Táchira/Apure)</option>
                                 <option value="zulia">⚡ Teatro 2: Zulia / Eje Eléctrico</option>
@@ -29,7 +29,7 @@
                         </div>
                         <div style="display: flex; align-items: center; gap: 0.4rem; flex: 1; min-width: 200px;">
                             <span style="font-size:0.9rem;">🔍</span>
-                            <input type="text" id="sentiment-target-filter" placeholder="Filtrar por actor / palabra clave (ej. @CANTV, PDVSA)..." onkeyup="if(event.key==='Enter' && window.CobaltaSentiment)window.CobaltaSentiment.refresh()" style="width: 100%; background: rgba(10,11,16,0.9); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 4px; padding: 0.35rem 0.6rem; font-family: 'Roboto Mono', monospace; font-size: 0.75rem;">
+                            <input type="text" id="sentiment-target-filter" aria-label="Filtrar sentimiento por actor o palabra clave" placeholder="Filtrar por actor / palabra clave (ej. @CANTV, PDVSA)..." onkeyup="if(event.key==='Enter' && window.CobaltaSentiment)window.CobaltaSentiment.refresh()" style="width: 100%; background: rgba(10,11,16,0.9); border: 1px solid rgba(255,255,255,0.15); color: #fff; border-radius: 4px; padding: 0.35rem 0.6rem; font-family: 'Roboto Mono', monospace; font-size: 0.75rem;">
                         </div>
                     </div>
                     <div style="display: flex; align-items: center; gap: 0.5rem;">

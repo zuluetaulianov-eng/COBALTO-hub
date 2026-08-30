@@ -68,7 +68,7 @@
 
             <!-- BUSCADOR INTERACTIVO -->
             <div class="flex items-center" style="gap: 0.5rem; flex: 1; max-width: 320px;">
-                <input type="text" id="incidents-search-input" placeholder="🔍 Buscar vector o incidente..." 
+                <input type="text" id="incidents-search-input" placeholder="🔍 Buscar vector o incidente..." aria-label="Buscar vector o incidente"
                        class="form-control font-mono" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; background: rgba(0,0,0,0.4);"
                        oninput="CobaltoTimeline.searchIncidents(this.value)">
             </div>
@@ -185,7 +185,7 @@
             <div class="grid-2 gap-1" style="margin-bottom: 1rem;">
                 <div>
                     <label class="font-mono text-muted" style="font-size: 0.75rem;">TEATRO / ZONA</label>
-                    <select id="inc-form-theater" class="form-control font-mono" style="padding: 0.5rem; background: rgba(255,255,255,0.04);">
+                    <select id="inc-form-theater" aria-label="Teatro táctico del incidente" class="form-control font-mono" style="padding: 0.5rem; background: rgba(255,255,255,0.04);">
                         <option value="COL">🇨🇴 Colombia (COL)</option>
                         <option value="VEN">🇻🇪 Venezuela (VEN)</option>
                         <option value="FRONTERA">⚔️ Frontera (COL-VEN)</option>
@@ -194,7 +194,7 @@
                 </div>
                 <div>
                     <label class="font-mono text-muted" style="font-size: 0.75rem;">CATEGORÍA</label>
-                    <select id="inc-form-category" class="form-control font-mono" style="padding: 0.5rem; background: rgba(255,255,255,0.04);">
+                    <select id="inc-form-category" aria-label="Categoría del incidente" class="form-control font-mono" style="padding: 0.5rem; background: rgba(255,255,255,0.04);">
                         <option value="SECURITY">⚔️ Seguridad Táctica</option>
                         <option value="MILITARY">🛡️ Militar / Defensa</option>
                         <option value="INFRASTRUCTURE">⚡ Infraestructura Crítica</option>
@@ -209,7 +209,7 @@
             <div class="grid-2 gap-1" style="margin-bottom: 1rem;">
                 <div>
                     <label class="font-mono text-muted" style="font-size: 0.75rem;">NIVEL DE SEVERIDAD</label>
-                    <select id="inc-form-severity" class="form-control font-mono" style="padding: 0.5rem; background: rgba(255,255,255,0.04);">
+                    <select id="inc-form-severity" aria-label="Nivel de severidad del incidente" class="form-control font-mono" style="padding: 0.5rem; background: rgba(255,255,255,0.04);">
                         <option value="CRITICAL">🚨 CRÍTICO (Alerta Máxima)</option>
                         <option value="HIGH" selected>⚠️ ALTA (Requiere Atención)</option>
                         <option value="MEDIUM">🟡 MEDIA (Monitoreo Standard)</option>

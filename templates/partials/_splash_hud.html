@@ -1,10 +1,29 @@
-﻿<body data-now="{{ now }}">
+<body data-now="{{ now }}">
     <div id="splash-screen" class="splash-screen">
         <div class="logo">🛰️</div>
         <div style="color: #00E5FF; font-size: 1rem; letter-spacing: 3px; margin-bottom: 1.5rem;">COBALTO HUB</div>
         <div class="bar"><div class="bar-fill"></div></div>
         <div style="color: rgba(255,255,255,0.3); font-size: 0.65rem; margin-top: 1.5rem;">INICIALIZANDO SENSORES</div>
     </div>
+    <script>
+        (function() {
+            function removeSplash() {
+                var splash = document.getElementById('splash-screen');
+                if (splash && splash.parentNode) {
+                    splash.style.transition = 'opacity 0.2s ease-out';
+                    splash.style.opacity = '0';
+                    splash.style.pointerEvents = 'none';
+                    setTimeout(function() { if (splash && splash.parentNode) splash.parentNode.removeChild(splash); }, 200);
+                }
+            }
+            if (document.readyState === 'interactive' || document.readyState === 'complete') {
+                removeSplash();
+            } else {
+                document.addEventListener('DOMContentLoaded', removeSplash);
+            }
+            setTimeout(removeSplash, 300);
+        })();
+    </script>
 
     <!-- HUD Notification (Auto-Refresh) -->
     <div id="hud-update" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0, 229, 255, 0.15); border: 1px solid var(--primary); padding: 10px 20px; border-radius: 8px; color: #fff; font-family: 'Roboto Mono', monospace; font-size: 0.9rem; z-index: 9999; display: none; backdrop-filter: blur(10px); box-shadow: 0 0 15px rgba(0, 229, 255, 0.3);">

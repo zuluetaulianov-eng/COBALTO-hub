@@ -1,10 +1,9 @@
-    <div class="app-container">
-        
+
         <!-- SIDEBAR -->
         <aside class="sidebar">
             <div class="logo-area" style="position: relative; display: flex; align-items: center; justify-content: center;">
                 <img src="{{ LOGO_PATH if LOGO_PATH and LOGO_PATH != '123.png' else '/static/icons/icon-512.png' }}" alt="COBALTO HUB" loading="lazy" onerror="this.onerror=null;this.src='/static/icons/icon-192.png';" style="margin: 0 auto; max-height: 48px; object-fit: contain;">
-                <button id="sidebar-collapse-btn" class="btn-icon" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); color: var(--primary); font-size: 1rem; border: 1px solid rgba(0, 229, 255, 0.2); background: rgba(10, 11, 16, 0.6); border-radius: 6px; padding: 4px 8px; font-family: 'Roboto Mono', monospace;" title="Ocultar panel lateral">◀</button>
+                <button id="sidebar-collapse-btn" class="btn-icon" style="position: absolute; right: 0; top: 50%; transform: translateY(-50%); color: var(--primary); font-size: 1rem; border: 1px solid rgba(0, 229, 255, 0.2); background: rgba(10, 11, 16, 0.6); border-radius: 6px; padding: 4px 8px; font-family: 'Roboto Mono', monospace;" title="Ocultar panel lateral" aria-label="Ocultar panel lateral">◀</button>
             </div>
             
             <!-- THEATER / COUNTRY VECTOR SELECTOR -->

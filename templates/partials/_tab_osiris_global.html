@@ -11,14 +11,14 @@
                                 <span id="osiris-cctv-count" style="color:var(--text-muted);font-family:monospace;font-size:0.6rem;">0</span>
                             </div>
                             <div style="display:flex;gap:6px;align-items:center;">
-                                <input id="osiris-cctv-search" type="text" placeholder="🔍 Search camera, city..." style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:#fff;padding:3px 8px;font-size:0.6rem;font-family:monospace;width:150px;outline:none;" />
+                                <input id="osiris-cctv-search" type="text" placeholder="🔍 Search camera, city..." aria-label="Buscar cámara CCTV por ciudad o nombre" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:#fff;padding:3px 8px;font-size:0.6rem;font-family:monospace;width:150px;outline:none;" />
                                 <div style="display:flex;gap:2px;margin-right:4px;">
                                     <button class="cctv-layout-btn" data-cols="1" onclick="if(window.OsirisGlobal)window.OsirisGlobal.setCCTVCols(1)" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:3px;color:#64748B;padding:2px 6px;font-size:9px;cursor:pointer;">1×1</button>
                                     <button class="cctv-layout-btn" data-cols="2" onclick="if(window.OsirisGlobal)window.OsirisGlobal.setCCTVCols(2)" style="background:none;border:1px solid rgba(0,229,255,0.5);border-radius:3px;color:#00E5FF;padding:2px 6px;font-size:9px;cursor:pointer;">2×2</button>
                                     <button class="cctv-layout-btn" data-cols="3" onclick="if(window.OsirisGlobal)window.OsirisGlobal.setCCTVCols(3)" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:3px;color:#64748B;padding:2px 6px;font-size:9px;cursor:pointer;">3×3</button>
                                     <button class="cctv-layout-btn" data-cols="4" onclick="if(window.OsirisGlobal)window.OsirisGlobal.setCCTVCols(4)" style="background:none;border:1px solid rgba(255,255,255,0.1);border-radius:3px;color:#64748B;padding:2px 6px;font-size:9px;cursor:pointer;">4×4</button>
                                 </div>
-                                <select id="osiris-cctv-filter" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text-muted);padding:3px 6px;font-size:0.6rem;font-family:monospace;cursor:pointer;">
+                                <select id="osiris-cctv-filter" aria-label="Filtrar cámaras por fuente CCTV" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text-muted);padding:3px 6px;font-size:0.6rem;font-family:monospace;cursor:pointer;">
                                     <option value="all">ALL SOURCES</option>
                                 </select>
                                 <button id="osiris-cctv-live-btn" onclick="if(window.OsirisGlobal)window.OsirisGlobal.toggleLiveVision()" style="background:rgba(0,255,170,0.12);border:1px solid rgba(0,255,170,0.4);border-radius:4px;color:#00FFAA;padding:3px 8px;font-size:0.6rem;font-family:monospace;cursor:pointer;font-weight:bold;" title="Alternar actualización de video en vivo">🔴 LIVE STREAM: ON</button>
@@ -70,7 +70,7 @@
                         <button onclick="if(window.OsirisGlobal)window.OsirisGlobal.closeModal()" style="position:absolute;top:-30px;right:0;background:none;border:none;color:#FF4444;font-size:20px;cursor:pointer;font-family:monospace;z-index:10;">✕ CLOSE</button>
                         <div id="cctv-modal-name" style="color:#00E5FF;font-weight:bold;font-family:monospace;font-size:13px;margin-bottom:10px;">CCTV FEED</div>
                         <img id="cctv-modal-img" src="" style="max-width:100%;max-height:75vh;border-radius:8px;border:1px solid rgba(255,255,255,0.1);" />
-                        <video id="cctv-modal-video" autoplay muted playsinline controls style="display:none;max-width:100%;max-height:75vh;border-radius:8px;border:1px solid rgba(0,229,255,0.4);"></video>
+                        <video id="cctv-modal-video" autoplay muted playsinline controls style="display:none;max-width:100%;max-height:75vh;border-radius:8px;border:1px solid rgba(0,229,255,0.4);"><track kind="captions" srclang="es" label="Español" src="data:text/vtt;charset=utf-8,WEBVTT"></video>
                         <div id="cctv-modal-meta" style="margin-top:10px;color:#fff;font-family:monospace;font-size:10px;text-align:center;"></div>
                     </div>
                 </div>

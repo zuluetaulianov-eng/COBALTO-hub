@@ -53,6 +53,17 @@ window.switchTheater = function(code) {
     var badge = document.getElementById('theater-active-badge');
     if (badge) badge.textContent = window.currentTheater;
 
+    // Sincronizar selector del sidebar
+    var sidebarSelect = document.getElementById('global-theater-select');
+    if (sidebarSelect && sidebarSelect.value !== window.currentTheater) {
+        sidebarSelect.value = window.currentTheater;
+    }
+
+    // Sincronizar pills del SITREP
+    document.querySelectorAll('.sitrep-pill').forEach(function(pill) {
+        pill.classList.toggle('active', pill.getAttribute('data-theater') === window.currentTheater);
+    });
+
     if (window.UnifiedMap && window.UnifiedMap.state && window.UnifiedMap.state.map) {
         if (window.currentTheater === 'COL') {
             window.UnifiedMap.state.map.flyTo([6.5, -70.0], 5);
@@ -63,15 +74,11 @@ window.switchTheater = function(code) {
         }
     }
 
-    var cards = document.querySelectorAll('.news-card, .intel-card');
-    cards.forEach(function(card) {
-        var tags = (card.getAttribute('data-country') || '').toUpperCase();
-        if (window.currentTheater === 'ALL' || !tags || tags.includes(window.currentTheater) || tags.includes('GLOBAL')) {
-            card.style.display = '';
-        } else {
-            card.style.display = 'none';
-        }
-    });
+    // Delegar toda la lógica de visibilidad a filterNews para respetar
+    // los filtros activos de categoría, severidad y búsqueda de texto.
+    if (window.CobaltoCore && typeof window.CobaltoCore.filterNews === 'function') {
+        window.CobaltoCore.filterNews();
+    }
 };
 
 window.CobaltoCore = {
@@ -260,6 +267,7 @@ window.CobaltoCore = {
 
         var searchHandlers = {
             'search-input': { fn: function() { self.filterNews(); } },
+            'topbar-search-input': { fn: function() { self.filterNews(); } },
             'social-search': { fn: function() { if (window.CobaltoIntel) CobaltoIntel.filterSocial(); } },
             'alert-search': { fn: function() { if (window.CobaltoIntel) CobaltoIntel.filterAlerts(); } },
             'rt-search': { fn: function() { if (window.CobaltoIntel) CobaltoIntel.filterRT(); } },
@@ -310,6 +318,14 @@ window.CobaltoCore = {
             'btn-express-briefing': function() { self.loadExpressBriefing(); },
             'btn-refresh-briefing': function() { self.handleUpdate(null); },
             'chat-send-btn': function() { if (window.CobaltoChat) CobaltoChat.sendMessage(); },
+            'btn-clear-filters': function() {
+                var siEl = document.getElementById('search-input');
+                var tbEl = document.getElementById('topbar-search-input');
+                if (siEl) siEl.value = '';
+                if (tbEl) tbEl.value = '';
+                if (window.CobaltoCore) window.CobaltoCore.filterNews();
+            },
+            'chat-mic-btn': function() { if (window.CobaltoVoice) window.CobaltoVoice.toggleListeningForInput('chat-input'); },
             'ai-expand-btn': function() { if (window.CobaltoChat) CobaltoChat.toggleAI(); },
             'fab-ai': function() { if (window.CobaltoChat) CobaltoChat.toggleAI(); },
             'btn-clear-chat': function() { if (window.CobaltoChat) CobaltoChat.clearChat(); }
@@ -786,7 +802,7 @@ window.CobaltoCore = {
                     mediaHtml = `
                         <div class="video-preview-wrapper" style="position:relative; margin-bottom:0.8rem; border-radius:8px; overflow:hidden; border:1px solid rgba(0,229,255,0.3); background:#000;">
                             <div style="position:relative; padding-bottom:56.25%; height:0;">
-                                <iframe src="${vidSrc}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" allowfullscreen loading="lazy"></iframe>
+                                <iframe src="${vidSrc}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" allowfullscreen loading="lazy" title="Reproductor de video de noticia"></iframe>
                             </div>
                             <span class="config-chip" style="position:absolute; top:6px; right:6px; background:rgba(255,45,85,0.85); color:#fff; font-size:0.65rem; font-weight:bold; z-index:2; pointer-events:none;">🎬 VIDEO</span>
                         </div>
@@ -795,7 +811,7 @@ window.CobaltoCore = {
                     var posterAttr = item.image ? `poster="${this.utils.escapeHTML(item.image)}"` : '';
                     mediaHtml = `
                         <div class="video-preview-wrapper" style="position:relative; margin-bottom:0.8rem; border-radius:8px; overflow:hidden; border:1px solid rgba(0,229,255,0.3); background:#000;">
-                            <video src="${vidSrc}" ${posterAttr} controls muted playsinline style="width:100%; max-height:220px; object-fit:cover; display:block;" loading="lazy"></video>
+                            <video src="${vidSrc}" ${posterAttr} controls muted playsinline style="width:100%; max-height:220px; object-fit:cover; display:block;" loading="lazy"><track kind="captions" srclang="es" label="Español" src="data:text/vtt;charset=utf-8,WEBVTT"></video>
                             <span class="config-chip" style="position:absolute; top:6px; right:6px; background:rgba(255,45,85,0.85); color:#fff; font-size:0.65rem; font-weight:bold; z-index:2; pointer-events:none;">🎬 VIDEO</span>
                         </div>
                     `;
@@ -820,7 +836,7 @@ window.CobaltoCore = {
                             <span class="news-time">${this.utils.escapeHTML(item.published || '')}</span>
                         </div>
                         ${mediaHtml}
-                        <a href="javascript:void(0)" onclick="window.openSitrepReader(this.closest('.news-card'))" class="news-title" title="Clic para maximizar e inspeccionar la noticia">${this.utils.escapeHTML(item.title || '')}</a>
+                        <a href="${linkEsc}" target="_blank" rel="noopener" onclick="window.openSitrepReader(this.closest('.news-card')); return false;" class="news-title" title="Clic para maximizar e inspeccionar la noticia">${this.utils.escapeHTML(item.title || '')}</a>
                         <p class="news-summary">${this.utils.escapeHTML(item.summary || '')}</p>
                     </div>
                     <div class="news-card-actions">
@@ -934,8 +950,9 @@ window.CobaltoCore = {
     },
 
     preloadAllTabs: function() {
-        console.log('[COBALTO] Precargando todos los módulos en un solo ciclo...');
+        console.log('[COBALTO] Precargando datos de módulos de forma asíncrona...');
         var self = this;
+        var scheduleIdle = window.requestIdleCallback || function(cb) { setTimeout(cb, 400); };
 
         var targets = [
             { tabId: 'tab-social', url: '/api/social', initialData: window._initialSocial, render: function(d) { self.renderSocialTab(d); } },
@@ -945,14 +962,18 @@ window.CobaltoCore = {
         ];
 
         targets.forEach(function(t) {
-            // 0. Hidratar directamente si el servidor ya inyectó el payload inicial
+            // 0. Hidratar directamente en caché de memoria/IDB
             if (t.initialData) {
                 self.state.tabCache[t.tabId] = t.initialData;
                 self.db.set(t.tabId, t.initialData);
-                // Renderizar siempre en background aunque el tab no esté visible
-                t.render(t.initialData);
-                if (!self.state.tabRendered) self.state.tabRendered = {};
-                self.state.tabRendered[t.tabId] = true;
+                // Diferir renderizado visual a tiempo inactivo para no bloquear FCP/LCP
+                scheduleIdle(function() {
+                    if (!self.state.tabRendered || !self.state.tabRendered[t.tabId]) {
+                        t.render(t.initialData);
+                        if (!self.state.tabRendered) self.state.tabRendered = {};
+                        self.state.tabRendered[t.tabId] = true;
+                    }
+                });
                 return;
             }
 
@@ -961,10 +982,13 @@ window.CobaltoCore = {
                 .then(function(data) {
                     self.state.tabCache[t.tabId] = data;
                     self.db.set(t.tabId, data);
-                    // Renderizar siempre en background — el tab ya tendrá datos cuando se abra
-                    t.render(data);
-                    if (!self.state.tabRendered) self.state.tabRendered = {};
-                    self.state.tabRendered[t.tabId] = true;
+                    scheduleIdle(function() {
+                        if (!self.state.tabRendered || !self.state.tabRendered[t.tabId]) {
+                            t.render(data);
+                            if (!self.state.tabRendered) self.state.tabRendered = {};
+                            self.state.tabRendered[t.tabId] = true;
+                        }
+                    });
                 })
                 .catch(function(e) {
                     console.warn('[COBALTO] Error precargando ' + t.tabId, e);
@@ -1752,7 +1776,7 @@ window.CobaltoCore = {
             'tab-timeline': 'Cronología Táctica (Timeline)',
             'tab-map': 'Mapa Unificado (OSIRIS + COBALTO)',
             'tab-graph': 'Grafo Social',
-            'tab-user-search': 'Búsqueda de Usuarios',
+            'tab-user-search': 'Perfilamiento de Actores',
             'tab-osiris-global': 'OSIRIS Global Intelligence',
             'tab-predictive': '⚠️ Alertas Predictivas',
             'tab-actors': 'Perfilamiento de Actores',
@@ -1893,7 +1917,10 @@ window.CobaltoCore = {
 
     filterNews: function() {
         const searchEl = document.getElementById('search-input');
-        const term = searchEl ? searchEl.value.toLowerCase() : '';
+        const topbarEl = document.getElementById('topbar-search-input');
+        // Usar el valor del input que tenga contenido; prioridad al SITREP search-input
+        const term = (searchEl ? searchEl.value : '') || (topbarEl ? topbarEl.value : '');
+        const termLower = term.toLowerCase();
         const catSelect = document.getElementById('sitrep-category-select');
         const catFilter = catSelect ? catSelect.value : 'ALL';
         const sevSelect = document.getElementById('sitrep-severity-select');
@@ -1907,8 +1934,19 @@ window.CobaltoCore = {
             const category = (card.getAttribute('data-category') || 'ALL').toUpperCase();
             const severity = (card.getAttribute('data-severity') || 'ALL').toUpperCase();
 
-            const matchSearch = !term || title.includes(term) || summary.includes(term);
-            const matchTheater = currentTheater === 'ALL' || country.includes(currentTheater) || country.includes('GLOBAL');
+            const matchSearch = !termLower || title.includes(termLower) || summary.includes(termLower);
+
+            let matchTheater;
+            if (currentTheater === 'ALL') {
+                matchTheater = true;
+            } else if (currentTheater === 'GLOBAL') {
+                // Solo noticias que NO son Colombia ni Venezuela
+                matchTheater = !country.includes('COL') && !country.includes('VEN');
+            } else {
+                // COL o VEN: mostrar las del país seleccionado
+                matchTheater = country.includes(currentTheater);
+            }
+
             const matchCat = catFilter === 'ALL' || category === catFilter;
             const matchSev = sevFilter === 'ALL' || severity === sevFilter;
 
@@ -2902,25 +2940,23 @@ if (typeof window._startCobaltoApp === 'function') {
 /* ── SITREP GLOBAL ACTION HELPERS ────────────────────────────────────────── */
 window.sitrepFocusMap = function(countryTag, title) {
     if (window.CobaltoCore) window.CobaltoCore.switchTab('tab-map');
-    setTimeout(function() {
-        if (window.UnifiedMap && window.UnifiedMap.state && window.UnifiedMap.state.map) {
+    var executeFocus = function() {
+        if (window.UnifiedMap) {
+            if (!window.UnifiedMap.state.active && typeof window.UnifiedMap.init === 'function') {
+                window.UnifiedMap.init();
+            }
             var searched = false;
             if (title && typeof window.UnifiedMap.searchVector === 'function') {
                 searched = window.UnifiedMap.searchVector(title);
             }
-            if (!searched) {
-                if (countryTag === 'COL') {
-                    window.UnifiedMap.flyToTheater('COL');
-                } else if (countryTag === 'VEN') {
-                    window.UnifiedMap.flyToTheater('VEN');
-                } else {
-                    window.UnifiedMap.flyToTheater('GLOBAL');
-                }
+            if (!searched && typeof window.UnifiedMap.flyToTheater === 'function') {
+                window.UnifiedMap.flyToTheater(countryTag || 'GLOBAL');
             }
         }
-    }, 150);
+    };
+    setTimeout(executeFocus, 250);
     if (typeof window.showTacticalToast === 'function') {
-        window.showTacticalToast('📍 Enfocando mapa táctico en vector ' + countryTag, 'info');
+        window.showTacticalToast('📍 Posicionando vector en Mapa Unificado: ' + (countryTag || 'GLOBAL'), 'info');
     }
 };
 
@@ -3087,10 +3123,10 @@ window.openSitrepReader = function(card) {
     var imgEl = document.getElementById('sitrep-modal-img');
     if (video && imgWrapper) {
         if (video.includes('youtube') || video.includes('youtu.be') || video.includes('vimeo') || video.includes('rumble') || video.includes('dailymotion') || video.includes('tiktok')) {
-            imgWrapper.innerHTML = `<div style="position:relative; padding-bottom:56.25%; height:0; border-radius:8px; overflow:hidden; border:1px solid rgba(0,229,255,0.3);"><iframe src="${video}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" allowfullscreen></iframe></div>`;
+            imgWrapper.innerHTML = `<div style="position:relative; padding-bottom:56.25%; height:0; border-radius:8px; overflow:hidden; border:1px solid rgba(0,229,255,0.3);"><iframe src="${video}" style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" allowfullscreen title="Reproductor de video modal"></iframe></div>`;
         } else {
             var poster = img ? `poster="${img}"` : '';
-            imgWrapper.innerHTML = `<video src="${video}" ${poster} controls playsinline style="width:100%; max-height:360px; border-radius:8px; object-fit:contain; background:#000; display:block; border:1px solid rgba(0,229,255,0.3);"></video>`;
+            imgWrapper.innerHTML = `<video src="${video}" ${poster} controls playsinline style="width:100%; max-height:360px; border-radius:8px; object-fit:contain; background:#000; display:block; border:1px solid rgba(0,229,255,0.3);"><track kind="captions" srclang="es" label="Español" src="data:text/vtt;charset=utf-8,WEBVTT"></video>`;
         }
         imgWrapper.style.display = 'block';
     } else if (img && imgWrapper && imgEl) {

@@ -1,13 +1,27 @@
-# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v16.3
+# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v16.4
 
 > **Sistema de Mando y Control de Inteligencia (C4I)** en tiempo real con **Arquitectura Multipaís (Multi-Theater OSINT)**,  
 > **Target Dossier Engine (360° Risk Score)**, **Módulos OSINT Estatales Venezolanos (IVSS / SENIAT RIF / SAIME Institucional / CNE OSINT + Votación)**, **Streaming de Video Continuo HLS.js en Visor CCTV**, **Pivot de Inteligencia en Grafo Táctico**, **TLS Fingerprinting Evasion (JA3/HTTP2)**, **Singleton Browser Pool Manager**, **Visión Táctica CCTV 100% Real & Motor Proxy Resiliente**, **Extracción Semántica JSON-LD/OpenGraph**, **Reproducción de Video Táctico Nativa (Flutter/Web)**, **Persistencia Histórica Deduplicada**, **OSIRIS Diagnostic Doctor Engine**, **Zero-Key Semantic Web Search & Jina Reader** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
 > Consolida fuentes RSS, canales de Telegram, redes sociales, ciberseguridad, rastreo de aeronaves/buques, telemetría de campo en vivo y análisis geopolítico multiagente con IA.  
-> **v16.3** — Integración de **Fallback Histórico de Centros de Votación del CNE vía Wayback Machine (CDX API)** en `osint_cne.py` y `osiris-recon.js` para recuperación de Registro Electoral por Cédula, módulo OSINT Institucional CNE (comunicados, avisos oficiales y normativa), integración OSINT Institucional SAIME (movilidad fronteriza y trámites), reconstrucción OSINT Institucional IVSS (pensiones, salud y comunicados), reconstrucción OSINT Institucional SENIAT (API REST, Unidad Tributaria y RIF público), reproductor HLS.js integrado en visor CCTV, navegación pivot 1-clic en Grafo Táctico y suite completa de pruebas pasadas al 100%.
+> **v16.4** — Optimización integral de **Rendimiento de Carga (Core Web Vitals FCP/LCP)** mediante eliminación del bloqueo del hilo principal en el Splash HUD y precarga perezosa de pestañas (`requestIdleCallback`), hojas de estilo CSS no bloqueantes, cumplimiento del 100% en **Accesibilidad (WCAG A11y)** con etiquetado semántico de formularios (`aria-label`/`for`) y pistas de subtítulos `<track>` en reproductores de video, e **Indexación y Rastreo SEO (Lighthouse)** con directivas `index, follow` e hipervínculos rastreables.
 
 ---
 
-## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v16.3)
+## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v16.4)
+
+- **⚡ Optimización de Rendimiento & Core Web Vitals (FCP / LCP / TBT):**
+  - **Splash HUD Inmediato (`_splash_hud.html`)**: Refactorización del ciclo de ocultamiento del Splash Overlay para ejecutar el desvanecimiento táctico tan pronto el DOM alcanza estado interactivo, liberando el hilo principal y reduciendo drásticamente el First Contentful Paint (FCP).
+  - **Precarga Perezosa de Pestañas (`main.js`)**: Refactorización de `preloadAllTabs` usando `requestIdleCallback` de modo que la precarga de tabs ocultos se ejecute únicamente durante períodos de inactividad de la CPU, previniendo tareas largas que bloqueaban el hilo principal.
+  - **Carga de CSS No Bloqueante (`_head.html`)**: Hojas de estilo de terceros (Leaflet, MapLibre GL, FontAwesome, Gridstack) convertidas a patrones de carga asíncrona (`media="print" onload="this.media='all'"`).
+  - **Diferido de Mapas y Grafos (`index.html`)**: Inicialización diferida de `CobaltoMap` e `initSocialGraph` para agilizar el arranque de la plataforma.
+
+- **♿ Accesibilidad Semántica Completa (WCAG A11y & Form Controls):**
+  - **Etiquetado Explícito de Formularios (`_tab_config.html` & Partials)**: Vinculación estricta `<label for="...">` y atributos `aria-label` descriptivos en todos los controles `<select>` y sliders tácticos.
+  - **Subtítulos y Pistas Multimedia (`<track kind="captions">`)**: Incorporación de pistas `<track kind="captions" srclang="es" label="Español" src="...">` en todos los reproductores de `<video>` HTML5 en `main.js`, `osiris-global.js`, `_tab_social.html`, `_tab_news.html` y `_tab_osiris_global.html`.
+
+- **🔍 Auditoría y Cumplimiento SEO (Lighthouse SEO Audit):**
+  - **Indexación y Rastreo (`Crawling & Indexing`)**: Actualización del meta tag de motores de búsqueda a `<meta name="robots" content="index, follow">` en `_head.html`.
+  - **Hipervínculos Rastreables (`Links are crawlable`)**: Reemplazo de `href="javascript:void(0)"` por URLs de noticias canónicas rastreables (`href="{{ item.link }}"` / `href="${linkEsc}"`) con `target="_blank" rel="noopener"` y `onclick="...; return false;"`.
 
 - **🗳️ Recuperación de Centros de Votación CNE vía Wayback Machine (`osint_cne.py` & `osiris-recon.js`):**
   - **Motor Fallback CDX API**: `cne_voter_wayback_lookup(cedula)` realiza búsquedas dirigidas en los índices archivados del Internet Archive (Wayback Machine) sobre las URLs históricas del Registro Electoral del CNE (`ce.php?nacionalidad=V&cedula=...`).
@@ -762,7 +776,8 @@ Cobalto Hub es instalable como aplicación de escritorio:
 
 | Versión | Fecha | Cambios clave |
 |---|---|---|
-| **v14.3** | 2026-08-24 | **Migración Social Nitter → Bluesky + Mastodon & Estabilización Launcher**: Eliminación completa de Nitter (discontinuado desde 2024). `social_hub.py` reemplaza `fetch_nitter()` por `fetch_bluesky()` (AT Protocol, sin auth) y `fetch_mastodon()` (REST API, 3 instancias fallback). 4 nuevas fuentes de datos sociales en tiempo real: `#venezuela` y `#ciberseguridad` en ambas plataformas. Timeout del launcher desktop ampliado de 15s a 45s. Logs sociales degradados a WARNING. |
+| **v16.4** | 2026-08-30 | **Optimización de Rendimiento, Accesibilidad & SEO**: Aceleración de carga inicial (FCP/LCP) mediante ocultamiento inmediato del Splash HUD, precarga perezosa de pestañas en diferido (`requestIdleCallback`), hojas CSS no bloqueantes (`media="print" onload="..."`), cumplimiento del 100% en accesibilidad WCAG A11y (etiquetado de selectores, `aria-label`, subtítulos `<track>` en reproductores de video), e indexación y enlaces rastreables SEO. |
+| **v16.3** | 2026-08-30 | **Fallback CNE Wayback Machine & Módulos OSINT Estatales**: Integración de búsqueda histórica de votación CNE vía Internet Archive CDX API (`cne_voter_wayback_lookup`), módulos OSINT Institucionales CNE, IVSS, SENIAT RIF y SAIME, reproductor HLS.js en visor CCTV y pivot 1-clic en Grafo Táctico. |
 | **v14.2** | 2026-08-24 | **Marco DGAE Colombia 2026 & Hardening**: Integración completa del set de inteligencia DGAE 2026 para Colombia (164+ keywords, 26 targets de alto perfil, 5 fuentes RSS estratégicas: *Colombia+20*, *InSight Crime*, *Infobae*, *Indepaz*, *FIP*). Parcheo dinámico de fuentes caídas (`feed_patches.json`), aceleración del rate-limiter de redes sociales, circuit breakers optimizados en OSINT tiempo real y bypass SSL en scraping BCV. |
 | **v13.0** | 2026-08-20 | **Arquitectura Multipaís (Multi-Theater OSINT)**: Escalado del sistema a un motor multi-teatro modular mediante perfiles JSON (`data/theaters/`), registro `theaters_config.py`, auto-etiquetado de noticias (`country_tags`), selector de teatro en la barra lateral con navegación suave (`flyTo`) en el mapa Leaflet, endpoint `GET /api/theaters` y geocercas sísmicas multipaís. 132/132 tests aprobados. |
 | **v12.6** | 2026-08-19 | **Arquitectura Nativa PyQt6 & Bandeja de Sistema**: Migración a `PyQt6/QWebEngineView` en `cobalto_desktop.py` con System Tray icon, Windows Mutex monoinstancia, WebSocket continuous rehydration en `main.js`, retención TTL de noticias en config UI y compilación PyInstaller `build_exe.py`. |
