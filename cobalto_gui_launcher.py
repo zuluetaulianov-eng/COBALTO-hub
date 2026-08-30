@@ -73,12 +73,19 @@ from pathlib import Path
 
 def is_server_ready(host="127.0.0.1", port=8083):
     """Verifica si el servidor FastAPI está respondiendo solicitudes HTTP."""
-    url = f"http://{host}:{port}/api/status"
-    try:
-        req = urllib.request.urlopen(url, timeout=0.8)
-        return req.status == 200
-    except Exception:
-        return False
+    endpoints = ["/api/health", "/api/status"]
+    for ep in endpoints:
+        url = f"http://{host}:{port}{ep}"
+        try:
+            req = urllib.request.urlopen(url, timeout=0.8)
+            if req.status in (200, 401, 403):
+                return True
+        except urllib.error.HTTPError as e:
+            if e.code in (200, 401, 403):
+                return True
+        except Exception:
+            pass
+    return False
 
 # Cargar dotenv para configuraciones del puerto, etc.
 try:

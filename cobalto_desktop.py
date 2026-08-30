@@ -105,14 +105,19 @@ def check_single_instance():
 
 def is_server_ready(host=HOST, port=PORT):
     test_hosts = ["127.0.0.1", "localhost"] if host in ("0.0.0.0", "127.0.0.1") else [host]
+    endpoints = ["/api/health", "/api/status"]
     for h in test_hosts:
-        url = f"http://{h}:{port}/api/status"
-        try:
-            req = urllib.request.urlopen(url, timeout=0.8)
-            if req.status == 200:
-                return True
-        except Exception:
-            pass
+        for ep in endpoints:
+            url = f"http://{h}:{port}{ep}"
+            try:
+                req = urllib.request.urlopen(url, timeout=0.8)
+                if req.status in (200, 401, 403):
+                    return True
+            except urllib.error.HTTPError as e:
+                if e.code in (200, 401, 403):
+                    return True
+            except Exception:
+                pass
     return False
 
 
