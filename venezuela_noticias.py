@@ -541,12 +541,45 @@ def sync_cobalto_entries_to_inbox(entries: List[Dict[str, Any]]) -> int:
     try:
         with conn:
             for item in entries:
-                title = item.get("title", "")
-                link = item.get("link", "#")
+                title = (item.get("title") or item.get("headline") or "").strip()
+                link = item.get("link") or item.get("url") or item.get("source_url") or "#"
                 if not title or title.startswith("[MONITOREO]"):
                     continue
 
-                h_val = f"{title.lower().strip()}|{link.lower().strip()}"
+                summary = (
+                    item.get("summary")
+                    or item.get("content")
+                    or item.get("description")
+                    or item.get("text")
+                    or item.get("body")
+                    or ""
+                ).strip()
+
+                image = (
+                    item.get("image")
+                    or item.get("image_url")
+                    or item.get("media_url")
+                    or item.get("img")
+                    or item.get("thumbnail")
+                    or ""
+                ).strip()
+
+                video = (
+                    item.get("video")
+                    or item.get("video_url")
+                    or item.get("media_video")
+                    or ""
+                ).strip()
+
+                source = (
+                    item.get("source_name")
+                    or item.get("source")
+                    or item.get("channel")
+                    or item.get("feed_title")
+                    or "COBALTO OSINT"
+                ).strip()
+
+                h_val = f"{title.lower()}|{link.lower()}"
                 c_hash = hashlib.md5(h_val.encode("utf-8")).hexdigest()
 
                 c_tags = item.get("country_tags", ["GLOBAL"])
@@ -560,12 +593,12 @@ def sync_cobalto_entries_to_inbox(entries: List[Dict[str, Any]]) -> int:
                         """,
                         (
                             c_hash,
-                            title.strip(),
-                            item.get("summary", ""),
+                            title,
+                            summary,
                             link,
-                            item.get("image", "") or "",
-                            item.get("video", "") or "",
-                            item.get("source", "COBALTO OSINT"),
+                            image,
+                            video,
+                            source,
                             c_tag,
                             now_iso,
                             "pending",
