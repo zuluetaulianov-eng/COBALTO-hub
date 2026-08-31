@@ -1,4 +1,4 @@
-# tests/test_venezuela_noticias.py - Suite de pruebas para Venezuela Noticias Standalone
+# tests/test_venezuela_noticias.py - Suite de pruebas para Venezuela Noticias en COBALTO
 
 import os
 import sys
@@ -10,9 +10,8 @@ from fastapi.testclient import TestClient
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
 
-from main import app  # noqa: E402
-
 import venezuela_noticias as vn  # noqa: E402
+from app import app  # noqa: E402
 
 client = TestClient(app)
 
@@ -24,10 +23,10 @@ def test_vn_database_initialization():
 
 def test_article_crud_flow():
     article = vn.create_article(
-        title="Noticia de Prueba Standalone",
+        title="Noticia de Prueba COBALTO",
         summary="Resumen de prueba",
         content="Contenido extenso",
-        category="Economía",
+        category="Nacional",
         is_featured=True
     )
     assert article["id"] > 0
@@ -35,35 +34,35 @@ def test_article_crud_flow():
 
     fetched = vn.get_article_by_slug(article["slug"])
     assert fetched is not None
-    assert fetched["title"] == "Noticia de Prueba Standalone"
+    assert fetched["title"] == "Noticia de Prueba COBALTO"
 
-    published = vn.get_published_articles(category="Economía")
+    published = vn.get_published_articles(category="Nacional")
     assert len(published) >= 1
     deleted = vn.delete_article(article["id"])
     assert deleted is True
 
 
-def test_remote_push_and_inbox():
-    unique_link = f"https://example.com/noticia-{int(time.time() * 1000)}"
-    push_data = [
+def test_cobalto_sync_and_inbox_flow():
+    unique_link = f"https://example.com/cobalto-item-{int(time.time() * 1000)}"
+    fake_cobalto_entries = [
         {
-            "title": "Noticia enviada desde COBALTO via HTTP REST API",
-            "summary": "Resumen transmitido remotamente",
+            "title": "Noticia Capturada por COBALTO RSS",
+            "summary": "Resumen capturado",
             "link": unique_link,
             "image": "https://example.com/img.jpg",
-            "source": "COBALTO HUB"
+            "source": "RSS Feed Test"
         }
     ]
-    res_push = client.post("/api/vn/inbox/push", json=push_data)
-    assert res_push.status_code == 200
-    assert res_push.json().get("imported") == 1
+    imported_count = vn.sync_cobalto_entries_to_inbox(fake_cobalto_entries)
+    assert imported_count == 1
 
     inbox = vn.get_cobalto_inbox(status="pending")
     assert len(inbox) >= 1
 
-    inbox_id = inbox[0]["id"]
-    approved = vn.approve_inbox_item(inbox_id, custom_category="Nacional")
-    assert approved is not None
+    inbox_item = inbox[0]
+    approved_article = vn.approve_inbox_item(inbox_item["id"], custom_category="Deportes")
+    assert approved_article is not None
+    assert approved_article["category"] == "Deportes"
 
 
 def test_admin_auth_and_login_flow():
@@ -158,7 +157,7 @@ def test_user_management_and_rbac_flow():
     assert res_del.status_code == 200
 
 
-def test_fastapi_endpoints():
+def test_fastapi_venezuela_noticias_endpoints():
     res_news = client.get("/noticias")
     assert res_news.status_code == 200
     assert "VENEZUELA NOTICIAS" in res_news.text
@@ -170,3 +169,30 @@ def test_fastapi_endpoints():
     res_rss = client.get("/noticias/rss.xml")
     assert res_rss.status_code == 200
     assert "application/xml" in res_rss.headers.get("content-type", "")
+
+
+def test_upload_media_and_image_optimization():
+    # Login Admin
+    res_login = client.post("/api/vn-admin/login", json={"username": "admin", "password": "admin"})
+    token = res_login.json()["token"]
+    client.cookies.set("vn_token", token)
+
+    # Crear imagen sintética en memoria
+    import io
+    from PIL import Image
+    img = Image.new("RGB", (800, 600), color="blue")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    raw_bytes = buf.getvalue()
+
+    # Subir imagen vía API
+    response = client.post(
+        "/api/vn-admin/upload",
+        files={"file": ("test_image.jpg", raw_bytes, "image/jpeg")}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["url"].endswith(".webp")
+    assert "optimized_size" in data
+    assert data["optimized_size"] <= len(raw_bytes)

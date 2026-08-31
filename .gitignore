@@ -54,6 +54,8 @@ cib_tracker.json
 config_dynamic.json
 
 # ── Assets multimedia (generados/descargados) ─────────────────
+static/uploads/vn/*
+!static/uploads/vn/.gitkeep
 *.mp3
 *.bmp
 *.ico

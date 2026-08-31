@@ -1,5 +1,6 @@
 # rt_venezuela_noticias.py - Router para Venezuela Noticias en COBALTO HUB
 
+import io
 import logging
 import os
 import secrets
@@ -11,6 +12,12 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.responses import Response as FastAPIResponse
 from fastapi.templating import Jinja2Templates
 
+try:
+    from PIL import Image, ImageOps
+    HAS_PILLOW = True
+except ImportError:
+    HAS_PILLOW = False
+
 import venezuela_noticias as vn
 
 router = APIRouter(tags=["Venezuela Noticias"])
@@ -18,6 +25,26 @@ logger = logging.getLogger("router")
 
 UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "uploads", "vn")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+def optimize_image_bytes(image_bytes: bytes, max_dim: int = 1600, quality: int = 82) -> tuple[bytes, str]:
+    """Comprime y optimiza imágenes a formato WebP ultra-ligero (reducción 70-90% de peso)."""
+    if not HAS_PILLOW:
+        return image_bytes, ""
+    try:
+        img = Image.open(io.BytesIO(image_bytes))
+        img = ImageOps.exif_transpose(img)
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+        w, h = img.size
+        if w > max_dim or h > max_dim:
+            img.thumbnail((max_dim, max_dim), Image.Resampling.LANCZOS)
+        buf = io.BytesIO()
+        img.save(buf, format="WEBP", quality=quality, method=6)
+        return buf.getvalue(), ".webp"
+    except Exception as e:
+        logger.warning(f"Fallo optimización PIL: {e}")
+        return image_bytes, ""
 
 
 def get_token_from_request(request: Request) -> str:
@@ -409,22 +436,49 @@ async def api_delete_article(article_id: int, request: Request):
 
 @router.post("/api/vn-admin/upload")
 async def api_upload_media(request: Request, file: UploadFile = File(...)):
-    """Subida directa de imágenes y videos locales para artículos redactados por reporteros/usuarios."""
+    """Subida directa de imágenes y videos con optimización y compresión automatizada WebP."""
     require_admin_auth(request, required_role="reporter")
     allowed_exts = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".mp4", ".webm"}
     ext = os.path.splitext(file.filename or "")[1].lower()
     if ext not in allowed_exts:
         raise HTTPException(status_code=400, detail=f"Formato no permitido. Extensiones soportadas: {', '.join(allowed_exts)}")
 
-    filename = f"vn_{int(time.time())}_{secrets.token_hex(4)}{ext}"
-    filepath = os.path.join(UPLOAD_DIR, filename)
-
     try:
         content = await file.read()
+        original_size = len(content)
+
+        # Límite de tamaño: 50MB para videos, 15MB para imágenes
+        max_size = 50 * 1024 * 1024 if ext in (".mp4", ".webm") else 15 * 1024 * 1024
+        if original_size > max_size:
+            raise HTTPException(status_code=400, detail=f"El archivo excede el tamaño máximo permitido ({max_size // (1024*1024)}MB)")
+
+        # Optimización automática de imágenes a WebP ultra-ligero
+        if ext in (".png", ".jpg", ".jpeg", ".webp"):
+            optimized_bytes, new_ext = optimize_image_bytes(content)
+            if new_ext:
+                content = optimized_bytes
+                ext = new_ext
+
+        filename = f"vn_{int(time.time())}_{secrets.token_hex(4)}{ext}"
+        filepath = os.path.join(UPLOAD_DIR, filename)
+
         with open(filepath, "wb") as f:
             f.write(content)
+
+        savings = round((1 - (len(content) / original_size)) * 100, 1) if original_size > 0 else 0
+        logger.info(f"Archivo guardado: {filename} ({len(content)} bytes, ahorro: {savings}%)")
+
         url = f"/static/uploads/vn/{filename}"
-        return JSONResponse({"status": "ok", "url": url, "filename": filename})
+        return JSONResponse({
+            "status": "ok",
+            "url": url,
+            "filename": filename,
+            "original_size": original_size,
+            "optimized_size": len(content),
+            "savings_percent": savings
+        })
+    except HTTPException:
+        raise
     except Exception as e:
         logger.exception(f"Error subiendo archivo multimedia: {e}")
         raise HTTPException(status_code=500, detail="Error guardando archivo multimedia")

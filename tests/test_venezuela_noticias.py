@@ -169,3 +169,30 @@ def test_fastapi_venezuela_noticias_endpoints():
     res_rss = client.get("/noticias/rss.xml")
     assert res_rss.status_code == 200
     assert "application/xml" in res_rss.headers.get("content-type", "")
+
+
+def test_upload_media_and_image_optimization():
+    # Login Admin
+    res_login = client.post("/api/vn-admin/login", json={"username": "admin", "password": "admin"})
+    token = res_login.json()["token"]
+    client.cookies.set("vn_token", token)
+
+    # Crear imagen sintética en memoria
+    import io
+    from PIL import Image
+    img = Image.new("RGB", (800, 600), color="blue")
+    buf = io.BytesIO()
+    img.save(buf, format="JPEG")
+    raw_bytes = buf.getvalue()
+
+    # Subir imagen vía API
+    response = client.post(
+        "/api/vn-admin/upload",
+        files={"file": ("test_image.jpg", raw_bytes, "image/jpeg")}
+    )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["status"] == "ok"
+    assert data["url"].endswith(".webp")
+    assert "optimized_size" in data
+    assert data["optimized_size"] <= len(raw_bytes)
