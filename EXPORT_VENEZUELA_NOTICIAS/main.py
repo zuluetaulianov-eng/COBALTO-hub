@@ -55,9 +55,16 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 app.state.templates = templates
 
+class CachedStaticFiles(StaticFiles):
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
+
 static_dir = BASE_DIR / "static"
 if static_dir.exists():
-    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+    app.mount("/static", CachedStaticFiles(directory=str(static_dir)), name="static")
 
 
 @app.get("/")
