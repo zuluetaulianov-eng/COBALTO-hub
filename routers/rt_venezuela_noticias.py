@@ -280,16 +280,45 @@ async def api_get_inbox(request: Request):
     return JSONResponse({"status": "ok", "count": len(inbox), "inbox": inbox})
 
 
+@router.get("/api/vn-admin/inbox/inspect/{inbox_id}")
+async def api_inspect_inbox(inbox_id: int, request: Request):
+    """Inspecciona una noticia del inbox antes de aprobar, intentando extracción profunda si aplica."""
+    require_admin_auth(request, required_role="reporter")
+    conn = vn.get_vn_db_connection()
+    try:
+        row = conn.execute("SELECT * FROM vn_cobalto_inbox WHERE id = ?", (inbox_id,)).fetchone()
+        if not row:
+            raise HTTPException(status_code=404, detail="Elemento no encontrado")
+        item = dict(row)
+        item["suggested_category"] = vn.auto_detect_category(item.get("title", ""), item.get("summary", ""))
+        return JSONResponse({"status": "ok", "item": item})
+    finally:
+        conn.close()
+
+
 @router.post("/api/vn-admin/inbox/approve/{inbox_id}")
 async def api_approve_inbox(inbox_id: int, request: Request):
     """Aprobar un elemento de la bandeja e ingresarlo como noticia publicada (Exclusivo Superadmin)."""
-    require_admin_auth(request, required_role="admin")
+    auth_data = require_admin_auth(request, required_role="admin")
     body = await request.json() if request.headers.get("content-type") == "application/json" else {}
-    category = body.get("category", "Nacional")
+    
+    category = body.get("category")
     custom_title = body.get("title")
     custom_summary = body.get("summary")
+    custom_content = body.get("content")
+    custom_image_url = body.get("image_url")
+    custom_video_url = body.get("video_url")
 
-    article = vn.approve_inbox_item(inbox_id, custom_category=category, custom_title=custom_title, custom_summary=custom_summary)
+    article = vn.approve_inbox_item(
+        inbox_id=inbox_id,
+        custom_category=category,
+        custom_title=custom_title,
+        custom_summary=custom_summary,
+        custom_content=custom_content,
+        custom_image_url=custom_image_url,
+        custom_video_url=custom_video_url,
+        author_name=auth_data.get("username", "Redacción VN")
+    )
     if not article:
         raise HTTPException(status_code=404, detail="Elemento no encontrado en bandeja de entrada")
     return JSONResponse({"status": "ok", "article": article})

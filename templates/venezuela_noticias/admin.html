@@ -345,30 +345,53 @@
 
         <!-- TAB BANDEJA DE ENTRADA INBOX -->
         <section id="tab-inbox" class="panel-box">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.2rem; flex-wrap:wrap; gap:1rem;">
                 <div>
                     <h3 style="font-family:'Outfit', sans-serif; font-size:1.25rem;">Sugerencias de Noticias Ingestadas desde COBALTO</h3>
-                    <p style="font-size:0.82rem; color:var(--text-muted);">Solo Administradores pueden aprobar y otorgar visto bueno para publicar</p>
+                    <p style="font-size:0.82rem; color:var(--text-muted);">Revisa el contenido antes de aprobar. Solo Administradores pueden aprobar y publicar.</p>
                 </div>
             </div>
 
             <div class="inbox-list" id="inbox-container">
                 {% for item in inbox %}
-                <div class="inbox-item" id="inbox-item-{{ item.id }}">
-                    <div style="flex:1;">
-                        <div class="inbox-title">
-                            {% if item.video %}🎬 {% endif %}{{ item.title }}
-                        </div>
-                        <div class="inbox-sub">
-                            <span>Fuente: {{ item.source }}</span> • 
-                            <span>Recibido: {{ item.received_at[:16] }}</span>
+                <div class="inbox-item" id="inbox-item-{{ item.id }}" style="flex-direction:column; align-items:stretch; gap:0.8rem;">
+                    <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; flex-wrap:wrap;">
+                        <div style="flex:1;">
+                            <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:6px; flex-wrap:wrap;">
+                                <span style="font-size:0.7rem; font-weight:800; padding:2px 8px; border-radius:10px; background:rgba(0,229,255,0.15); color:var(--primary); border:1px solid rgba(0,229,255,0.3);">
+                                    🏷️ Categoría Probable: {{ item.suggested_category }}
+                                </span>
+                                <span style="font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:10px; background:rgba(255,255,255,0.08); color:var(--text-muted); border:1px solid var(--border-color);">
+                                    🌍 {{ item.country_tag or 'GLOBAL' }}
+                                </span>
+                            </div>
+
+                            <div class="inbox-title" style="font-size:1.05rem;">
+                                {% if item.video %}🎬 {% endif %}{{ item.title }}
+                            </div>
+
+                            {% if item.summary %}
+                            <p style="font-size:0.85rem; color:var(--text-muted); margin:6px 0 8px 0; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+                                {{ item.summary }}
+                            </p>
+                            {% endif %}
+
+                            <div class="inbox-sub" style="display:flex; gap:0.8rem; align-items:center; flex-wrap:wrap; font-size:0.8rem;">
+                                <span><b>Fuente:</b> {{ item.source }}</span> • 
+                                <span><b>Recibido:</b> {{ item.received_at[:16] }}</span> • 
+                                <a href="{{ item.link }}" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:600;">
+                                    🌐 Abrir fuente original ↗
+                                </a>
+                            </div>
                         </div>
                     </div>
 
-                    <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <div style="display:flex; gap:0.5rem; align-items:center; justify-content:flex-end; border-top:1px solid rgba(255,255,255,0.05); padding-top:0.6rem; flex-wrap:wrap;">
+                        <button class="btn-action" style="font-size:0.8rem;" onclick="inspectInboxItem({{ item.id }})">🔍 Inspeccionar Noticia</button>
                         {% if current_user and current_user.role == 'admin' %}
-                        <button class="btn-action btn-green" onclick="approveDirect({{ item.id }})">⚡ Aprobar & Publicar Directo</button>
-                        <button class="btn-action btn-red" onclick="rejectItem({{ item.id }})">🗑️ Descartar</button>
+                        <button class="btn-action btn-green" style="font-size:0.8rem;" onclick="openApproveModal({{ item.id }}, '{{ item.title|replace('\'', '\\\'') }}', '{{ item.suggested_category }}', '{{ (item.summary or '')|replace('\'', '\\\'') }}', '{{ item.image or '' }}', '{{ item.video or '' }}')">✏️ Aprobar & Personalizar</button>
+                        <button class="btn-action" style="font-size:0.8rem; background:rgba(16, 185, 129, 0.2); color:#fff; border-color:var(--accent-green);" onclick="approveDirect({{ item.id }})">⚡ Aprobar Directo</button>
+                        <button class="btn-action btn-red" style="font-size:0.8rem;" onclick="rejectItem({{ item.id }})">🗑️ Descartar</button>
                         {% else %}
                         <span style="font-size:0.75rem; color:var(--accent-yellow); background:rgba(245, 158, 11, 0.1); border:1px solid rgba(245, 158, 11, 0.3); padding:5px 10px; border-radius:6px; font-weight:600;">
                             🔒 Requiere Visto Bueno del Superadministrador
@@ -590,7 +613,79 @@
         </div>
     </div>
 
+    <!-- MODAL APROBACIÓN & EDICIÓN PRE-PUBLICACIÓN DE INBOX -->
+    <div class="modal-overlay" id="approve-inbox-modal">
+        <div class="modal-box" style="max-width:700px;">
+            <h3 style="margin-bottom:1rem; font-family:'Outfit', sans-serif; color:var(--primary);">⚡ Aprobar & Personalizar Noticia de COBALTO</h3>
+            <input type="hidden" id="approve-inbox-id">
+            
+            <div class="form-group">
+                <label>Título de la Noticia</label>
+                <input type="text" id="approve-title" class="form-input" placeholder="Título para la noticia pública">
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+                <div class="form-group">
+                    <label>Categoría</label>
+                    <select id="approve-cat" class="form-select">
+                        <option value="Nacional">Nacional</option>
+                        <option value="Economía">Economía</option>
+                        <option value="Política">Política</option>
+                        <option value="Sucesos">Sucesos</option>
+                        <option value="Internacional">Internacional</option>
+                        <option value="Deportes">Deportes</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>URL de Imagen Destacada</label>
+                    <input type="text" id="approve-image" class="form-input" placeholder="https://...">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Resumen Ejecutivo / Bajada</label>
+                <textarea id="approve-summary" class="form-textarea" rows="3" placeholder="Resumen corto para la portada..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Cuerpo Completo del Artículo</label>
+                <textarea id="approve-content" class="form-textarea" rows="5" placeholder="Texto completo del artículo para la vista individual..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>URL de Video Embed (opcional)</label>
+                <input type="text" id="approve-video" class="form-input" placeholder="https://www.youtube.com/watch?v=...">
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.8rem; margin-top:1.5rem;">
+                <button class="btn-action btn-red" onclick="closeApproveModal()">Cancelar</button>
+                <button class="btn-action btn-green" onclick="submitApproveCustom()">🚀 Aprobar & Publicar Ahora</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL INSPECCIÓN Y DETALLE DE INBOX -->
+    <div class="modal-overlay" id="inspect-inbox-modal">
+        <div class="modal-box" style="max-width:720px; max-height:90vh; overflow-y:auto;">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:0.8rem; margin-bottom:1rem;">
+                <h3 style="font-family:'Outfit', sans-serif; color:var(--primary); margin:0;">🔍 Inspección Táctica de Noticia OSINT</h3>
+                <button class="btn-action" style="padding:4px 10px;" onclick="closeInspectModal()">✕ Cerrar</button>
+            </div>
+
+            <div id="inspect-content-body">
+                <div style="text-align:center; padding:2rem; color:var(--text-muted);">Cargando metadatos...</div>
+            </div>
+
+            <div style="display:flex; justify-content:flex-end; gap:0.8rem; margin-top:1.5rem; border-top:1px solid var(--border-color); padding-top:1rem;">
+                <button class="btn-action" onclick="closeInspectModal()">Cerrar</button>
+                <button class="btn-action btn-green" id="btn-inspect-proceed">⚡ Proceder a Aprobar & Editar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        let currentInspectItem = null;
+
         async function logoutAdmin() {
             await fetch('/api/vn-admin/logout', { method: 'POST' });
             document.cookie = "vn_token=; path=/; max-age=0;";
@@ -605,6 +700,108 @@
             document.getElementById('tab-cms').style.display = (tab === 'cms') ? 'block' : 'none';
             const usersTab = document.getElementById('tab-users');
             if (usersTab) usersTab.style.display = (tab === 'users') ? 'block' : 'none';
+        }
+
+        function openApproveModal(id, title, category, summary, image, video) {
+            document.getElementById('approve-inbox-id').value = id;
+            document.getElementById('approve-title').value = title || '';
+            document.getElementById('approve-cat').value = category || 'Nacional';
+            document.getElementById('approve-summary').value = summary || '';
+            document.getElementById('approve-content').value = summary || '';
+            document.getElementById('approve-image').value = image || '';
+            document.getElementById('approve-video').value = video || '';
+            document.getElementById('approve-inbox-modal').style.display = 'flex';
+        }
+
+        function closeApproveModal() {
+            document.getElementById('approve-inbox-modal').style.display = 'none';
+        }
+
+        async function submitApproveCustom() {
+            const id = document.getElementById('approve-inbox-id').value;
+            const title = document.getElementById('approve-title').value;
+            const category = document.getElementById('approve-cat').value;
+            const summary = document.getElementById('approve-summary').value;
+            const content = document.getElementById('approve-content').value;
+            const image_url = document.getElementById('approve-image').value;
+            const video_url = document.getElementById('approve-video').value;
+
+            if (!title) { alert('El título es requerido'); return; }
+
+            try {
+                const res = await fetch(`/api/vn-admin/inbox/approve/${id}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title, category, summary, content, image_url, video_url })
+                });
+                if (res.ok) {
+                    closeApproveModal();
+                    const elem = document.getElementById(`inbox-item-${id}`);
+                    if (elem) elem.remove();
+                    alert('¡Noticia aprobada y publicada exitosamente!');
+                    window.location.reload();
+                } else {
+                    const err = await res.json();
+                    alert(err.detail || 'No tienes permiso para aprobar esta noticia.');
+                }
+            } catch (e) {
+                alert('Error aprobando noticia: ' + e);
+            }
+        }
+
+        async function inspectInboxItem(id) {
+            try {
+                const bodyContainer = document.getElementById('inspect-content-body');
+                bodyContainer.innerHTML = '<div style="text-align:center; padding:2rem; color:var(--text-muted);">🔍 Obteniendo detalles de COBALTO...</div>';
+                document.getElementById('inspect-inbox-modal').style.display = 'flex';
+
+                const res = await fetch(`/api/vn-admin/inbox/inspect/${id}`);
+                if (!res.ok) throw new Error('Error recuperando item');
+                const data = await res.json();
+                const item = data.item;
+                currentInspectItem = item;
+
+                bodyContainer.innerHTML = `
+                    <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.8rem; flex-wrap:wrap;">
+                        <span style="font-size:0.75rem; font-weight:800; padding:3px 10px; border-radius:12px; background:rgba(0,229,255,0.2); color:var(--primary); border:1px solid var(--primary);">
+                            🏷️ Categoría Detectada: ${item.suggested_category}
+                        </span>
+                        <span style="font-size:0.75rem; font-weight:700; padding:3px 10px; border-radius:12px; background:rgba(255,255,255,0.08); color:#fff; border:1px solid var(--border-color);">
+                            🌍 ${item.country_tag || 'GLOBAL'}
+                        </span>
+                    </div>
+
+                    <h2 style="font-size:1.25rem; font-weight:800; color:#fff; margin-bottom:0.6rem;">${item.title}</h2>
+                    
+                    <div style="font-size:0.82rem; color:var(--text-muted); margin-bottom:1.2rem;">
+                        <b>Fuente OSINT:</b> ${item.source} • 
+                        <b>Recibido:</b> ${item.received_at} • 
+                        <a href="${item.link}" target="_blank" style="color:var(--primary); text-decoration:none; font-weight:600;">
+                            🌐 Visitar Fuente Original ↗
+                        </a>
+                    </div>
+
+                    <div style="background:rgba(255,255,255,0.03); border:1px solid var(--border-color); padding:1rem; border-radius:10px; margin-bottom:1rem;">
+                        <h4 style="font-size:0.85rem; color:var(--primary); margin-bottom:0.5rem;">📝 Resumen Ingestado</h4>
+                        <p style="font-size:0.9rem; color:var(--text-main); line-height:1.6;">${item.summary || 'Sin resumen provisto.'}</p>
+                    </div>
+
+                    ${item.image ? `<div style="margin-bottom:1rem;"><img src="${item.image}" style="width:100%; max-height:260px; object-fit:cover; border-radius:10px; border:1px solid var(--border-color);" alt="Imagen destacada"></div>` : ''}
+                `;
+
+                document.getElementById('btn-inspect-proceed').onclick = function() {
+                    closeInspectModal();
+                    openApproveModal(item.id, item.title, item.suggested_category, item.summary, item.image, item.video);
+                };
+
+            } catch (e) {
+                alert('Error al inspeccionar item: ' + e);
+                closeInspectModal();
+            }
+        }
+
+        function closeInspectModal() {
+            document.getElementById('inspect-inbox-modal').style.display = 'none';
         }
 
         async function approveDirect(id) {

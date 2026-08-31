@@ -479,6 +479,24 @@ def get_featured_article() -> Optional[Dict[str, Any]]:
 
 # ── INBOX Y COBALTO SYNC ───────────────────────────────────────
 
+def auto_detect_category(title: str, summary: str = "") -> str:
+    """Detecta automáticamente la categoría probable basada en palabras clave."""
+    text = f"{title} {summary}".lower()
+    
+    if any(k in text for k in ["bcv", "dólar", "dolar", "inflación", "inflacion", "petróleo", "petroleo", "pdvsa", "salario", "arancel", "banco", "bolívar", "bolivar", "finanzas", "cripto", "bitcoin", "exportación"]):
+        return "Economía"
+    if any(k in text for k in ["cne", "asamblea", "diputado", "ministro", "canciller", "elecciones", "voto", "gobierno", "fanb", "decreto", "partido", "oposición", "oposicion", "presidente"]):
+        return "Política"
+    if any(k in text for k in ["cicpc", "policía", "policia", "detenido", "capturado", "homicidio", "robo", "incendio", "accidente", "fiscalía", "fiscalia", "allanamiento", "drogas", "incautación"]):
+        return "Sucesos"
+    if any(k in text for k in ["vinotinto", "fútbol", "futbol", "béisbol", "beisbol", "lvbp", "olímpico", "olimpico", "conmebol", "fifa", "campeón", "campeon"]):
+        return "Deportes"
+    if any(k in text for k in ["eeuu", "ee.uu", "biden", "trump", "onu", "ue", "europa", "china", "rusia", "colombia", "brasil", "washington", "moscú", "kremlin"]):
+        return "Internacional"
+
+    return "Nacional"
+
+
 def sync_cobalto_entries_to_inbox(entries: List[Dict[str, Any]]) -> int:
     if not entries:
         return 0
@@ -538,16 +556,25 @@ def get_cobalto_inbox(status: str = "pending", limit: int = 50) -> List[Dict[str
             "SELECT * FROM vn_cobalto_inbox WHERE status = ? ORDER BY datetime(received_at) DESC LIMIT ?",
             (status, limit)
         ).fetchall()
-        return [dict(r) for r in rows]
+        inbox_items = []
+        for r in rows:
+            d = dict(r)
+            d["suggested_category"] = auto_detect_category(d.get("title", ""), d.get("summary", ""))
+            inbox_items.append(d)
+        return inbox_items
     finally:
         conn.close()
 
 
 def approve_inbox_item(
     inbox_id: int,
-    custom_category: str = "Nacional",
+    custom_category: Optional[str] = None,
     custom_title: Optional[str] = None,
-    custom_summary: Optional[str] = None
+    custom_summary: Optional[str] = None,
+    custom_content: Optional[str] = None,
+    custom_image_url: Optional[str] = None,
+    custom_video_url: Optional[str] = None,
+    author_name: str = "Redacción VN"
 ) -> Optional[Dict[str, Any]]:
     conn = get_vn_db_connection()
     try:
@@ -557,20 +584,26 @@ def approve_inbox_item(
             return None
         item_dict = dict(item)
 
-        title = custom_title if custom_title else item_dict["title"]
-        summary = custom_summary if custom_summary else item_dict["summary"]
+        title = custom_title.strip() if custom_title and custom_title.strip() else item_dict["title"]
+        summary = custom_summary.strip() if custom_summary and custom_summary.strip() else (item_dict.get("summary") or "")
+        content = custom_content.strip() if custom_content and custom_content.strip() else summary
+        
+        category = custom_category.strip() if custom_category and custom_category.strip() else auto_detect_category(title, summary)
+        image_url = custom_image_url.strip() if custom_image_url is not None else (item_dict.get("image") or "")
+        video_url = custom_video_url.strip() if custom_video_url is not None else (item_dict.get("video") or "")
 
         article = create_article(
             title=title,
             summary=summary,
-            content=summary,
-            category=custom_category,
-            image_url=item_dict.get("image") or "",
-            video_url=item_dict.get("video") or "",
+            content=content,
+            category=category,
+            image_url=image_url,
+            video_url=video_url,
             source_name=item_dict.get("source") or "COBALTO OSINT",
             canonical_url=item_dict.get("link") or "",
             is_featured=False,
-            status="published"
+            status="published",
+            author_name=author_name
         )
 
         with conn:
