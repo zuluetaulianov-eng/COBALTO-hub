@@ -41,12 +41,16 @@ async def lifespan(app: FastAPI):
     yield
 
 
+from fastapi.middleware.gzip import GZipMiddleware
+
 app = FastAPI(
     title="Venezuela Noticias — Standalone Portal",
     description="Portal informativo independiente y sistema CMS desacoplado.",
     version="1.0.0",
     lifespan=lifespan,
 )
+
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 app.state.templates = templates
