@@ -83,7 +83,7 @@ echo.
 echo  [+] Levantando túnel público Zrok exclusivo para Venezuela Noticias...
 where zrok >nul 2>nul
 if %errorlevel% equ 0 (
-    start /min cmd /c "zrok share reserved commandereliminatedextraction --override-endpoint http://localhost:8085 --force-local --headless > zrok.log 2>&1"
+    start /min cmd /c "zrok share reserved commandereliminatedextraction --override-endpoint http://127.0.0.1:8085 --force-local --headless > zrok.log 2>&1"
     echo  [OK] Túnel Zrok publicado en: https://commandereliminatedextraction.share.zrok.io
 ) else (
     echo  [ALERTA] Zrok no encontrado en PATH. El portal estará disponible solo en red local.
@@ -101,7 +101,7 @@ echo.
 echo  [+] Levantando túnel público Zrok exclusivo para Venezuela Noticias...
 where zrok >nul 2>nul
 if %errorlevel% equ 0 (
-    start /min cmd /c "zrok share reserved commandereliminatedextraction --override-endpoint http://localhost:8085 --force-local --headless > zrok.log 2>&1"
+    start /min cmd /c "zrok share reserved commandereliminatedextraction --override-endpoint http://127.0.0.1:8085 --force-local --headless > zrok.log 2>&1"
     echo  [OK] Túnel Zrok publicado en: https://commandereliminatedextraction.share.zrok.io
 ) else (
     echo  [ALERTA] Zrok no encontrado en PATH. El panel estará disponible solo en red local.
