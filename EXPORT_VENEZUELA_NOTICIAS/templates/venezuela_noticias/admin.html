@@ -389,7 +389,14 @@
                     <div style="display:flex; gap:0.5rem; align-items:center; justify-content:flex-end; border-top:1px solid rgba(255,255,255,0.05); padding-top:0.6rem; flex-wrap:wrap;">
                         <button class="btn-action" style="font-size:0.8rem;" onclick="inspectInboxItem({{ item.id }})">🔍 Inspeccionar Noticia</button>
                         {% if current_user and current_user.role == 'admin' %}
-                        <button class="btn-action btn-green" style="font-size:0.8rem;" onclick="openApproveModal({{ item.id }}, '{{ item.title|replace('\'', '\\\'') }}', '{{ item.suggested_category }}', '{{ (item.summary or '')|replace('\'', '\\\'') }}', '{{ item.image or '' }}', '{{ item.video or '' }}')">✏️ Aprobar & Personalizar</button>
+                        <button class="btn-action btn-green" style="font-size:0.8rem;"
+                                data-id="{{ item.id }}"
+                                data-title="{{ item.title|e }}"
+                                data-category="{{ item.suggested_category }}"
+                                data-summary="{{ (item.summary or '')|e }}"
+                                data-image="{{ item.image or '' }}"
+                                data-video="{{ item.video or '' }}"
+                                onclick="openApproveModalFromBtn(this)">✏️ Aprobar & Personalizar</button>
                         <button class="btn-action" style="font-size:0.8rem; background:rgba(16, 185, 129, 0.2); color:#fff; border-color:var(--accent-green);" onclick="approveDirect({{ item.id }})">⚡ Aprobar Directo</button>
                         <button class="btn-action btn-red" style="font-size:0.8rem;" onclick="rejectItem({{ item.id }})">🗑️ Descartar</button>
                         {% else %}
@@ -433,7 +440,14 @@
                     </div>
                     <div style="display:flex; gap:0.5rem; align-items:center;">
                         {% if (current_user and current_user.role == 'admin') or (current_user and article.author_name == current_user.username) %}
-                        <button class="btn-action" style="font-size:0.8rem;" onclick="openEditModal({{ article.id }}, '{{ article.title|replace('\'', '\\\'') }}', '{{ article.category }}', '{{ (article.summary or '')|replace('\'', '\\\'') }}', '{{ article.video_url or '' }}', '{{ article.image_url or '' }}')">✏️ Editar</button>
+                        <button class="btn-action" style="font-size:0.8rem;"
+                                data-id="{{ article.id }}"
+                                data-title="{{ article.title|e }}"
+                                data-category="{{ article.category }}"
+                                data-summary="{{ (article.summary or '')|e }}"
+                                data-video="{{ article.video_url or '' }}"
+                                data-image="{{ article.image_url or '' }}"
+                                onclick="openEditModalFromBtn(this)">✏️ Editar</button>
                         <button class="btn-action btn-red" style="font-size:0.8rem;" onclick="deleteArticle({{ article.id }})">🗑️ Eliminar</button>
                         {% else %}
                         <span style="font-size:0.75rem; color:var(--text-muted); background:rgba(255,255,255,0.05); padding:5px 10px; border-radius:6px; border:1px solid var(--border-color);">
@@ -713,6 +727,41 @@
 
     <script>
         let currentInspectItem = null;
+
+        function switchTab(tabName, btnElement) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.panel-box').forEach(p => p.style.display = 'none');
+            
+            if (btnElement) {
+                btnElement.classList.add('active');
+            }
+            const targetPanel = document.getElementById('tab-' + tabName);
+            if (targetPanel) {
+                targetPanel.style.display = 'block';
+            }
+        }
+
+        function openApproveModalFromBtn(btn) {
+            openApproveModal(
+                btn.getAttribute('data-id'),
+                btn.getAttribute('data-title'),
+                btn.getAttribute('data-category'),
+                btn.getAttribute('data-summary'),
+                btn.getAttribute('data-image'),
+                btn.getAttribute('data-video')
+            );
+        }
+
+        function openEditModalFromBtn(btn) {
+            openEditModal(
+                btn.getAttribute('data-id'),
+                btn.getAttribute('data-title'),
+                btn.getAttribute('data-category'),
+                btn.getAttribute('data-summary'),
+                btn.getAttribute('data-video'),
+                btn.getAttribute('data-image')
+            );
+        }
 
         async function logoutAdmin() {
             await fetch('/api/vn-admin/logout', { method: 'POST' });
