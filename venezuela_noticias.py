@@ -311,6 +311,36 @@ def generate_slug(title: str) -> str:
     return f"{s[:60]}-{salt}"
 
 
+def normalize_video_embed_url(url: Optional[str]) -> str:
+    """Transforma automáticamente enlaces de YouTube, Vimeo, TikTok, Dailymotion y Rumble
+    en URLs de reproductor embed reproducibles sin bloqueos X-Frame-Options ni CORS."""
+    if not url:
+        return ""
+    url = url.strip()
+
+    # YouTube (watch?v=, Shorts, youtube.com/embed, youtu.be)
+    yt_match = re.search(r'(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})', url)
+    if yt_match:
+        return f"https://www.youtube-nocookie.com/embed/{yt_match.group(1)}"
+
+    # Vimeo
+    vimeo_match = re.search(r'vimeo\.com\/(?:video\/)?(\d+)', url)
+    if vimeo_match:
+        return f"https://player.vimeo.com/video/{vimeo_match.group(1)}"
+
+    # TikTok
+    tiktok_match = re.search(r'tiktok\.com\/@[^\/]+\/video\/(\d+)', url)
+    if tiktok_match:
+        return f"https://www.tiktok.com/embed/v2/{tiktok_match.group(1)}"
+
+    # Dailymotion
+    daily_match = re.search(r'(?:dailymotion\.com\/video\/|dai\.ly\/)([a-zA-Z0-9]+)', url)
+    if daily_match:
+        return f"https://www.dailymotion.com/embed/video/{daily_match.group(1)}"
+
+    return url
+
+
 def create_article(
     title: str,
     summary: str = "",
@@ -329,6 +359,7 @@ def create_article(
     conn = get_vn_db_connection()
     slug = generate_slug(title)
     now_iso = datetime.now().isoformat()
+    clean_video_url = normalize_video_embed_url(video_url)
 
     try:
         with conn:
@@ -348,7 +379,7 @@ def create_article(
                     source_name.strip(),
                     canonical_url.strip(),
                     image_url.strip(),
-                    video_url.strip(),
+                    clean_video_url,
                     category.strip(),
                     1 if is_featured else 0,
                     status.strip(),
@@ -394,6 +425,7 @@ def update_article(
 ) -> Optional[Dict[str, Any]]:
     init_vn_db()
     conn = get_vn_db_connection()
+    clean_video_url = normalize_video_embed_url(video_url)
     try:
         with conn:
             cursor = conn.execute(
@@ -402,7 +434,7 @@ def update_article(
                 SET title = ?, summary = ?, content = ?, category = ?, image_url = ?, video_url = ?
                 WHERE id = ?
                 """,
-                (title.strip(), summary.strip(), content.strip(), category.strip(), image_url.strip(), video_url.strip(), article_id)
+                (title.strip(), summary.strip(), content.strip(), category.strip(), image_url.strip(), clean_video_url, article_id)
             )
             if cursor.rowcount == 0:
                 return None

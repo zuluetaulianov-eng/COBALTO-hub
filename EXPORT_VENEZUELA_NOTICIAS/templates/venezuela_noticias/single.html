@@ -239,10 +239,10 @@
 
             {% if article.video_url %}
             <div class="media-container">
-                {% if 'youtube' in article.video_url or 'vimeo' in article.video_url or 'tiktok' in article.video_url or 'dailymotion' in article.video_url or 'rumble' in article.video_url %}
-                <iframe src="{{ article.video_url }}" allowfullscreen></iframe>
+                {% if 'youtube' in article.video_url or 'youtu.be' in article.video_url or 'vimeo' in article.video_url or 'tiktok' in article.video_url or 'dailymotion' in article.video_url or 'rumble' in article.video_url or 'embed' in article.video_url %}
+                <iframe src="{{ article.video_url }}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border:0; width:100%; aspect-ratio:16/9;"></iframe>
                 {% else %}
-                <video src="{{ article.video_url }}" {% if article.image_url %}poster="{{ article.image_url }}"{% endif %} controls muted playsinline></video>
+                <video src="{{ article.video_url }}" {% if article.image_url %}poster="{{ article.image_url }}"{% endif %} controls muted playsinline style="width:100%; max-height:550px; border-radius:8px;"></video>
                 {% endif %}
             </div>
             {% elif article.image_url %}
