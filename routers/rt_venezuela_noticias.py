@@ -2,9 +2,11 @@
 
 import logging
 import os
+import secrets
+import time
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query, Request, Response
+from fastapi import APIRouter, File, HTTPException, Query, Request, Response, UploadFile
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.responses import Response as FastAPIResponse
 from fastapi.templating import Jinja2Templates
@@ -13,6 +15,9 @@ import venezuela_noticias as vn
 
 router = APIRouter(tags=["Venezuela Noticias"])
 logger = logging.getLogger("router")
+
+UPLOAD_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "static", "uploads", "vn")
+os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
 def get_token_from_request(request: Request) -> str:
@@ -400,3 +405,26 @@ async def api_delete_article(article_id: int, request: Request):
 
     success = vn.delete_article(article_id)
     return JSONResponse({"status": "ok", "deleted": success})
+
+
+@router.post("/api/vn-admin/upload")
+async def api_upload_media(request: Request, file: UploadFile = File(...)):
+    """Subida directa de imágenes y videos locales para artículos redactados por reporteros/usuarios."""
+    require_admin_auth(request, required_role="reporter")
+    allowed_exts = {".png", ".jpg", ".jpeg", ".webp", ".gif", ".mp4", ".webm"}
+    ext = os.path.splitext(file.filename or "")[1].lower()
+    if ext not in allowed_exts:
+        raise HTTPException(status_code=400, detail=f"Formato no permitido. Extensiones soportadas: {', '.join(allowed_exts)}")
+
+    filename = f"vn_{int(time.time())}_{secrets.token_hex(4)}{ext}"
+    filepath = os.path.join(UPLOAD_DIR, filename)
+
+    try:
+        content = await file.read()
+        with open(filepath, "wb") as f:
+            f.write(content)
+        url = f"/static/uploads/vn/{filename}"
+        return JSONResponse({"status": "ok", "url": url, "filename": filename})
+    except Exception as e:
+        logger.exception(f"Error subiendo archivo multimedia: {e}")
+        raise HTTPException(status_code=500, detail="Error guardando archivo multimedia")

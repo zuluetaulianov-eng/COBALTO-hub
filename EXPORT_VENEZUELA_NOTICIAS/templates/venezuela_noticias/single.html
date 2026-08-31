@@ -226,7 +226,13 @@
                 <span class="tag-badge">{{ article.category or 'Nacional' }}</span>
                 <h1 class="article-title">{{ article.title }}</h1>
                 <div class="article-meta">
+                    {% if article.author_name and article.author_name != 'Redacción VN' %}
+                    <span style="background:rgba(0, 229, 255, 0.15); color:var(--primary); border:1px solid rgba(0, 229, 255, 0.3); padding:3px 10px; border-radius:12px; font-weight:700; font-size:0.8rem;">
+                        ✍️ Reportero Colaborador: <b>{{ article.author_name }}</b>
+                    </span>
+                    {% else %}
                     <span>✍️ {{ article.source_name or 'Redacción VN' }}</span>
+                    {% endif %}
                     <span>📅 {{ article.published_at[:10] }}</span>
                 </div>
             </div>

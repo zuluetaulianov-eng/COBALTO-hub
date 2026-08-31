@@ -574,7 +574,7 @@
                     </div>
 
                     <div class="card-footer">
-                        <span>✍️ {{ item.author_name or item.source_name or 'Redacción VN' }}</span>
+                        <span>✍️ {% if item.author_name and item.author_name != 'Redacción VN' %}<b style="color:var(--primary);">{{ item.author_name }}</b>{% else %}{{ item.source_name or 'Redacción VN' }}{% endif %}</span>
                         <a href="/noticias/articulo/{{ item.slug }}" class="btn-read">Leer ➔</a>
                     </div>
                 </div>

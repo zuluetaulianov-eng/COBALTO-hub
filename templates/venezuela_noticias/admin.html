@@ -505,11 +505,11 @@
 
     <!-- MODAL CREACIÓN DE NOTICIA -->
     <div class="modal-overlay" id="create-modal">
-        <div class="modal-box">
-            <h3 style="margin-bottom:1rem; font-family:'Outfit', sans-serif;">📝 Crear Nueva Noticia</h3>
+        <div class="modal-box" style="max-width:650px;">
+            <h3 style="margin-bottom:1rem; font-family:'Outfit', sans-serif; color:var(--primary);">📝 Redactar Nueva Noticia de Usuario / Reportero</h3>
             <div class="form-group">
                 <label>Título de la Noticia</label>
-                <input type="text" id="new-title" class="form-input" placeholder="Ej. Nuevas medidas económicas anunciadas">
+                <input type="text" id="new-title" class="form-input" placeholder="Ej. Reporte especial desde la comunidad...">
             </div>
             <div class="form-group">
                 <label>Categoría</label>
@@ -523,29 +523,43 @@
                 </select>
             </div>
             <div class="form-group">
-                <label>Resumen / Contenido</label>
-                <textarea id="new-summary" class="form-textarea" rows="4" placeholder="Escribe el resumen ejecutivo de la noticia..."></textarea>
+                <label>Resumen / Cuerpo del Artículo</label>
+                <textarea id="new-summary" class="form-textarea" rows="5" placeholder="Escribe el contenido detallado de la noticia..."></textarea>
             </div>
+
             <div class="form-group">
-                <label>URL de Video Embed (YouTube, Vimeo, TikTok, MP4)</label>
-                <input type="text" id="new-video" class="form-input" placeholder="https://www.youtube.com/watch?v=...">
+                <label>Imagen Destacada (URL o Subir Archivo Local)</label>
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <input type="text" id="new-image" class="form-input" placeholder="https://... o sube una foto de tu dispositivo" style="flex:1;">
+                    <label class="btn-action" style="cursor:pointer; white-space:nowrap; background:rgba(0,229,255,0.15); border-color:var(--primary); color:var(--primary);">
+                        📷 Subir Imagen
+                        <input type="file" accept="image/*" style="display:none;" onchange="uploadLocalMedia(this, 'new-image')">
+                    </label>
+                </div>
             </div>
+
             <div class="form-group">
-                <label>URL de Imagen Destacada</label>
-                <input type="text" id="new-image" class="form-input" placeholder="https://...">
+                <label>Video Embed (URL o Subir Video Local MP4)</label>
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <input type="text" id="new-video" class="form-input" placeholder="https://youtube... o sube video MP4 local" style="flex:1;">
+                    <label class="btn-action" style="cursor:pointer; white-space:nowrap; background:rgba(255,255,255,0.1);">
+                        🎬 Subir Video
+                        <input type="file" accept="video/*" style="display:none;" onchange="uploadLocalMedia(this, 'new-video')">
+                    </label>
+                </div>
             </div>
 
             <div style="display:flex; justify-content:flex-end; gap:0.8rem; margin-top:1.5rem;">
                 <button class="btn-action btn-red" onclick="closeCreateModal()">Cancelar</button>
-                <button class="btn-action btn-green" onclick="submitCreateArticle()">Guardar & Publicar</button>
+                <button class="btn-action btn-green" onclick="submitCreateArticle()">🚀 Publicar Noticia</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL EDICIÓN DE NOTICIA -->
     <div class="modal-overlay" id="edit-modal">
-        <div class="modal-box">
-            <h3 style="margin-bottom:1rem; font-family:'Outfit', sans-serif;">✏️ Editar Noticia Propia</h3>
+        <div class="modal-box" style="max-width:650px;">
+            <h3 style="margin-bottom:1rem; font-family:'Outfit', sans-serif; color:var(--primary);">✏️ Editar Noticia Propia</h3>
             <input type="hidden" id="edit-article-id">
             <div class="form-group">
                 <label>Título de la Noticia</label>
@@ -564,15 +578,29 @@
             </div>
             <div class="form-group">
                 <label>Resumen / Contenido</label>
-                <textarea id="edit-summary" class="form-textarea" rows="4"></textarea>
+                <textarea id="edit-summary" class="form-textarea" rows="5"></textarea>
             </div>
+
             <div class="form-group">
-                <label>URL de Video Embed</label>
-                <input type="text" id="edit-video" class="form-input">
+                <label>Imagen Destacada (URL o Subir Archivo Local)</label>
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <input type="text" id="edit-image" class="form-input" style="flex:1;">
+                    <label class="btn-action" style="cursor:pointer; white-space:nowrap; background:rgba(0,229,255,0.15); border-color:var(--primary); color:var(--primary);">
+                        📷 Subir Imagen
+                        <input type="file" accept="image/*" style="display:none;" onchange="uploadLocalMedia(this, 'edit-image')">
+                    </label>
+                </div>
             </div>
+
             <div class="form-group">
-                <label>URL de Imagen Destacada</label>
-                <input type="text" id="edit-image" class="form-input">
+                <label>Video Embed (URL o Subir Video Local MP4)</label>
+                <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <input type="text" id="edit-video" class="form-input" style="flex:1;">
+                    <label class="btn-action" style="cursor:pointer; white-space:nowrap; background:rgba(255,255,255,0.1);">
+                        🎬 Subir Video
+                        <input type="file" accept="video/*" style="display:none;" onchange="uploadLocalMedia(this, 'edit-video')">
+                    </label>
+                </div>
             </div>
 
             <div style="display:flex; justify-content:flex-end; gap:0.8rem; margin-top:1.5rem;">
@@ -693,13 +721,32 @@
             window.location.href = '/vn-login';
         }
 
-        function switchTab(tab, btn) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById('tab-inbox').style.display = (tab === 'inbox') ? 'block' : 'none';
-            document.getElementById('tab-cms').style.display = (tab === 'cms') ? 'block' : 'none';
-            const usersTab = document.getElementById('tab-users');
-            if (usersTab) usersTab.style.display = (tab === 'users') ? 'block' : 'none';
+        async function uploadLocalMedia(fileInput, targetInputId) {
+            if (!fileInput.files || !fileInput.files[0]) return;
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                fileInput.disabled = true;
+                const res = await fetch('/api/vn-admin/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById(targetInputId).value = data.url;
+                    alert('¡Archivo multimedia subido con éxito!');
+                } else {
+                    const err = await res.json();
+                    alert(err.detail || 'Error al subir el archivo multimedia.');
+                }
+            } catch (e) {
+                alert('Error al subir el archivo: ' + e);
+            } finally {
+                fileInput.disabled = false;
+                fileInput.value = '';
+            }
         }
 
         function openApproveModal(id, title, category, summary, image, video) {
