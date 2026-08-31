@@ -93,26 +93,11 @@ if %errorlevel% neq 0 (
 )
 echo.
 
-:: --- 4. INICIAR TÚNEL ZROK ---
-echo  [+] Levantando túnel seguro Zrok en segundo plano...
-where zrok >nul 2>nul
-if !errorlevel! equ 0 (
-    start /min cmd /c "zrok share reserved commandereliminatedextraction --force-local --headless > zrok.log 2>&1"
-    timeout /t 2 /nobreak > nul
-) else (
-    echo  [ALERTA] Zrok no encontrado en PATH. El tunel publico no estara disponible.
-)
-echo.
-
-:: --- 5. INICIAR LANZADOR GRÁFICO (GUI) ---
-echo  [+] Todo listo. Abriendo Panel de Control Gráfico de COBALTO...
+:: --- 4. INICIAR LANZADOR GRÁFICO (GUI OSINT) ---
+echo  [+] Todo listo. Abriendo Sistema de Mando OSINT de COBALTO HUB (Local)...
 %PYTHON_CMD% cobalto_gui_launcher.py %*
 
-:: --- 6. LIMPIEZA AL CERRAR ---
+:: --- 5. LIMPIEZA AL CERRAR ---
 echo.
-echo  [+] Cerrando túnel Zrok...
-taskkill /IM zrok.exe /F >nul 2>nul
-
-echo.
-echo  [!] El Lanzador ha finalizado.
+echo  [!] El Lanzador de COBALTO HUB ha finalizado.
 pause

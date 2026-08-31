@@ -585,7 +585,7 @@ except Exception as e:
     NOTES_INFORMATIVAS = []
 
 # ── Metadatos del dashboard ──
-SITE_URL = os.getenv("SITE_URL", "https://commandereliminatedextraction.share.zrok.io")
+SITE_URL = os.getenv("SITE_URL", "http://localhost:8000")
 PAGE_TITLE = "COBALTO HUB | Noticias & Intel Venezuela 2026"
 PAGE_DESCRIPTION = "Tablero en tiempo real con intel propia y externa. Canal: t.me/notivenezuelaarma"
 TELEGRAM_CHANNEL = "https://t.me/notivenezuelaarma"

@@ -80,20 +80,38 @@ goto MENU
 
 :START_PUBLIC
 echo.
+echo  [+] Levantando túnel público Zrok exclusivo para Venezuela Noticias...
+where zrok >nul 2>nul
+if %errorlevel% equ 0 (
+    start /min cmd /c "zrok share reserved commandereliminatedextraction --force-local 8080 --headless > zrok.log 2>&1"
+    echo  [OK] Túnel Zrok publicado en: https://commandereliminatedextraction.share.zrok.io
+) else (
+    echo  [ALERTA] Zrok no encontrado en PATH. El portal estará disponible solo en red local.
+)
 echo  [+] Iniciando Venezuela Noticias en modo Portal Público...
 echo  [+] Abriendo navegador en http://localhost:8080/noticias ...
 timeout /t 2 /nobreak >nul
 start http://localhost:8080/noticias
 %PYTHON_CMD% main.py --port 8080
+taskkill /IM zrok.exe /F >nul 2>nul
 goto END
 
 :START_ADMIN
 echo.
+echo  [+] Levantando túnel público Zrok exclusivo para Venezuela Noticias...
+where zrok >nul 2>nul
+if %errorlevel% equ 0 (
+    start /min cmd /c "zrok share reserved commandereliminatedextraction --force-local 8080 --headless > zrok.log 2>&1"
+    echo  [OK] Túnel Zrok publicado en: https://commandereliminatedextraction.share.zrok.io
+) else (
+    echo  [ALERTA] Zrok no encontrado en PATH. El panel estará disponible solo en red local.
+)
 echo  [+] Iniciando Venezuela Noticias en modo CMS Administración...
 echo  [+] Abriendo navegador en http://localhost:8080/vn-admin ...
 timeout /t 2 /nobreak >nul
 start http://localhost:8080/vn-admin
 %PYTHON_CMD% main.py --port 8080
+taskkill /IM zrok.exe /F >nul 2>nul
 goto END
 
 :START_CUSTOM

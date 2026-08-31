@@ -312,7 +312,7 @@ async def serve_sw():
 # ── CORS ──
 
 cors_origins = [
-    os.getenv("SITE_URL", "https://commandereliminatedextraction.share.zrok.io"),
+    os.getenv("SITE_URL", "http://localhost:8000"),
     "http://localhost:8083",
     "http://127.0.0.1:8083",
 ]
