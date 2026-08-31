@@ -6,7 +6,7 @@ cls
 echo.
 echo    ===================================================
 echo        V E N E Z U E L A   N O T I C I A S   v 1 . 0
-echo       Portal Autónomo & Sistema CMS Independiente
+echo       Portal Autónomo - Sistema CMS Independiente
 echo    ===================================================
 echo.
 
@@ -61,8 +61,8 @@ echo.
 :MENU
 echo  Seleccione la opción de ejecución deseada:
 echo.
-echo   [1] Iniciar Portal Público de Noticias (Puerto 8080)
-echo   [2] Iniciar Panel de Administración CMS (Puerto 8080)
+echo   [1] Iniciar Portal Público de Noticias (Puerto 8085)
+echo   [2] Iniciar Panel de Administración CMS (Puerto 8085)
 echo   [3] Iniciar Servidor en Puerto Personalizado
 echo   [0] Salir
 echo.
@@ -83,16 +83,16 @@ echo.
 echo  [+] Levantando túnel público Zrok exclusivo para Venezuela Noticias...
 where zrok >nul 2>nul
 if %errorlevel% equ 0 (
-    start /min cmd /c "zrok share reserved commandereliminatedextraction --force-local 8080 --headless > zrok.log 2>&1"
+    start /min cmd /c "zrok share reserved commandereliminatedextraction --override-endpoint http://localhost:8085 --force-local --headless > zrok.log 2>&1"
     echo  [OK] Túnel Zrok publicado en: https://commandereliminatedextraction.share.zrok.io
 ) else (
     echo  [ALERTA] Zrok no encontrado en PATH. El portal estará disponible solo en red local.
 )
 echo  [+] Iniciando Venezuela Noticias en modo Portal Público...
-echo  [+] Abriendo navegador en http://localhost:8080/noticias ...
+echo  [+] Abriendo navegador en http://localhost:8085/noticias ...
 timeout /t 2 /nobreak >nul
-start http://localhost:8080/noticias
-%PYTHON_CMD% main.py --port 8080
+start http://localhost:8085/noticias
+%PYTHON_CMD% main.py --port 8085
 taskkill /IM zrok.exe /F >nul 2>nul
 goto END
 
@@ -101,23 +101,23 @@ echo.
 echo  [+] Levantando túnel público Zrok exclusivo para Venezuela Noticias...
 where zrok >nul 2>nul
 if %errorlevel% equ 0 (
-    start /min cmd /c "zrok share reserved commandereliminatedextraction --force-local 8080 --headless > zrok.log 2>&1"
+    start /min cmd /c "zrok share reserved commandereliminatedextraction --override-endpoint http://localhost:8085 --force-local --headless > zrok.log 2>&1"
     echo  [OK] Túnel Zrok publicado en: https://commandereliminatedextraction.share.zrok.io
 ) else (
     echo  [ALERTA] Zrok no encontrado en PATH. El panel estará disponible solo en red local.
 )
 echo  [+] Iniciando Venezuela Noticias en modo CMS Administración...
-echo  [+] Abriendo navegador en http://localhost:8080/vn-admin ...
+echo  [+] Abriendo navegador en http://localhost:8085/vn-admin ...
 timeout /t 2 /nobreak >nul
-start http://localhost:8080/vn-admin
-%PYTHON_CMD% main.py --port 8080
+start http://localhost:8085/vn-admin
+%PYTHON_CMD% main.py --port 8085
 taskkill /IM zrok.exe /F >nul 2>nul
 goto END
 
 :START_CUSTOM
 echo.
 set /p PORT_USER=" Ingrese el puerto deseado (ej. 8090): "
-if "%PORT_USER%"=="" set PORT_USER=8080
+if "%PORT_USER%"=="" set PORT_USER=8085
 echo  [+] Iniciando Venezuela Noticias en el puerto %PORT_USER%...
 echo  [+] Abriendo navegador en http://localhost:%PORT_USER%/noticias ...
 timeout /t 2 /nobreak >nul

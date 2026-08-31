@@ -31,11 +31,12 @@ logger = logging.getLogger("venezuela_noticias")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     vn.init_vn_db()
+    port = os.getenv("VN_PORT", "8085")
     logger.info("==================================================================")
     logger.info("  🇻🇪 VENEZUELA NOTICIAS — Portal Autónomo Iniciado Correctamente  ")
-    logger.info("  • Feed Público:  http://localhost:8080/noticias                 ")
-    logger.info("  • Feed RSS XML:  http://localhost:8080/noticias/rss.xml         ")
-    logger.info("  • Panel CMS Admin: http://localhost:8080/vn-admin                ")
+    logger.info(f"  • Feed Público:  http://localhost:{port}/noticias               ")
+    logger.info(f"  • Feed RSS XML:  http://localhost:{port}/noticias/rss.xml       ")
+    logger.info(f"  • Panel CMS Admin: http://localhost:{port}/vn-admin              ")
     logger.info("==================================================================")
     yield
 
@@ -66,7 +67,7 @@ app.include_router(venezuela_noticias_router)
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ejecutar servidor autónomo de Venezuela Noticias")
     parser.add_argument("--host", default=os.getenv("VN_HOST", "0.0.0.0"), help="Host IP")
-    parser.add_argument("--port", type=int, default=int(os.getenv("VN_PORT", "8080")), help="Puerto HTTP")
+    parser.add_argument("--port", type=int, default=int(os.getenv("VN_PORT", "8085")), help="Puerto HTTP")
     args = parser.parse_args()
 
     uvicorn.run("main:app", host=args.host, port=args.port, reload=False)
