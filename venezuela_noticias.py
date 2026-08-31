@@ -361,6 +361,20 @@ def create_article(
     now_iso = datetime.now().isoformat()
     clean_video_url = normalize_video_embed_url(video_url)
 
+    summary_clean = summary.strip()
+    content_clean = content.strip()
+
+    if summary_clean and not content_clean:
+        content_clean = summary_clean
+        if len(summary_clean) > 220:
+            summary_clean = summary_clean[:180].rsplit(' ', 1)[0] + '...'
+    elif content_clean and not summary_clean:
+        summary_clean = content_clean[:180].rsplit(' ', 1)[0] + '...' if len(content_clean) > 180 else content_clean
+    elif len(summary_clean) > 250:
+        if not content_clean:
+            content_clean = summary_clean
+        summary_clean = summary_clean[:180].rsplit(' ', 1)[0] + '...'
+
     try:
         with conn:
             cursor = conn.execute(
@@ -374,8 +388,8 @@ def create_article(
                 (
                     title.strip(),
                     slug,
-                    summary.strip(),
-                    content.strip(),
+                    summary_clean,
+                    content_clean,
                     source_name.strip(),
                     canonical_url.strip(),
                     image_url.strip(),
@@ -394,7 +408,7 @@ def create_article(
             "id": article_id,
             "title": title,
             "slug": slug,
-            "summary": summary,
+            "summary": summary_clean,
             "category": category,
             "status": status,
             "author_id": author_id,
@@ -426,6 +440,20 @@ def update_article(
     init_vn_db()
     conn = get_vn_db_connection()
     clean_video_url = normalize_video_embed_url(video_url)
+    summary_clean = summary.strip()
+    content_clean = content.strip()
+
+    if summary_clean and not content_clean:
+        content_clean = summary_clean
+        if len(summary_clean) > 220:
+            summary_clean = summary_clean[:180].rsplit(' ', 1)[0] + '...'
+    elif content_clean and not summary_clean:
+        summary_clean = content_clean[:180].rsplit(' ', 1)[0] + '...' if len(content_clean) > 180 else content_clean
+    elif len(summary_clean) > 250:
+        if not content_clean:
+            content_clean = summary_clean
+        summary_clean = summary_clean[:180].rsplit(' ', 1)[0] + '...'
+
     try:
         with conn:
             cursor = conn.execute(
@@ -434,7 +462,7 @@ def update_article(
                 SET title = ?, summary = ?, content = ?, category = ?, image_url = ?, video_url = ?
                 WHERE id = ?
                 """,
-                (title.strip(), summary.strip(), content.strip(), category.strip(), image_url.strip(), clean_video_url, article_id)
+                (title.strip(), summary_clean, content_clean, category.strip(), image_url.strip(), clean_video_url, article_id)
             )
             if cursor.rowcount == 0:
                 return None

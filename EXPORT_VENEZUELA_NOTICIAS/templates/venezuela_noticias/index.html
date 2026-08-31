@@ -411,7 +411,9 @@
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
-            line-height: 1.5;
+            max-height: 4.2em;
+            word-break: break-word;
+            line-height: 1.4;
         }
         .card-footer {
             display: flex;
@@ -570,7 +572,7 @@
                             <span style="font-size:0.72rem; color:var(--text-muted);">{{ item.published_at[:10] }}</span>
                         </div>
                         <h4 class="card-title">{{ item.title }}</h4>
-                        <p class="card-summary">{{ item.summary }}</p>
+                        <p class="card-summary">{{ (item.summary or item.content or '')|striptags|truncate(160, False, '...') }}</p>
                     </div>
 
                     <div class="card-footer">
