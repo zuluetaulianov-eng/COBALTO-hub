@@ -64,6 +64,9 @@ def test_cobalto_sync_and_inbox_flow():
     assert approved_article is not None
     assert approved_article["category"] == "Deportes"
 
+    # Cleanup test article
+    vn.delete_article(approved_article["id"])
+
 
 def test_admin_auth_and_login_flow():
     # 1. Sin autenticación -> redirección en HTML a /vn-login
