@@ -1,0 +1,234 @@
+/* dashboard.css — Tactical Dark Cyberpunk Theme for Video Subsystem */
+:root {
+    --bg-color: #0A0B10;
+    --panel-bg: rgba(15, 23, 42, 0.75);
+    --border-color: rgba(255, 255, 255, 0.08);
+    --primary: #00E5FF;
+    --primary-hover: #00B8D4;
+    --accent: #FFD700;
+    --danger: #FF4444;
+    --success: #00FFAA;
+    --text-main: #F1F5F9;
+    --text-muted: #94A3B8;
+    --font-mono: 'Roboto Mono', 'Courier New', monospace;
+    --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    font-family: var(--font-sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Glassmorphism Panels */
+.panel-glass {
+    background: var(--panel-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+/* Header & Navigation Bar */
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid var(--border-color);
+    background: rgba(10, 11, 16, 0.9);
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--primary);
+    letter-spacing: 1px;
+}
+
+.brand-badge {
+    background: rgba(0, 229, 255, 0.15);
+    border: 1px solid rgba(0, 229, 255, 0.4);
+    color: var(--primary);
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+/* Layout Columns */
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 16px;
+    padding: 16px;
+    height: calc(100vh - 65px);
+}
+
+/* CCTV Grid Controls */
+.toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    margin-bottom: 12px;
+}
+
+.btn-tactical {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-family: var(--font-mono);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-tactical:hover {
+    background: rgba(0, 229, 255, 0.15);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.btn-tactical.active {
+    background: rgba(0, 229, 255, 0.2);
+    border-color: var(--primary);
+    color: var(--primary);
+    font-weight: bold;
+}
+
+/* Camera Card & Stream Container */
+.cctv-grid-container {
+    display: grid;
+    gap: 12px;
+    overflow-y: auto;
+    max-height: calc(100vh - 165px);
+    padding-right: 4px;
+}
+
+.cctv-grid-cols-1 { grid-template-columns: 1fr; }
+.cctv-grid-cols-2 { grid-template-columns: 1fr 1fr; }
+.cctv-grid-cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.cctv-grid-cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+.cctv-card {
+    position: relative;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #000;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: transform 0.2s ease, border-color 0.2s ease;
+    cursor: pointer;
+}
+
+.cctv-card:hover {
+    border-color: var(--primary);
+    transform: translateY(-2px);
+}
+
+.cctv-card img, .cctv-card video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    min-height: 180px;
+}
+
+.cctv-overlay-header {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.cctv-badge {
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.cctv-status-live {
+    background: rgba(255, 68, 68, 0.85);
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: bold;
+    padding: 2px 6px;
+    border-radius: 3px;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.4; }
+    100% { opacity: 1; }
+}
+
+/* Modal Window */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(5, 5, 10, 0.92);
+    backdrop-filter: blur(10px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.modal-content {
+    max-width: 90vw;
+    max-height: 90vh;
+    width: 1000px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Tactical Meta Table */
+.meta-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+.meta-table td {
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.meta-label {
+    color: var(--text-muted);
+}
+
+.meta-value {
+    color: var(--primary);
+    text-align: right;
+    font-weight: bold;
+}

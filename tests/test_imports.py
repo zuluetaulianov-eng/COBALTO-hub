@@ -52,6 +52,7 @@ def test_core_imports():
         "routers.rt_finint",
         "routers.rt_humint",
         "routers.rt_predictive",
+        "routers.rt_sitrep",
     ]
     for mod in modules:
         try:

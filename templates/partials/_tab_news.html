@@ -133,7 +133,7 @@
                     {% for item in all_entries[:30] %}
                     {% set country_tag = item.country_tags[0] if item.country_tags else 'GLOBAL' %}
                     {% set sources_count = item.sources_count|default(1) %}
-                    <div class="news-card" data-title="{{ item.title|lower }}" data-summary="{{ item.summary|lower }}" data-country="{% if item.country_tags %}{{ item.country_tags|join(' ') }}{% else %}GLOBAL{% endif %}" data-category="ALL" data-severity="INFO" data-sources-count="{{ sources_count }}" {% if item.video %}data-video="{{ item.video }}"{% endif %}>
+                    <div class="news-card" data-title="{{ item.title|lower }}" data-summary="{{ item.summary|lower }}" data-link="{{ item.link }}" data-source="{{ item.source }}" data-country="{% if item.country_tags %}{{ item.country_tags|join(' ') }}{% else %}GLOBAL{% endif %}" data-category="ALL" data-severity="INFO" data-sources-count="{{ sources_count }}" {% if item.image %}data-image="{{ item.image }}"{% endif %} {% if item.video %}data-video="{{ item.video }}"{% endif %}>
                         <div>
                             <div class="news-header">
                                 <div class="flex items-center gap-05 flex-wrap">
@@ -180,7 +180,7 @@
 
             <!-- MODAL DE INSPECCIÓN TÁCTICA Y LECTURA PROFUNDA DE NOTICIAS -->
             <div id="sitrep-reader-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(5,7,12,0.92); backdrop-filter:blur(15px); -webkit-backdrop-filter:blur(15px); z-index:200000; align-items:center; justify-content:center; padding:1.5rem;">
-                <div class="sitrep-modal-container panel-glass" style="width:100%; max-width:850px; max-height:90vh; display:flex; flex-direction:column; border:1px solid rgba(0,229,255,0.4); border-radius:16px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(0,229,255,0.15);">
+                <div class="sitrep-modal-container panel-glass" style="width:100%; max-width:1100px; max-height:94vh; display:flex; flex-direction:column; border:1px solid rgba(0,229,255,0.4); border-radius:16px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.8), 0 0 30px rgba(0,229,255,0.15);">
                     
                     <!-- Header del Modal -->
                     <div class="sitrep-modal-header p-2 flex-between" style="background:rgba(15,20,30,0.85); border-bottom:1px solid rgba(255,255,255,0.08);">
@@ -214,6 +214,8 @@
                             <div id="sitrep-modal-sources-list" class="flex flex-column gap-05" style="display:flex; flex-direction:column;"></div>
                         </div>
 
+                        <div id="sitrep-modal-meta-row" class="flex flex-wrap gap-05" style="display:none;"></div>
+
                         <!-- Entidades Detectadas -->
                         <div class="sitrep-entities-panel p-2 rounded-lg" style="background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.06);">
                             <div class="text-muted font-mono text-xs mb-1" style="color:var(--primary);">🏷️ ENTIDADES & CONTEXTO RECONOCIDO:</div>
@@ -224,6 +226,15 @@
                         <div>
                             <div class="text-muted font-mono text-xs mb-1">📄 RESUMEN FÁCTICO DE INTELIGENCIA:</div>
                             <p id="sitrep-modal-summary" class="text-main text-base" style="line-height:1.7; color:#E2E8F0; white-space:pre-wrap;"></p>
+                        </div>
+
+                        <div id="sitrep-modal-full-box">
+                            <div class="flex-between items-center mb-1">
+                                <div class="text-muted font-mono text-xs">📰 CUERPO COMPLETO DE LA NOTICIA:</div>
+                                <span class="config-chip" id="sitrep-modal-full-status" style="font-size:0.65rem;">CARGANDO</span>
+                            </div>
+                            <div id="sitrep-modal-gallery" class="sitrep-modal-gallery" style="display:none;"></div>
+                            <p id="sitrep-modal-full" class="sitrep-modal-full-text">Extrayendo artículo original desde la fuente...</p>
                         </div>
 
                         <!-- Desglose de Análisis IA (Bajo Demanda) -->

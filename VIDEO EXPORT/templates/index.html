@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COBALTO — Subsistema Táctico de Video & CCTV</title>
+    <meta name="description" content="Subsistema independiente de vigilancia de video, ingesta MJPEG, streaming y analítica por visión artificial OpenCV">
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- NAVBAR -->
+    <header class="navbar">
+        <div class="brand">
+            <span>📹 COBALTO VIDEO SUBSYSTEM</span>
+            <span class="brand-badge">STANDALONE MODULE</span>
+        </div>
+        <div style="display: flex; gap: 16px; align-items: center; font-family: monospace; font-size: 11px;">
+            <span>SISTEMA: <strong style="color:#00FFAA;">100% ONLINE</strong></span>
+            <span>CÁMARAS: <strong id="stat-total-cams" style="color:#00E5FF;">0</strong></span>
+            <span>NOTICIAS VIDEO: <strong id="stat-total-news-vid" style="color:#FFD700;">0</strong></span>
+        </div>
+    </header>
+
+    <!-- MAIN DASHBOARD -->
+    <main class="dashboard-grid">
+
+        <!-- LEFT COLUMN: CCTV GRID VIEWER -->
+        <section class="panel-glass" style="display: flex; flex-direction: column; overflow: hidden; padding: 16px;">
+            <!-- TOOLBAR -->
+            <div class="toolbar panel-glass">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 1.1rem;">📹</span>
+                    <strong style="color: #FFD700; font-family: monospace; font-size: 0.85rem; letter-spacing: 1px;">RED DE CÁMARAS CCTV & VIDEOS</strong>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <input type="text" id="cctv-search-input" placeholder="🔍 Buscar cámara, ciudad..." style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 4px; color: #fff; padding: 4px 10px; font-size: 11px; font-family: monospace; outline: none; width: 180px;">
+
+                    <div style="display: flex; gap: 4px;">
+                        <button class="btn-tactical btn-layout" data-cols="1" onclick="window.VideoPlayerSubsystem.setGridCols(1)">1×1</button>
+                        <button class="btn-tactical btn-layout active" data-cols="2" onclick="window.VideoPlayerSubsystem.setGridCols(2)">2×2</button>
+                        <button class="btn-tactical btn-layout" data-cols="3" onclick="window.VideoPlayerSubsystem.setGridCols(3)">3×3</button>
+                        <button class="btn-tactical btn-layout" data-cols="4" onclick="window.VideoPlayerSubsystem.setGridCols(4)">4×4</button>
+                    </div>
+
+                    <button id="btn-live-toggle" class="btn-tactical" onclick="window.VideoPlayerSubsystem.toggleLiveStream()" style="border-color: #00FFAA; color: #00FFAA;">
+                        🔴 STREAM: ON
+                    </button>
+                </div>
+            </div>
+
+            <!-- GRID CONTAINER -->
+            <div id="cctv-grid" class="cctv-grid-container cctv-grid-cols-2" style="flex: 1;">
+                <!-- Dynamically populated by cctv_player.js -->
+            </div>
+        </section>
+
+        <!-- RIGHT COLUMN: CONTROL, MEDIA EXTRACTOR & NEWS VIDEOS PANEL -->
+        <aside style="display: flex; flex-direction: column; gap: 16px; overflow-y: auto;">
+
+            <!-- MEDIA EXTRACTOR WIDGET -->
+            <div class="panel-glass" style="padding: 16px;">
+                <h3 style="color: #00E5FF; font-family: monospace; font-size: 0.85rem; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                    <span>🎬</span> EXTRACTOR DE VIDEO SOCIAL / MP4
+                </h3>
+                <form id="video-extract-form" style="display: flex; flex-direction: column; gap: 8px;">
+                    <input type="url" id="media-url-input" placeholder="Pega enlace de TikTok, YouTube, Vimeo o MP4..." required style="background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); border-radius: 6px; color: #fff; padding: 8px; font-size: 11px; font-family: monospace; outline: none;">
+                    <button type="submit" class="btn-tactical" style="background: rgba(0,229,255,0.15); border-color: #00E5FF; color: #00E5FF; padding: 8px;">
+                        ⚡ EXTRAER Y REPRODUCIR VIDEO
+                    </button>
+                </form>
+                <div id="media-player-box" style="margin-top: 12px;"></div>
+            </div>
+
+            <!-- NEWS WITH VIDEO WIDGET -->
+            <div class="panel-glass" style="padding: 16px; flex: 1; min-height: 250px; display: flex; flex-direction: column;">
+                <h3 style="color: #FFD700; font-family: monospace; font-size: 0.85rem; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                    <span>📰</span> NOTICIAS CON VIDEO
+                </h3>
+                <div id="news-videos-grid" style="display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex: 1; max-height: 320px;">
+                    <!-- Dynamically populated by cctv_player.js -->
+                </div>
+            </div>
+
+            <!-- OPENCV CV STATUS -->
+            <div class="panel-glass" style="padding: 16px;">
+                <h3 style="color: #00FFAA; font-family: monospace; font-size: 0.85rem; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;">
+                    <span>🧠</span> VISIÓN ARTIFICIAL & ALERTAS
+                </h3>
+                <div style="background: rgba(0,0,0,0.3); border-radius: 6px; padding: 10px; border: 1px solid var(--border-color);">
+                    <div style="display: flex; justify-content: space-between; font-family: monospace; font-size: 10px; margin-bottom: 6px;">
+                        <span style="color: var(--text-muted);">MOTOR DE VISIÓN:</span>
+                        <span style="color: #00E5FF;">OpenCV HOG + MOG2</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-family: monospace; font-size: 10px;">
+                        <span style="color: var(--text-muted);">ESTADO ALERTA:</span>
+                        <span style="color: #00FFAA;">VIGILANCIA NORMAL</span>
+                    </div>
+                </div>
+            </div>
+
+        </aside>
+
+    </main>
+
+    <!-- CCTV MODAL -->
+    <div id="cctv-modal" class="modal-overlay">
+        <div class="modal-content panel-glass">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
+                <h3 id="modal-cam-title" style="color: #00E5FF; font-family: monospace; font-size: 0.95rem;">DETALLE DE CÁMARA</h3>
+                <button onclick="window.VideoPlayerSubsystem.closeModal()" style="background: none; border: none; color: #FF4444; font-size: 18px; cursor: pointer; font-family: monospace;">✕ CERRAR</button>
+            </div>
+            <div style="display: grid; grid-template-columns: 1.8fr 1fr; gap: 16px; margin-top: 10px;">
+                <div style="background: #000; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color);">
+                    <img id="modal-cam-img" src="" alt="Live Stream Feed" style="width: 100%; height: 100%; object-fit: contain; max-height: 550px;">
+                </div>
+                <div id="modal-cam-meta">
+                    <!-- Dynamic metadata table -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts loaded with defer per AGENTS.md rules -->
+    <script src="/static/js/cctv_player.js" defer></script>
+</body>
+</html>

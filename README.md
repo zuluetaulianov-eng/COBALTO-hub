@@ -9,6 +9,11 @@
 
 ## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v16.4)
 
+- **📰 Inspección Táctica & Extracción Profunda en Tarjetas de Noticias (Modo Expandido SITREP):**
+  - **Simulación de Navegador Real Chromium 128+ (`routers/rt_sitrep.py`)**: Actualización de cabeceras HTTP de extracción con agentes de usuario modernos de escritorio (`User-Agent`, `Sec-Ch-Ua`, `Sec-Fetch-Dest: document`, `Sec-Fetch-Mode: navigate`), eliminando bloqueos `403 Forbidden` de cortafuegos CDN / WAF en portales de noticias digitales.
+  - **Extracción de Cuerpo y Metadatos**: Procesamiento asíncrono con BeautifulSoup para parsear el contenido limpio del artículo, autor, sección, fecha, conteo de palabras y galería multimedia adjunta.
+  - **Síntesis OSINT Fallback en Modo Maximizado (`main.js`)**: Resiliencia táctica en la interfaz que presenta la síntesis OSINT precargada (`SÍNTESIS OSINT`) cuando la fuente responde con enlaces rotos o restricciones severas de red, garantizando continuidad visual sin errores.
+
 - **⚡ Optimización de Rendimiento & Core Web Vitals (FCP / LCP / TBT):**
   - **Splash HUD Inmediato (`_splash_hud.html`)**: Refactorización del ciclo de ocultamiento del Splash Overlay para ejecutar el desvanecimiento táctico tan pronto el DOM alcanza estado interactivo, liberando el hilo principal y reduciendo drásticamente el First Contentful Paint (FCP).
   - **Precarga Perezosa de Pestañas (`main.js`)**: Refactorización de `preloadAllTabs` usando `requestIdleCallback` de modo que la precarga de tabs ocultos se ejecute únicamente durante períodos de inactividad de la CPU, previniendo tareas largas que bloqueaban el hilo principal.

@@ -4221,3 +4221,28 @@ body.ai-collapsed .telemetry-drawer {
     font-weight: bold !important;
     font-size: 12px !important;
 }
+
+.sitrep-modal-full-text {
+    line-height: 1.75;
+    color: #E2E8F0;
+    white-space: pre-wrap;
+    font-size: 0.95rem;
+    margin: 0;
+}
+.sitrep-modal-gallery {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+    margin-bottom: 0.8rem;
+}
+.sitrep-modal-gallery img {
+    width: 100%;
+    height: 110px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 229, 255, 0.2);
+    cursor: pointer;
+}
+#sitrep-modal-img-wrapper img {
+    max-height: 360px;
+}

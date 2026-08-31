@@ -240,6 +240,7 @@ from routers.rt_export import router as export_router
 from routers.rt_finint import router as finint_router
 from routers.rt_humint import router as humint_router
 from routers.rt_predictive import router as predictive_router
+from routers.rt_sitrep import router as sitrep_router
 from routers.rt_venezuela_noticias import router as venezuela_noticias_router
 
 app.include_router(humint_router)
@@ -249,6 +250,7 @@ app.include_router(predictive_router)
 app.include_router(agents_router)
 app.include_router(analytics_router)
 app.include_router(export_router)
+app.include_router(sitrep_router)
 app.include_router(venezuela_noticias_router)
 
 if getattr(sys, 'frozen', False):

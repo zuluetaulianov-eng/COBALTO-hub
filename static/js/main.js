@@ -824,7 +824,7 @@ window.CobaltoCore = {
             var linkEsc = this.utils.escapeHTML(item.link || '#');
 
             return `
-                <div class="news-card" data-title="${this.utils.escapeHTML(t)}" data-summary="${this.utils.escapeHTML(s)}" data-country="${countryTag}" data-category="${category}" data-severity="${severity}" data-sources-count="${sourcesCount}" data-related="${relatedJson}" data-video="${videoEsc}">
+                <div class="news-card" data-title="${this.utils.escapeHTML(t)}" data-summary="${this.utils.escapeHTML(s)}" data-link="${linkEsc}" data-source="${this.utils.escapeHTML(item.source || '')}" data-image="${this.utils.escapeHTML(item.image || '')}" data-country="${countryTag}" data-category="${category}" data-severity="${severity}" data-sources-count="${sourcesCount}" data-related="${relatedJson}" data-video="${videoEsc}">
                     <div>
                         <div class="news-header">
                             <div class="flex items-center gap-05 flex-wrap">
@@ -3057,14 +3057,15 @@ window.openSitrepReader = function(card) {
     var modal = document.getElementById('sitrep-reader-modal');
     if (!modal) return;
 
-    var title = card.getAttribute('data-title') || card.querySelector('.news-title')?.textContent || '';
-    var summary = card.getAttribute('data-summary') || card.querySelector('.news-summary')?.textContent || '';
-    var countryTag = card.getAttribute('data-country') || 'GLOBAL';
+    var title = card.querySelector('.news-title')?.textContent || card.getAttribute('data-title') || '';
+    var summary = card.querySelector('.news-summary')?.textContent || card.getAttribute('data-summary') || '';
+    var countryTag = (card.getAttribute('data-country') || 'GLOBAL').split(' ')[0];
     var severity = card.getAttribute('data-severity') || 'INFO';
-    var source = card.querySelector('.news-source')?.textContent || 'OSINT SOURCE';
+    var category = card.getAttribute('data-category') || '';
+    var source = card.getAttribute('data-source') || card.querySelector('.news-source')?.textContent || 'OSINT SOURCE';
     var time = card.querySelector('.news-time')?.textContent || '';
-    var img = card.querySelector('.card-image')?.src || '';
-    var link = card.querySelector('.news-card-actions .news-action-btn[onclick*="sitrepCopyLink"]')?.getAttribute('onclick')?.match(/'([^']+)'/)?.[1] || card.querySelector('.news-title')?.href || '#';
+    var img = card.getAttribute('data-image') || card.querySelector('.card-image')?.src || '';
+    var link = card.getAttribute('data-link') || card.querySelector('.news-title')?.href || '#';
 
     var rawRelated = card.getAttribute('data-related') || '[]';
     var relatedSources = [];
@@ -3075,11 +3076,14 @@ window.openSitrepReader = function(card) {
     }
 
     window._activeSitrepModalCard = card;
+    window._sitrepArticleToken = (window._sitrepArticleToken || 0) + 1;
+    var articleToken = window._sitrepArticleToken;
     window._activeSitrepModalData = {
         title: title,
         summary: summary,
         countryTag: countryTag,
         severity: severity,
+        category: category,
         source: source,
         time: time,
         img: img,
@@ -3182,10 +3186,99 @@ window.openSitrepReader = function(card) {
         }).join('');
     }
 
+    var metaRow = document.getElementById('sitrep-modal-meta-row');
+    if (metaRow) {
+        var chips = [];
+        if (category && category !== 'ALL' && category !== 'GENERAL') chips.push(category);
+        if (severity) chips.push(severity);
+        chips.push(countryTag);
+        if (source) chips.push(source.toUpperCase());
+        metaRow.innerHTML = chips.map(function(c) {
+            return '<span class="config-chip" style="font-size:0.68rem;">' + c + '</span>';
+        }).join('');
+        metaRow.style.display = chips.length ? 'flex' : 'none';
+    }
+
+    var fullEl = document.getElementById('sitrep-modal-full');
+    var fullStatus = document.getElementById('sitrep-modal-full-status');
+    var galleryEl = document.getElementById('sitrep-modal-gallery');
+    if (fullEl) fullEl.textContent = 'Extrayendo artículo original desde la fuente...';
+    if (fullStatus) fullStatus.textContent = 'CARGANDO';
+    if (galleryEl) {
+        galleryEl.innerHTML = '';
+        galleryEl.style.display = 'none';
+    }
+
     var aiBox = document.getElementById('sitrep-modal-ai-box');
     if (aiBox) aiBox.style.display = 'none';
 
     modal.style.display = 'flex';
+    window.loadSitrepFullArticle(link, articleToken, title, summary);
+};
+
+window.loadSitrepFullArticle = function(link, token, title, summary) {
+    var fullEl = document.getElementById('sitrep-modal-full');
+    var fullStatus = document.getElementById('sitrep-modal-full-status');
+    var galleryEl = document.getElementById('sitrep-modal-gallery');
+    var metaRow = document.getElementById('sitrep-modal-meta-row');
+    if (!link || link === '#') {
+        if (fullEl) fullEl.textContent = summary || 'Sin enlace de fuente para extraer el cuerpo.';
+        if (fullStatus) fullStatus.textContent = 'SIN FUENTE';
+        return;
+    }
+    fetch('/api/sitrep/article?url=' + encodeURIComponent(link))
+        .then(function(r) { return r.json().then(function(data) { return { ok: r.ok, data: data }; }); })
+        .then(function(res) {
+            if (token !== window._sitrepArticleToken) return;
+            var data = res.data || {};
+            if (!res.ok || !data.content) {
+                if (fullEl) fullEl.textContent = summary || 'No se pudo extraer el cuerpo completo de la noticia. Puedes abrir la fuente principal a través del enlace inferior.';
+                if (fullStatus) fullStatus.textContent = summary ? 'SÍNTESIS OSINT' : 'SIN FUENTE';
+                return;
+            }
+            if (fullEl) fullEl.textContent = String(data.content || '').replace(/<[^>]+>/g, ' ').replace(/\s+\n/g, '\n').trim();
+            if (fullStatus) fullStatus.textContent = (data.word_count || 0) + ' PALABRAS';
+            if (window._activeSitrepModalData) {
+                window._activeSitrepModalData.fullContent = data.content;
+                if (data.title) window._activeSitrepModalData.title = window._activeSitrepModalData.title || data.title;
+            }
+            var extra = [];
+            if (data.author) extra.push('✍ ' + data.author);
+            if (data.site_name) extra.push(data.site_name);
+            if (data.section) extra.push(data.section);
+            if (data.published) extra.push(String(data.published).slice(0, 16).replace('T', ' '));
+            if (data.word_count) extra.push(data.word_count + ' palabras');
+            if (metaRow && extra.length) {
+                extra.forEach(function(c) {
+                    var span = document.createElement('span');
+                    span.className = 'config-chip';
+                    span.style.fontSize = '0.68rem';
+                    span.textContent = c;
+                    metaRow.appendChild(span);
+                });
+                metaRow.style.display = 'flex';
+            }
+            var imgs = (data.images || []).filter(Boolean);
+            if (galleryEl && imgs.length) {
+                galleryEl.innerHTML = imgs.slice(0, 4).map(function(src) {
+                    return '<img src="' + src.replace(/"/g, '&quot;') + '" alt="" loading="lazy">';
+                }).join('');
+                galleryEl.style.display = 'grid';
+            }
+            if (data.image) {
+                var imgWrapper = document.getElementById('sitrep-modal-img-wrapper');
+                var hasMedia = imgWrapper && imgWrapper.style.display !== 'none' && imgWrapper.innerHTML.trim();
+                if (imgWrapper && !hasMedia) {
+                    imgWrapper.innerHTML = '<img id="sitrep-modal-img" src="' + data.image.replace(/"/g, '&quot;') + '" style="width:100%; max-height:360px; object-fit:cover; border-radius:8px; display:block;" alt="">';
+                    imgWrapper.style.display = 'block';
+                }
+            }
+        })
+        .catch(function() {
+            if (token !== window._sitrepArticleToken) return;
+            if (fullEl) fullEl.textContent = summary || 'No se pudo extraer el cuerpo completo de la noticia. Puedes abrir la fuente principal a través del enlace inferior.';
+            if (fullStatus) fullStatus.textContent = summary ? 'SÍNTESIS OSINT' : 'SIN FUENTE';
+        });
 };
 
 window.closeSitrepReader = function() {
@@ -3212,7 +3305,7 @@ window.analyzeSitrepModalAI = function() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-            message: 'Genera un desglose operacional táctico breve (1. Antecedentes, 2. Impacto Operativo en el Teatro, 3. Recomendación) para esta noticia: ' + window._activeSitrepModalData.title + ' — Resumen: ' + window._activeSitrepModalData.summary
+            message: 'Genera un desglose operacional táctico breve (1. Antecedentes, 2. Impacto Operativo en el Teatro, 3. Recomendación) para esta noticia: ' + window._activeSitrepModalData.title + ' — Resumen: ' + (window._activeSitrepModalData.fullContent || window._activeSitrepModalData.summary)
         })
     })
     .then(r => r.json())
