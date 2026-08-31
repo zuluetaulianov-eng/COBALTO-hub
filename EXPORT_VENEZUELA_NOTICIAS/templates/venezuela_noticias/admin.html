@@ -312,6 +312,7 @@
                     {% if current_user and current_user.role == 'admin' %}👑 ADMINISTRADOR{% else %}✍️ REPORTERO{% endif %}
                 </span>
             </div>
+            <button class="btn-action btn-green" onclick="openCreateModal()">✍️ Redactar Noticia</button>
             <a href="/noticias" target="_blank" class="btn-action">🌐 Ver Portal ↗</a>
             <button class="btn-action btn-red" onclick="logoutAdmin()">🚪 Cerrar Sesión</button>
         </div>
