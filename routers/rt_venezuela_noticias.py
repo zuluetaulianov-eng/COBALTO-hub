@@ -3,6 +3,7 @@
 import io
 import logging
 import os
+import re
 import secrets
 import time
 from typing import Optional
@@ -75,6 +76,29 @@ def require_admin_auth(request: Request, required_role: str = "reporter") -> dic
 
 # ── PORTAL PÚBLICO (HTML, API & RSS) ───────────────────────────
 
+@router.get("/manifest.json")
+async def get_manifest():
+    base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    manifest_path = os.path.join(base_path, "static", "manifest.json")
+    if os.path.exists(manifest_path):
+        with open(manifest_path, "rb") as f:
+            return FastAPIResponse(content=f.read(), media_type="application/json")
+    raise HTTPException(status_code=404, detail="manifest.json no encontrado")
+
+
+@router.get("/service-worker.js")
+async def get_service_worker():
+    base_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    sw_path = os.path.join(base_path, "static", "service-worker.js")
+    if os.path.exists(sw_path):
+        with open(sw_path, "rb") as f:
+            return FastAPIResponse(content=f.read(), media_type="application/javascript", headers={"Cache-Control": "no-cache"})
+    return FastAPIResponse(
+        content="self.addEventListener('install', function(e) { self.skipWaiting(); }); self.addEventListener('activate', function(e) { return self.clients.claim(); });",
+        media_type="application/javascript",
+    )
+
+
 @router.get("/noticias", response_class=HTMLResponse)
 async def public_news_home(request: Request):
     """Página principal del portal público de Venezuela Noticias."""
@@ -130,29 +154,56 @@ async def api_get_featured_article():
     return JSONResponse({"status": "ok", "featured": featured})
 
 
+def format_rfc822_date(date_str: str) -> str:
+    """Convierte cadenas de fecha ISO o SQLite a formato RFC 822 válido para RSS 2.0."""
+    if not date_str:
+        from datetime import datetime, timezone
+        return datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT")
+    try:
+        from datetime import datetime
+        dt = datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+        return dt.strftime("%a, %d %b %Y %H:%M:%S GMT")
+    except Exception:
+        return date_str
+
+
+def clean_rss_text(text: str) -> str:
+    """Limpia caracteres de formato Markdown (*, _, #, ---) y escapa entidades XML."""
+    if not text:
+        return ""
+    cleaned = re.sub(r'[*_#~`]+', '', text)
+    cleaned = re.sub(r'---+', '', cleaned)
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+    return cleaned.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;").replace("'", "&apos;")
+
+
 @router.get("/noticias/rss.xml", response_class=FastAPIResponse)
-async def public_news_rss():
+async def public_news_rss(request: Request):
     """Feed RSS 2.0 en XML del portal público de Venezuela Noticias."""
+    base_url = str(request.base_url).rstrip('/')
     articles = vn.get_published_articles(limit=30)
     items_xml = []
     for a in articles:
-        pub_date = a.get("published_at", "")
-        link = f"/noticias/articulo/{a.get('slug')}"
-        summary_clean = (a.get("summary") or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-        title_clean = (a.get("title") or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+        pub_date = format_rfc822_date(a.get("published_at", ""))
+        link = f"{base_url}/noticias/articulo/{a.get('slug')}"
+        summary_clean = clean_rss_text(a.get("summary") or "")
+        title_clean = clean_rss_text(a.get("title") or "")
+        category_clean = clean_rss_text(a.get("category", "Nacional"))
         items_xml.append(
             f"<item><title>{title_clean}</title><link>{link}</link><guid>{link}</guid>"
             f"<description>{summary_clean}</description><pubDate>{pub_date}</pubDate>"
-            f"<category>{a.get('category', 'Nacional')}</category></item>"
+            f"<category>{category_clean}</category></item>"
         )
 
     items_str = "\n".join(items_xml)
+    channel_link = f"{base_url}/noticias"
     rss_xml = (
         '<?xml version="1.0" encoding="UTF-8" ?>\n'
+        '<?xml-stylesheet type="text/xsl" href="/static/rss-style.xsl"?>\n'
         '<rss version="2.0">\n'
         '<channel>\n'
         '    <title>Venezuela Noticias — Feed Oficial</title>\n'
-        '    <link>/noticias</link>\n'
+        f'    <link>{channel_link}</link>\n'
         '    <description>Portal Informativo Autónomo Multicanal</description>\n'
         '    <language>es</language>\n'
         f'    {items_str}\n'
@@ -333,7 +384,7 @@ async def api_approve_inbox(inbox_id: int, request: Request):
     """Aprobar un elemento de la bandeja e ingresarlo como noticia publicada (Exclusivo Superadmin)."""
     auth_data = require_admin_auth(request, required_role="admin")
     body = await request.json() if request.headers.get("content-type") == "application/json" else {}
-    
+
     category = body.get("category")
     custom_title = body.get("title")
     custom_summary = body.get("summary")

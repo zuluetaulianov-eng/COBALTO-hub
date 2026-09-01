@@ -89,11 +89,92 @@ def delete_custom_incident(incident_id: str) -> bool:
     return False
 
 
+def extract_incidents_from_historical() -> List[Dict[str, Any]]:
+    """Extrae incidentes tácticos reales desde el almacén histórico SQLite."""
+    incidents = []
+    try:
+        from historical_store import query_range
+        res = query_range(limit=250)
+        entries = res.get("entries", [])
+
+        tactical_kws = {
+            "SECURITY": ["detenido", "detención", "incautación", "homicidio", "violencia", "enfrentamiento", "asalto", "secuestro", "droga", "cocaína", "capturado", "fuerzas"],
+            "MILITARY": ["militar", "fuerzas armadas", "fanb", "despliegue", "guardia nacional", "ejército", "patrullaje", "operación militar", "defensa"],
+            "INFRASTRUCTURE": ["apagón", "eléctrico", "guri", "refinería", "pdvsa", "supermetanol", "telecomunicaciones", "bgp", "vial", "deslizamiento", "bombeo"],
+            "CYBER": ["ransomware", "ciberataque", "cve-", "ddos", "exploit", "darknet", "malware", "phishing", "leak", "vencert"],
+            "CIB": ["astroturfing", "bot-storm", "campaña coordinada", "desinformación", "troll", "botnet"],
+            "PROTEST": ["protesta", "manifestación", "huelga", "paro", "concentración", "marcha", "disturbio", "exigencia"],
+            "WEATHER": ["lluvia", "inundación", "sismo", "terremoto", "derrumbamiento", "contingencia"]
+        }
+
+        seen_keys = set()
+        for e in entries:
+            title = e.get("title", "")
+            summary = e.get("summary", "")
+            combo = (title + " " + summary).lower()
+
+            matched_cat = None
+            for cat, kws in tactical_kws.items():
+                if any(kw in combo for kw in kws):
+                    matched_cat = cat
+                    break
+
+            if not matched_cat and e.get("severity") not in ["HIGH", "CRITICAL", "ALTA"]:
+                continue
+
+            matched_cat = matched_cat or "SECURITY"
+
+            key = f"{title[:40]}|{e.get('source','')}"
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+
+            theater = "GLOBAL"
+            if any(k in combo for k in ["venezuela", "caracas", "zulia", "maracaibo", "táchira", "apure", "bolívar", "valencia", "barquisimeto"]):
+                theater = "VEN"
+            elif any(k in combo for k in ["colombia", "bogotá", "cúcuta", "arauca", "norte de santander", "medellín"]):
+                theater = "COL"
+            if any(k in combo for k in ["franja", "fronter", "puente internacional", "san antonio", "el amparo"]):
+                theater = "FRONTERA"
+
+            sev = e.get("severity") or "HIGH"
+            if sev not in ["CRITICAL", "HIGH", "MEDIUM", "LOW"]:
+                sev = "HIGH" if matched_cat in ["MILITARY", "CYBER", "CIB"] else "MEDIUM"
+
+            inc_id = f"hist_{e.get('entry_id') or abs(hash(title))}"
+
+            incidents.append({
+                "id": inc_id,
+                "title": title,
+                "theater": theater,
+                "category": matched_cat,
+                "severity": sev,
+                "status": "OPEN",
+                "latitude": e.get("lat") or e.get("latitude") or 0.0,
+                "longitude": e.get("lng") or e.get("longitude") or 0.0,
+                "summary": summary[:300] if summary else "Evento de inteligencia registrado por sensores OSINT.",
+                "source": e.get("source") or "Almacén OSINT",
+                "timestamp": e.get("published") or e.get("ingested_at") or datetime.utcnow().isoformat() + "Z",
+                "created_at": e.get("ingested_at") or datetime.utcnow().isoformat() + "Z",
+            })
+    except Exception as err:
+        logger.debug(f"[INCIDENTS] Error leyendo desde almacén histórico: {err}")
+    return incidents
+
+
 def get_all_incidents() -> List[Dict[str, Any]]:
     # 1. Custom operator incidents
     all_inc = load_custom_incidents()
+    existing_ids = {i["id"] for i in all_inc}
 
-    # 2. Ingest auto-detected incidents from events_tracker (fast attempt)
+    # 2. Ingest auto-detected incidents from real historical OSINT database
+    hist_incidents = extract_incidents_from_historical()
+    for inc in hist_incidents:
+        if inc["id"] not in existing_ids:
+            existing_ids.add(inc["id"])
+            all_inc.append(inc)
+
+    # 3. Ingest auto-detected incidents from events_tracker (earthquakes, weather alerts, etc.)
     try:
         from events_tracker import get_all_events_data
         ev_data = get_all_events_data()
@@ -102,8 +183,9 @@ def get_all_incidents() -> List[Dict[str, Any]]:
         auto_items = (ev_data.get("security_incidents", []) or []) + (ev_data.get("protests", []) or [])
         for item in auto_items:
             inc_id = str(item.get("id") or f"auto_{abs(hash(item.get('title', '')))}")
-            if any(i["id"] == inc_id for i in all_inc):
+            if inc_id in existing_ids:
                 continue
+            existing_ids.add(inc_id)
 
             lat = float(item.get("latitude") or item.get("lat") or 0.0)
             lng = float(item.get("longitude") or item.get("lng") or 0.0)
@@ -134,51 +216,5 @@ def get_all_incidents() -> List[Dict[str, Any]]:
     except Exception as e:
         logger.debug(f"[INCIDENTS] Error procesando eventos automáticos: {e}")
 
-    # Fallback default operational incidents if list is empty
-    if not all_inc:
-        all_inc = [
-            {
-                "id": "inc_col_01",
-                "title": "🇨🇴 Despliegue de Unidad de Respuesta Rápida en Norte de Santander",
-                "theater": "COL",
-                "category": "MILITARY",
-                "severity": "CRITICAL",
-                "status": "OPEN",
-                "latitude": 7.8939,
-                "longitude": -72.5078,
-                "summary": "Movilización táctica preventivo-defensiva tras detección de movimientos inusuales de vectores no identificados en franja fronteriza.",
-                "source": "Comando de Operaciones Conjuntas",
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "created_at": datetime.utcnow().isoformat() + "Z",
-            },
-            {
-                "id": "inc_ven_01",
-                "title": "🇻🇪 Interrupción de Señal de Telecomunicaciones en San Cristóbal",
-                "theater": "VEN",
-                "category": "INFRASTRUCTURE",
-                "severity": "HIGH",
-                "status": "INVESTIGATING",
-                "latitude": 7.7669,
-                "longitude": -72.2250,
-                "summary": "Caída del 45% en el tráfico BGP regional. Anomalía electromagnética o falla estructural en repedidor central.",
-                "source": "Telemetría OSIRIS / SIGINT",
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "created_at": datetime.utcnow().isoformat() + "Z",
-            },
-            {
-                "id": "inc_cib_01",
-                "title": "⚡ Campaña de Astroturfing Coordinada en Redes Sociales",
-                "theater": "GLOBAL",
-                "category": "CIB",
-                "severity": "HIGH",
-                "status": "CONTAINED",
-                "latitude": 10.4806,
-                "longitude": -66.9036,
-                "summary": "Inyección masiva de 1,400 bots difundiendo narrativa contrainteligencia desestabilizadora.",
-                "source": "Sensor Bot-Storm COBALTO",
-                "timestamp": datetime.utcnow().isoformat() + "Z",
-                "created_at": datetime.utcnow().isoformat() + "Z",
-            },
-        ]
-
     return all_inc
+

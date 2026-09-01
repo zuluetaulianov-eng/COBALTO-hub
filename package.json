@@ -1,0 +1,14 @@
+{
+  "name": "venezuela-noticias-apk",
+  "version": "1.0.0",
+  "description": "App Nativa Autonoma para Venezuela Noticias con soporte ZROK",
+  "main": "www/index.html",
+  "scripts": {
+    "build": "python build_capacitor_apk.py"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.5.1",
+    "@capacitor/cli": "^6.2.2",
+    "@capacitor/core": "^8.5.1"
+  }
+}

@@ -1,13 +1,24 @@
-# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v16.4
+# 🛰️ COBALTO HUB — Plataforma de Inteligencia OSINT C4I v16.5
 
 > **Sistema de Mando y Control de Inteligencia (C4I)** en tiempo real con **Arquitectura Multipaís (Multi-Theater OSINT)**,  
 > **Target Dossier Engine (360° Risk Score)**, **Módulos OSINT Estatales Venezolanos (IVSS / SENIAT RIF / SAIME Institucional / CNE OSINT + Votación)**, **Streaming de Video Continuo HLS.js en Visor CCTV**, **Pivot de Inteligencia en Grafo Táctico**, **TLS Fingerprinting Evasion (JA3/HTTP2)**, **Singleton Browser Pool Manager**, **Visión Táctica CCTV 100% Real & Motor Proxy Resiliente**, **Extracción Semántica JSON-LD/OpenGraph**, **Reproducción de Video Táctico Nativa (Flutter/Web)**, **Persistencia Histórica Deduplicada**, **OSIRIS Diagnostic Doctor Engine**, **Zero-Key Semantic Web Search & Jina Reader** y **Blue Force Tracking (BFT)** — monitoreo de operadores en terreno, inteligencia global, RECON toolkit, OFAC SDN, CCTV y más.  
 > Consolida fuentes RSS, canales de Telegram, redes sociales, ciberseguridad, rastreo de aeronaves/buques, telemetría de campo en vivo y análisis geopolítico multiagente con IA.  
-> **v16.4** — Optimización integral de **Rendimiento de Carga (Core Web Vitals FCP/LCP)** mediante eliminación del bloqueo del hilo principal en el Splash HUD y precarga perezosa de pestañas (`requestIdleCallback`), hojas de estilo CSS no bloqueantes, cumplimiento del 100% en **Accesibilidad (WCAG A11y)** con etiquetado semántico de formularios (`aria-label`/`for`) y pistas de subtítulos `<track>` en reproductores de video, e **Indexación y Rastreo SEO (Lighthouse)** con directivas `index, follow` e hipervínculos rastreables.
+> **v16.5** — Auditoría integral y endurecimiento del **Centro de Comando de Incidentes y Cronología Táctica (`timeline-analysis.js` & `incidents_manager.py`)**: ingesta 100% de datos reales desde el almacén persistente SQLite (`historical_store.db`), categorización automatizada por palabras clave tácticas y teatros operacionales (`VEN`, `COL`, `FRONTERA`, `GLOBAL`), eliminación completa de datos sintéticos de prueba, detector CIB (Coordinated Inauthentic Behavior) con vectorización TF-IDF y persistencia temporal en `cib_tracker.json`, y estabilización del pipeline de compilación para la aplicación móvil nativa **Venezuela Noticias APK** (Android SDK 35, Java 17, Kotlin 1.8.22).
 
 ---
 
-## 🔄 Últimas Actualizaciones (Agosto 2026 — Release v16.4)
+## 🔄 Últimas Actualizaciones (Septiembre 2026 — Release v16.5)
+
+- **🛡️ Auditoría Cronológica Táctica & Ingesta Real OSINT (`incidents_manager.py` & `timeline-analysis.js`):**
+  - **Ingesta Real desde SQLite (`historical_store.db`)**: Conexión directa con la base de datos histórica para extraer noticias y alertas de inteligencia reales en tiempo real sin requerir datos simulados de fallback.
+  - **Clasificador Multiteatro y Categorías Tácticas**: Etiquetado automatizado por áreas estratégicas (*SECURITY, MILITARY, INFRASTRUCTURE, CYBER, CIB, PROTEST, WEATHER*) y teatros operacionales (*VENEZUELA, COLOMBIA, FRONTERA, GLOBAL*).
+  - **Exportación de Informes de Auditoría (`AUDITORIA_CRONOLOGICA_[fecha].txt`)**: Formato de reporte de texto estructurado para revistar la cronología táctica de incidentes y crisis en el centro de mando.
+  - **Detector CIB y Astroturfing (`sentiment_ml.py` & `cib_tracker.json`)**: Detección de patrones inauténticos coordinados mediante similitud coseno TF-IDF y seguimiento de firmas narrativas en ventanas móviles de 48 horas.
+
+- **📱 Estabilización de Build Native Android APK (Venezuela Noticias & COBALTO Mobile):**
+  - **Configuración Gradle & SDK 35**: Actualización de dependencias Capacitor Android a Target/Compile SDK 35 con compatibilidad forzada `JavaVersion.VERSION_17` y alineamiento de `kotlin-stdlib` (1.8.22).
+  - **Compilación Resiliente de Bajo Consumo**: Pipeline `build_capacitor_apk.py` optimizado con flag `--no-daemon` para garantizar la generación fluida de binarios APK en entornos de memoria restringida.
+  - **Paridad de Código**: Sincronización completa entre el núcleo COBALTO HUB y el repositorio exportado independiente `EXPORT_VENEZUELA_NOTICIAS`.
 
 - **📰 Inspección Táctica & Extracción Profunda en Tarjetas de Noticias (Modo Expandido SITREP):**
   - **Simulación de Navegador Real Chromium 128+ (`routers/rt_sitrep.py`)**: Actualización de cabeceras HTTP de extracción con agentes de usuario modernos de escritorio (`User-Agent`, `Sec-Ch-Ua`, `Sec-Fetch-Dest: document`, `Sec-Fetch-Mode: navigate`), eliminando bloqueos `403 Forbidden` de cortafuegos CDN / WAF en portales de noticias digitales.

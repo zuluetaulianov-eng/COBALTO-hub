@@ -12,6 +12,12 @@
     <meta name="twitter:card" content="summary_large_image">
 
     <link rel="icon" type="image/png" href="/static/img/vn_logo.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#00E5FF">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="/static/js/pwa-installer.js" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;800;900&display=swap" media="print" onload="this.media='all'">
@@ -228,7 +234,11 @@
             background: transparent;
             border: 1px solid var(--border-color);
             color: var(--text-muted);
-            padding: 6px 18px;
+            padding: 8px 18px;
+            min-height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             border-radius: 20px;
             font-size: 0.8rem;
             font-weight: 600;
@@ -305,7 +315,7 @@
         }
         .hero-title {
             font-family: 'Outfit', sans-serif;
-            font-size: 1.85rem;
+            font-size: clamp(1.35rem, 4vw, 1.85rem);
             font-weight: 800;
             line-height: 1.25;
             color: #fff;
@@ -338,8 +348,35 @@
         }
         .news-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr));
             gap: 1.5rem;
+        }
+        @media (max-width: 600px) {
+            .header-inner {
+                padding: 0.8rem 1rem;
+            }
+            .search-container {
+                max-width: 100%;
+                order: 3;
+            }
+            .nav-actions {
+                width: 100%;
+                justify-content: flex-end;
+            }
+            main {
+                padding: 0 1rem;
+                margin: 1rem auto;
+            }
+            .hero-body {
+                padding: 1.25rem;
+            }
+            .hero-media {
+                min-height: 200px;
+                aspect-ratio: 16 / 9;
+            }
+            .footer-banner {
+                padding: 1.8rem 1rem;
+            }
         }
         .card-news {
             background: var(--bg-card);
@@ -530,7 +567,9 @@
             </div>
             <div class="hero-body">
                 <div>
-                    <span class="tag-badge">{{ featured.category or 'Nacional' }}</span>
+                    {% for cat in (featured.category or 'Nacional').split(',') %}
+                    <span class="tag-badge">{{ cat.strip() }}</span>
+                    {% endfor %}
                     <span style="font-size:0.78rem; color:var(--text-muted); margin-left:0.6rem;">📅 {{ featured.published_at[:10] }}</span>
                 </div>
                 <h2 class="hero-title">{{ featured.title }}</h2>
@@ -568,8 +607,12 @@
 
                 <div class="card-body">
                     <div>
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem;">
-                            <span class="tag-badge" style="font-size:0.68rem; margin:0;">{{ item.category or 'Nacional' }}</span>
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.5rem; flex-wrap:wrap; gap:4px;">
+                            <div style="display:flex; flex-wrap:wrap; gap:4px;">
+                                {% for cat in (item.category or 'Nacional').split(',') %}
+                                <span class="tag-badge" style="font-size:0.68rem; margin:0;">{{ cat.strip() }}</span>
+                                {% endfor %}
+                            </div>
                             <span style="font-size:0.72rem; color:var(--text-muted);">{{ item.published_at[:10] }}</span>
                         </div>
                         <h4 class="card-title">{{ item.title }}</h4>
@@ -620,7 +663,7 @@
                 const cat = card.getAttribute('data-category') || '';
                 const search = card.getAttribute('data-search') || '';
 
-                const matchesCat = (currentCategory === 'ALL' || cat === currentCategory);
+                const matchesCat = (currentCategory === 'ALL' || cat.includes(currentCategory));
                 const matchesSearch = (!query || search.includes(query));
 
                 if (matchesCat && matchesSearch) {

@@ -12,6 +12,12 @@
     <meta name="twitter:card" content="summary_large_image">
 
     <link rel="icon" type="image/png" href="/static/img/vn_logo.png">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#00E5FF">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <script src="/static/js/pwa-installer.js" defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@600;800;900&display=swap" media="print" onload="this.media='all'">
@@ -105,7 +111,7 @@
         }
         .article-title {
             font-family: 'Outfit', sans-serif;
-            font-size: 2.3rem;
+            font-size: clamp(1.45rem, 5vw, 2.3rem);
             font-weight: 900;
             line-height: 1.25;
             color: #fff;
@@ -177,6 +183,7 @@
             border: 1px solid var(--border-color);
             color: #fff;
             padding: 8px 16px;
+            min-height: 42px;
             border-radius: 20px;
             font-size: 0.82rem;
             font-weight: 700;
@@ -184,6 +191,7 @@
             text-decoration: none;
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 6px;
             transition: all 0.2s;
         }
@@ -194,6 +202,36 @@
         }
         .btn-wa:hover { background: rgba(37, 211, 102, 0.2); border-color: #25D366; color: #25D366; }
         .btn-tg:hover { background: rgba(0, 136, 204, 0.2); border-color: #0088cc; color: #0088cc; }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 0.8rem 1rem;
+            }
+            main {
+                padding: 0 1rem;
+                margin: 1.2rem auto;
+            }
+            .article-summary-box {
+                font-size: 1.02rem;
+                padding: 1rem 1.1rem;
+            }
+            .article-body {
+                font-size: 1rem;
+            }
+            .article-meta {
+                flex-wrap: wrap;
+                gap: 0.6rem;
+            }
+            .share-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .share-bar .btn-share {
+                width: 100%;
+                justify-content: center;
+                margin-left: 0 !important;
+            }
+        }
 
         footer {
             border-top: 1px solid var(--border-color);
@@ -224,7 +262,11 @@
     <main>
         <article>
             <div class="article-header">
-                <span class="tag-badge">{{ article.category or 'Nacional' }}</span>
+                <div style="display:flex; flex-wrap:wrap; gap:6px; margin-bottom:1rem;">
+                    {% for cat in (article.category or 'Nacional').split(',') %}
+                    <span class="tag-badge" style="margin-bottom:0;">{{ cat.strip() }}</span>
+                    {% endfor %}
+                </div>
                 <h1 class="article-title">{{ article.title }}</h1>
                 <div class="article-meta">
                     {% if article.author_name and article.author_name != 'Redacción VN' %}

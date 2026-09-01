@@ -24,6 +24,15 @@ server.log
 zrok.log
 
 # ── Cache y artefactos de build ───────────────────────────────
+node_modules/
+android/
+www/
+EXPORT_VENEZUELA_NOTICIAS/node_modules/
+EXPORT_VENEZUELA_NOTICIAS/android/
+EXPORT_VENEZUELA_NOTICIAS/www/
+.gradle/
+*.apk
+*.aab
 __pycache__/
 *.py[cod]
 *.pyo

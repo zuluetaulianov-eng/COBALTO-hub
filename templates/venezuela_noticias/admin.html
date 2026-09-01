@@ -224,10 +224,16 @@
             color: var(--text-muted);
         }
 
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
         .user-table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 1rem;
+            min-width: 600px;
         }
         .user-table th, .user-table td {
             padding: 14px 16px;
@@ -293,6 +299,77 @@
             border-color: var(--primary);
             box-shadow: 0 0 12px var(--primary-glow);
             background: rgba(0, 0, 0, 0.4);
+        }
+
+        .cat-chips-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 6px;
+        }
+        .cat-chip-check {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+        .cat-chip-check input[type="checkbox"] {
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+        .cat-chip-check:has(input:checked) {
+            background: rgba(0, 229, 255, 0.18);
+            border-color: var(--primary);
+            color: #fff;
+            box-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+
+        @media (max-width: 600px) {
+            header {
+                padding: 0.8rem 1rem;
+            }
+            header .logo-box h2 {
+                font-size: 1.05rem;
+            }
+            main {
+                padding: 0 0.8rem;
+                margin: 1rem auto;
+            }
+            .panel-box {
+                padding: 1.1rem;
+            }
+            .modal-box {
+                padding: 1.2rem;
+                width: 95%;
+                max-height: 92vh;
+                overflow-y: auto;
+            }
+            .modal-box div[style*="grid-template-columns"] {
+                grid-template-columns: 1fr !important;
+                gap: 0.8rem !important;
+            }
+            .tabs-nav {
+                overflow-x: auto;
+                white-space: nowrap;
+                flex-wrap: nowrap;
+                scrollbar-width: none;
+                padding-bottom: 4px;
+            }
+            .tab-btn {
+                padding: 8px 12px;
+                font-size: 0.85rem;
+            }
+            .btn-action {
+                min-height: 38px;
+            }
         }
     </style>
 </head>
@@ -477,43 +554,45 @@
                 <button class="btn-action btn-green" onclick="openUserModal()">+ Crear Nuevo Usuario</button>
             </div>
 
-            <table class="user-table">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Usuario</th>
-                        <th>Nombre Completo</th>
-                        <th>Rol / Permisos</th>
-                        <th>Fecha Registro</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="user-table-body">
-                    {% for u in users %}
-                    <tr id="user-row-{{ u.id }}">
-                        <td>#{{ u.id }}</td>
-                        <td style="font-weight:700; color:#fff;">{{ u.username }}</td>
-                        <td>{{ u.full_name or '—' }}</td>
-                        <td>
-                            <span class="role-chip {{ u.role }}">
-                                {% if u.role == 'admin' %}👑 ADMINISTRADOR{% else %}✍️ REPORTERO{% endif %}
-                            </span>
-                        </td>
-                        <td style="color:var(--text-muted);">{{ u.created_at[:10] if u.created_at else '—' }}</td>
-                        <td>
-                            <div style="display:flex; gap:0.4rem;">
-                                {% if u.role == 'admin' %}
-                                <button class="btn-action" style="font-size:0.75rem; padding:4px 8px;" onclick="changeRole({{ u.id }}, 'reporter')">Cambiar a Reportero</button>
-                                {% else %}
-                                <button class="btn-action btn-green" style="font-size:0.75rem; padding:4px 8px;" onclick="changeRole({{ u.id }}, 'admin')">Hacer Admin</button>
-                                {% endif %}
-                                <button class="btn-action btn-red" style="font-size:0.75rem; padding:4px 8px;" onclick="deleteUser({{ u.id }})">Eliminar</button>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="table-responsive">
+                <table class="user-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Nombre Completo</th>
+                            <th>Rol / Permisos</th>
+                            <th>Fecha Registro</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="user-table-body">
+                        {% for u in users %}
+                        <tr id="user-row-{{ u.id }}">
+                            <td>#{{ u.id }}</td>
+                            <td style="font-weight:700; color:#fff;">{{ u.username }}</td>
+                            <td>{{ u.full_name or '—' }}</td>
+                            <td>
+                                <span class="role-chip {{ u.role }}">
+                                    {% if u.role == 'admin' %}👑 ADMINISTRADOR{% else %}✍️ REPORTERO{% endif %}
+                                </span>
+                            </td>
+                            <td style="color:var(--text-muted);">{{ u.created_at[:10] if u.created_at else '—' }}</td>
+                            <td>
+                                <div style="display:flex; gap:0.4rem;">
+                                    {% if u.role == 'admin' %}
+                                    <button class="btn-action" style="font-size:0.75rem; padding:4px 8px;" onclick="changeRole({{ u.id }}, 'reporter')">Cambiar a Reportero</button>
+                                    {% else %}
+                                    <button class="btn-action btn-green" style="font-size:0.75rem; padding:4px 8px;" onclick="changeRole({{ u.id }}, 'admin')">Hacer Admin</button>
+                                    {% endif %}
+                                    <button class="btn-action btn-red" style="font-size:0.75rem; padding:4px 8px;" onclick="deleteUser({{ u.id }})">Eliminar</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </section>
         {% endif %}
     </main>
@@ -527,15 +606,15 @@
                 <input type="text" id="new-title" class="form-input" placeholder="Ej. Reporte especial desde la comunidad...">
             </div>
             <div class="form-group">
-                <label>Categoría</label>
-                <select id="new-cat" class="form-select">
-                    <option value="Nacional">Nacional</option>
-                    <option value="Economía">Economía</option>
-                    <option value="Política">Política</option>
-                    <option value="Sucesos">Sucesos</option>
-                    <option value="Internacional">Internacional</option>
-                    <option value="Deportes">Deportes</option>
-                </select>
+                <label>Categorías (Puedes seleccionar 2 o más)</label>
+                <div class="cat-chips-grid" id="new-cat-container">
+                    <label class="cat-chip-check"><input type="checkbox" value="Nacional" checked> 🇻🇪 Nacional</label>
+                    <label class="cat-chip-check"><input type="checkbox" value="Economía"> 📈 Economía</label>
+                    <label class="cat-chip-check"><input type="checkbox" value="Política"> 🏛️ Política</label>
+                    <label class="cat-chip-check"><input type="checkbox" value="Sucesos"> 🚨 Sucesos</label>
+                    <label class="cat-chip-check"><input type="checkbox" value="Internacional"> 🌍 Internacional</label>
+                    <label class="cat-chip-check"><input type="checkbox" value="Deportes"> ⚽ Deportes</label>
+                </div>
             </div>
             <div class="form-group">
                 <label>Resumen / Cuerpo del Artículo</label>
@@ -581,15 +660,15 @@
                 <input type="text" id="edit-title" class="form-input">
             </div>
             <div class="form-group">
-                <label>Categoría</label>
-                <select id="edit-cat" class="form-select">
-                    <option value="Nacional">Nacional</option>
-                    <option value="Economía">Economía</option>
-                    <option value="Política">Política</option>
-                    <option value="Sucesos">Sucesos</option>
-                    <option value="Internacional">Internacional</option>
-                    <option value="Deportes">Deportes</option>
-                </select>
+                <label>Categorías (Puedes seleccionar 2 o más)</label>
+                <div class="cat-chips-grid" id="edit-cat-container">
+                    <label class="cat-chip-check"><input type="checkbox" value="Nacional"> 🇻🇪 Nacional</label>
+                    <label class="cat-chip-check"><input type="checkbox" value="Economía"> 📈 Economía</label>
+                    <label class="cat-chip-check"><input type="checkbox" value="Política"> 🏛️ Política</label>
+                    <label class="cat-chip-check"><input type="checkbox" value="Sucesos"> 🚨 Sucesos</label>
+                    <label class="cat-chip-check"><input type="checkbox" value="Internacional"> 🌍 Internacional</label>
+                    <label class="cat-chip-check"><input type="checkbox" value="Deportes"> ⚽ Deportes</label>
+                </div>
             </div>
             <div class="form-group">
                 <label>Resumen / Contenido</label>
@@ -668,18 +747,18 @@
             </div>
 
             <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-                <div class="form-group">
-                    <label>Categoría</label>
-                    <select id="approve-cat" class="form-select">
-                        <option value="Nacional">Nacional</option>
-                        <option value="Economía">Economía</option>
-                        <option value="Política">Política</option>
-                        <option value="Sucesos">Sucesos</option>
-                        <option value="Internacional">Internacional</option>
-                        <option value="Deportes">Deportes</option>
-                    </select>
+                <div class="form-group" style="grid-column: span 2;">
+                    <label>Categorías (Puedes seleccionar 2 o más)</label>
+                    <div class="cat-chips-grid" id="approve-cat-container">
+                        <label class="cat-chip-check"><input type="checkbox" value="Nacional"> 🇻🇪 Nacional</label>
+                        <label class="cat-chip-check"><input type="checkbox" value="Economía"> 📈 Economía</label>
+                        <label class="cat-chip-check"><input type="checkbox" value="Política"> 🏛️ Política</label>
+                        <label class="cat-chip-check"><input type="checkbox" value="Sucesos"> 🚨 Sucesos</label>
+                        <label class="cat-chip-check"><input type="checkbox" value="Internacional"> 🌍 Internacional</label>
+                        <label class="cat-chip-check"><input type="checkbox" value="Deportes"> ⚽ Deportes</label>
+                    </div>
                 </div>
-                <div class="form-group">
+                <div class="form-group" style="grid-column: span 2;">
                     <label>URL de Imagen Destacada</label>
                     <input type="text" id="approve-image" class="form-input" placeholder="https://...">
                 </div>
@@ -728,6 +807,22 @@
 
     <script>
         let currentInspectItem = null;
+
+        function getSelectedCategories(containerId) {
+            const container = document.getElementById(containerId);
+            if (!container) return 'Nacional';
+            const checked = Array.from(container.querySelectorAll('input[type="checkbox"]:checked')).map(c => c.value);
+            return checked.length > 0 ? checked.join(', ') : 'Nacional';
+        }
+
+        function setSelectedCategories(containerId, categoryStr) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const catList = (categoryStr || 'Nacional').split(',').map(s => s.trim().toLowerCase());
+            container.querySelectorAll('input[type="checkbox"]').forEach(chk => {
+                chk.checked = catList.includes(chk.value.toLowerCase());
+            });
+        }
 
         function switchTab(tabName, btnElement) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -802,7 +897,7 @@
         function openApproveModal(id, title, category, summary, image, video) {
             document.getElementById('approve-inbox-id').value = id;
             document.getElementById('approve-title').value = title || '';
-            document.getElementById('approve-cat').value = category || 'Nacional';
+            setSelectedCategories('approve-cat-container', category || 'Nacional');
             document.getElementById('approve-summary').value = summary || '';
             document.getElementById('approve-content').value = summary || '';
             document.getElementById('approve-image').value = image || '';
@@ -817,7 +912,7 @@
         async function submitApproveCustom() {
             const id = document.getElementById('approve-inbox-id').value;
             const title = document.getElementById('approve-title').value;
-            const category = document.getElementById('approve-cat').value;
+            const category = getSelectedCategories('approve-cat-container');
             const summary = document.getElementById('approve-summary').value;
             const content = document.getElementById('approve-content').value;
             const image_url = document.getElementById('approve-image').value;
@@ -935,13 +1030,16 @@
             }
         }
 
-        function openCreateModal() { document.getElementById('create-modal').style.display = 'flex'; }
+        function openCreateModal() {
+            setSelectedCategories('new-cat-container', 'Nacional');
+            document.getElementById('create-modal').style.display = 'flex';
+        }
         function closeCreateModal() { document.getElementById('create-modal').style.display = 'none'; }
 
         function openEditModal(id, title, category, summary, videoUrl, imageUrl) {
             document.getElementById('edit-article-id').value = id;
             document.getElementById('edit-title').value = title;
-            document.getElementById('edit-cat').value = category || 'Nacional';
+            setSelectedCategories('edit-cat-container', category || 'Nacional');
             document.getElementById('edit-summary').value = summary || '';
             document.getElementById('edit-video').value = videoUrl || '';
             document.getElementById('edit-image').value = imageUrl || '';
@@ -954,7 +1052,7 @@
 
         async function submitCreateArticle() {
             const title = document.getElementById('new-title').value;
-            const category = document.getElementById('new-cat').value;
+            const category = getSelectedCategories('new-cat-container');
             const summary = document.getElementById('new-summary').value;
             const video_url = document.getElementById('new-video').value;
             const image_url = document.getElementById('new-image').value;
@@ -982,7 +1080,7 @@
         async function submitEditArticle() {
             const id = document.getElementById('edit-article-id').value;
             const title = document.getElementById('edit-title').value;
-            const category = document.getElementById('edit-cat').value;
+            const category = getSelectedCategories('edit-cat-container');
             const summary = document.getElementById('edit-summary').value;
             const video_url = document.getElementById('edit-video').value;
             const image_url = document.getElementById('edit-image').value;

@@ -41,6 +41,7 @@ async def lifespan(app: FastAPI):
     yield
 
 
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 
 app = FastAPI(
@@ -50,6 +51,13 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
@@ -66,6 +74,27 @@ static_dir = BASE_DIR / "static"
 if static_dir.exists():
     app.mount("/static", CachedStaticFiles(directory=str(static_dir)), name="static")
 
+
+from fastapi.responses import FileResponse, Response
+
+
+@app.get("/manifest.json")
+async def serve_manifest():
+    manifest_path = BASE_DIR / "static" / "manifest.json"
+    if manifest_path.exists():
+        return FileResponse(str(manifest_path), media_type="application/json")
+    return Response(content='{"name":"Venezuela Noticias"}', media_type="application/json")
+
+
+@app.get("/service-worker.js")
+async def serve_sw():
+    sw_path = BASE_DIR / "static" / "service-worker.js"
+    if sw_path.exists():
+        return FileResponse(str(sw_path), media_type="application/javascript", headers={"Cache-Control": "no-cache"})
+    return Response(
+        content="self.addEventListener('install', function(e) { self.skipWaiting(); }); self.addEventListener('activate', function(e) { return self.clients.claim(); });",
+        media_type="application/javascript",
+    )
 
 @app.get("/")
 async def root_redirect():

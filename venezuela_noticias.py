@@ -341,6 +341,23 @@ def normalize_video_embed_url(url: Optional[str]) -> str:
     return url
 
 
+def normalize_categories(cat_val: Any) -> str:
+    """Normaliza 1 o múltiples categorías (lista o texto separado por comas) en una cadena limpia.
+    Ej: ["Política", "Deportes"] -> "Política, Deportes"
+    Ej: "Política, Deportes, Política" -> "Política, Deportes"
+    """
+    if not cat_val:
+        return "Nacional"
+    if isinstance(cat_val, list):
+        cats = [str(c).strip() for c in cat_val if str(c).strip()]
+    elif isinstance(cat_val, str):
+        cats = [c.strip() for c in cat_val.split(",") if c.strip()]
+    else:
+        cats = ["Nacional"]
+    unique_cats = list(dict.fromkeys(cats))
+    return ", ".join(unique_cats) if unique_cats else "Nacional"
+
+
 def create_article(
     title: str,
     summary: str = "",
@@ -360,6 +377,7 @@ def create_article(
     slug = generate_slug(title)
     now_iso = datetime.now().isoformat()
     clean_video_url = normalize_video_embed_url(video_url)
+    cat_clean = normalize_categories(category)
 
     summary_clean = summary.strip()
     content_clean = content.strip()
@@ -394,7 +412,7 @@ def create_article(
                     canonical_url.strip(),
                     image_url.strip(),
                     clean_video_url,
-                    category.strip(),
+                    cat_clean,
                     1 if is_featured else 0,
                     status.strip(),
                     author_id,
@@ -409,7 +427,7 @@ def create_article(
             "title": title,
             "slug": slug,
             "summary": summary_clean,
-            "category": category,
+            "category": cat_clean,
             "status": status,
             "author_id": author_id,
             "author_name": author_name
@@ -440,6 +458,7 @@ def update_article(
     init_vn_db()
     conn = get_vn_db_connection()
     clean_video_url = normalize_video_embed_url(video_url)
+    cat_clean = normalize_categories(category)
     summary_clean = summary.strip()
     content_clean = content.strip()
 
@@ -462,7 +481,7 @@ def update_article(
                 SET title = ?, summary = ?, content = ?, category = ?, image_url = ?, video_url = ?
                 WHERE id = ?
                 """,
-                (title.strip(), summary_clean, content_clean, category.strip(), image_url.strip(), clean_video_url, article_id)
+                (title.strip(), summary_clean, content_clean, cat_clean, image_url.strip(), clean_video_url, article_id)
             )
             if cursor.rowcount == 0:
                 return None
@@ -493,8 +512,8 @@ def get_published_articles(
         params: List[Any] = []
 
         if category and category.upper() != "ALL":
-            sql += " AND category = ?"
-            params.append(category)
+            sql += " AND category LIKE ?"
+            params.append(f"%{category.strip()}%")
 
         if query and query.strip():
             sql += " AND (title LIKE ? OR summary LIKE ? OR content LIKE ?)"
@@ -542,7 +561,7 @@ def get_featured_article() -> Optional[Dict[str, Any]]:
 def auto_detect_category(title: str, summary: str = "") -> str:
     """Detecta automáticamente la categoría probable basada en palabras clave."""
     text = f"{title} {summary}".lower()
-    
+
     if any(k in text for k in ["bcv", "dólar", "dolar", "inflación", "inflacion", "petróleo", "petroleo", "pdvsa", "salario", "arancel", "banco", "bolívar", "bolivar", "finanzas", "cripto", "bitcoin", "exportación"]):
         return "Economía"
     if any(k in text for k in ["cne", "asamblea", "diputado", "ministro", "canciller", "elecciones", "voto", "gobierno", "fanb", "decreto", "partido", "oposición", "oposicion", "presidente"]):
@@ -680,7 +699,7 @@ def approve_inbox_item(
         title = custom_title.strip() if custom_title and custom_title.strip() else item_dict["title"]
         summary = custom_summary.strip() if custom_summary and custom_summary.strip() else (item_dict.get("summary") or "")
         content = custom_content.strip() if custom_content and custom_content.strip() else summary
-        
+
         category = custom_category.strip() if custom_category and custom_category.strip() else auto_detect_category(title, summary)
         image_url = custom_image_url.strip() if custom_image_url is not None else (item_dict.get("image") or "")
         video_url = custom_video_url.strip() if custom_video_url is not None else (item_dict.get("video") or "")

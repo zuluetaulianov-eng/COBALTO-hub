@@ -381,73 +381,33 @@ def get_all_events_data() -> Dict[str, Any]:
     critical_infrastructure = get_critical_infrastructure()
 
     if not security_incidents and not protests:
-        # Generar eventos simulados premium en Venezuela
-        from datetime import datetime
-        security_incidents = [
-            {
-                "id": "sec_01",
-                "title": "Despliegue preventivo en refineria Amuay",
-                "summary": "Fuerzas de seguridad realizan patrullaje preventivo en el perimetro de la refineria para asegurar la continuidad operacional.",
-                "latitude": 11.7511,
-                "longitude": -70.2014,
-                "type": "security",
-                "severity": "NORMAL",
-                "published": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "source": "OSINT Monitor"
-            },
-            {
-                "id": "sec_02",
-                "title": "Interrupcion de vias por contingencia climatica",
-                "summary": "Cierre parcial temporal de tramo vial debido a deslizamiento menor provocado por lluvias recientes. Equipos de vialidad activos.",
-                "latitude": 10.4806,
-                "longitude": -66.9036,
-                "type": "weather",
-                "severity": "NORMAL",
-                "published": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "source": "Reporte Vial"
-            }
-        ]
-        protests = [
-            {
-                "id": "prot_01",
-                "title": "Concentracion civil pacifica en Plaza Altamira",
-                "summary": "Grupo de ciudadanos se reune de manera pacifica para expresar peticiones de mejoras de servicios publicos locales. Sin incidentes.",
-                "latitude": 10.4961,
-                "longitude": -66.8489,
-                "type": "protest",
-                "published": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "source": "OSINT Social"
-            }
-        ]
-        if not earthquakes:
-            earthquakes = [
-                {
-                    "id": "eq_col_74",
-                    "title": "Terremoto M 7.4 - 5 km al S de San José del Palmar, Colombia",
-                    "magnitude": 7.4,
-                    "depth": 110.3,
-                    "place": "San José del Palmar, Colombia",
-                    "time": "2026-08-10 12:34:28 UTC",
-                    "latitude": 4.97,
-                    "longitude": -76.23,
-                    "type": "earthquake",
-                    "source": "USGS Earthquake Hazards",
-                    "url": "https://www.usgs.gov/programs/earthquake-hazards"
-                },
-                {
-                    "id": "eq_01",
-                    "title": "Sismo menor M 3.4 - Suroeste de Carúpano",
-                    "magnitude": 3.4,
-                    "depth": 15.0,
-                    "place": "12 km al suroeste de Carúpano",
-                    "time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    "latitude": 10.5833,
-                    "longitude": -63.3000,
-                    "type": "earthquake",
-                    "source": "FUNVISIS / USGS",
-                    "url": "https://earthquake.usgs.gov/"
-                }
-            ]
+        try:
+            from historical_store import query_range
+            h_data = query_range(limit=50)
+            for h in h_data.get("entries", []):
+                t = f"{h.get('title','')} {h.get('summary','')}".lower()
+                if any(kw in t for kw in ["secuestro", "asalto", "homicidio", "robo", "violencia", "narcotráfico", "asesinato", "extorsión", "sicariato", "detención", "fuerzas"]):
+                    security_incidents.append({
+                        "id": f"sec_{h.get('entry_id') or abs(hash(h.get('title','')))}",
+                        "title": h.get("title"),
+                        "summary": (h.get("summary") or "")[:200],
+                        "link": h.get("link") or "#",
+                        "published": h.get("published") or datetime.now().isoformat(),
+                        "source": h.get("source") or "Monitor OSINT",
+                        "type": "security_incident",
+                    })
+                elif any(kw in t for kw in ["protesta", "manifestación", "disturbios", "huelga", "marcha", "paro", "movilización", "plantón"]):
+                    protests.append({
+                        "id": f"prot_{h.get('entry_id') or abs(hash(h.get('title','')))}",
+                        "title": h.get("title"),
+                        "summary": (h.get("summary") or "")[:200],
+                        "link": h.get("link") or "#",
+                        "published": h.get("published") or datetime.now().isoformat(),
+                        "source": h.get("source") or "Monitor de Protestas",
+                        "type": "protest",
+                    })
+        except Exception as err:
+            logger.debug(f"[EVENTS_TRACKER] Error leyendo almacén histórico: {err}")
 
     analysis = analyze_events(earthquakes, weather_alerts)
 

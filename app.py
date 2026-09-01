@@ -8,9 +8,11 @@ import sys
 import time
 from collections import defaultdict
 from contextlib import asynccontextmanager
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Optional
+
+from utils import parse_datetime
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query, Request, WebSocket, WebSocketDisconnect
@@ -293,7 +295,10 @@ async def add_cache_control_header(request, call_next):
 
 @app.get("/manifest.json")
 async def serve_manifest():
-    return FileResponse(str(BASE_DIR / "static" / "manifest.json"))
+    manifest_path = BASE_DIR / "static" / "manifest.json"
+    if manifest_path.exists():
+        return FileResponse(str(manifest_path), media_type="application/json")
+    raise HTTPException(status_code=404, detail="manifest.json no encontrado")
 
 
 @app.get("/service-worker.js")
@@ -302,7 +307,7 @@ async def serve_sw():
     if not sw_path.exists():
         sw_path = BASE_DIR / "service-worker.js"
     if sw_path.exists():
-        return FileResponse(str(sw_path), media_type="application/javascript")
+        return FileResponse(str(sw_path), media_type="application/javascript", headers={"Cache-Control": "no-cache"})
     return Response(
         content="self.addEventListener('install', function(e) { self.skipWaiting(); }); self.addEventListener('activate', function(e) { return self.clients.claim(); });",
         media_type="application/javascript",
@@ -315,12 +320,16 @@ cors_origins = [
     os.getenv("SITE_URL", "http://localhost:8000"),
     "http://localhost:8083",
     "http://127.0.0.1:8083",
+    "http://localhost",
+    "https://localhost",
+    "capacitor://localhost",
+    "http://localhost:8085",
 ]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=cors_origins,
-    allow_methods=["GET", "POST"],
-    allow_headers=["Content-Type"],
+    allow_origins=["*"] if os.getenv("ALLOW_ALL_CORS") == "true" else cors_origins,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["*"],
 )
 
 # ── Autenticación ──
@@ -1109,41 +1118,42 @@ async def get_cyber_data():
     except Exception:
         pass
 
-    advisories = [
-        {
-            "title": "Alerta SOC: Monitoreo Continuo de Infraestructura Crítica Nacional",
-            "summary": "Sensores VenCERT y SOC COBALTO activos. No se detectan anomalías masivas de tráfico o intrusiones en nodos de telecomunicaciones.",
-            "source": "VenCERT Advisory",
-            "published": "Hace momentos",
-            "category": "VENCERT",
-            "severity": "MEDIA",
-            "link": "#"
-        },
-        {
-            "title": "Ransomware Tracker: Vigilancia sobre grupos LockBit & BlackCat en LATAM",
-            "summary": "Monitoreo en portales leak de la Darknet sin apariciones de entidades gubernamentales o bancarias regionales.",
-            "source": "DeepWeb Ransomware Monitor",
-            "published": "Hace 1 hora",
-            "category": "CRITICAL",
-            "severity": "ALTA",
-            "link": "#"
-        },
-        {
-            "title": "Pastebin & Darknet Dumps: Escaneo de credenciales expuestas",
-            "summary": "Escáner automatizado de Pastebin / Darkweb no reporta filtraciones de dominios institucionales en las últimas 24h.",
-            "source": "Pastebin Leak Sensor",
-            "published": "Hace 2 horas",
-            "category": "DARKNET",
-            "severity": "MEDIA",
-            "link": "#"
-        }
-    ]
+    if not cyber_items:
+        advisories = [
+            {
+                "title": "Alerta SOC: Monitoreo Continuo de Infraestructura Crítica Nacional",
+                "summary": "Sensores VenCERT y SOC COBALTO activos. No se detectan anomalías masivas de tráfico o intrusiones en nodos de telecomunicaciones.",
+                "source": "VenCERT Advisory",
+                "published": "Hace momentos",
+                "category": "VENCERT",
+                "severity": "MEDIA",
+                "link": "#"
+            },
+            {
+                "title": "Ransomware Tracker: Vigilancia sobre grupos LockBit & BlackCat en LATAM",
+                "summary": "Monitoreo en portales leak de la Darknet sin apariciones de entidades gubernamentales o bancarias regionales.",
+                "source": "DeepWeb Ransomware Monitor",
+                "published": "Hace 1 hora",
+                "category": "CRITICAL",
+                "severity": "ALTA",
+                "link": "#"
+            },
+            {
+                "title": "Pastebin & Darknet Dumps: Escaneo de credenciales expuestas",
+                "summary": "Escáner automatizado de Pastebin / Darkweb no reporta filtraciones de dominios institucionales en las últimas 24h.",
+                "source": "Pastebin Leak Sensor",
+                "published": "Hace 2 horas",
+                "category": "DARKNET",
+                "severity": "MEDIA",
+                "link": "#"
+            }
+        ]
 
-    for adv in advisories:
-        key = f"{adv['link']}|{adv['title']}"
-        if key not in seen:
-            seen.add(key)
-            cyber_items.append(adv)
+        for adv in advisories:
+            key = f"{adv['link']}|{adv['title']}"
+            if key not in seen:
+                seen.add(key)
+                cyber_items.append(adv)
 
     return sanitize_for_json(cyber_items)
 
