@@ -1,8 +1,9 @@
+import os
 import requests
 
 # 1. Configuración
 API_SISTEMA = "http://localhost:8100"
-NVIDIA_API_KEY = "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"
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
 
 def buscar_contexto(pregunta: str) -> str:
     """Consulta el Sistema Inteligente (Capa 1: Determinista)."""

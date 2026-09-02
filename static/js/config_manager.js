@@ -966,57 +966,132 @@ window.CobaltoConfig = {
         }, 4000);
     },
 
-        detectOllamaModels: async function(silent = false) {
+    detectOllamaModels: async function(silent = false) {
         const btn = document.getElementById('btn-detect-ollama-models');
         const icon = document.getElementById('icon-detect-ollama');
         const hostInput = document.getElementById('cfg-ollama-host');
         const portInput = document.getElementById('cfg-ollama-port');
         const modelSelect = document.getElementById('cfg-ollama-model');
 
+        const statusBadge = document.getElementById('local-ai-status-badge');
+        const engineTitle = document.getElementById('local-ai-engine-title');
+        const engineDesc = document.getElementById('local-ai-engine-desc');
+        const vramTag = document.getElementById('local-ai-vram-tag');
+
         if (!modelSelect) return;
 
-        const host = hostInput ? hostInput.value.trim() : '192.168.1.213';
+        const host = hostInput ? hostInput.value.trim() : 'localhost';
         const port = portInput ? portInput.value.trim() : '11434';
 
         if (icon) icon.classList.add('fa-spin');
         if (btn) btn.disabled = true;
 
         try {
-            const resp = await fetch(`/api/ollama/models?host=${encodeURIComponent(host)}&port=${encodeURIComponent(port)}`);
+            const resp = await fetch(`/api/local-ai/detect?host=${encodeURIComponent(host)}&port=${encodeURIComponent(port)}`);
             const data = await resp.json();
 
-            if (data.status === 'ok' && Array.isArray(data.models) && data.models.length > 0) {
-                const currentVal = modelSelect.value || (this.state.config && this.state.config.OLLAMA_MODEL) || 'llama3.2';
-                modelSelect.innerHTML = '';
-                
-                data.models.forEach(m => {
-                    const opt = document.createElement('option');
-                    opt.value = m;
-                    opt.textContent = m + (m.includes('llama3.2') ? ' (Recomendado)' : '');
-                    if (m === currentVal) opt.selected = true;
-                    modelSelect.appendChild(opt);
-                });
+            if (data.status === 'ok') {
+                if (hostInput && data.host && data.host !== hostInput.value) {
+                    hostInput.value = data.host;
+                }
+                if (portInput && data.port && parseInt(data.port) !== parseInt(portInput.value)) {
+                    portInput.value = data.port;
+                }
 
-                if (!data.models.includes(currentVal) && currentVal) {
+                const models = data.models || [];
+                const runningModel = data.running_model || '';
+                const currentVal = modelSelect.value || (this.state.config && this.state.config.OLLAMA_MODEL) || runningModel;
+
+                modelSelect.innerHTML = '';
+
+                if (models.length > 0) {
+                    models.forEach(m => {
+                        const opt = document.createElement('option');
+                        opt.value = m;
+                        let label = m;
+                        if (m === runningModel) {
+                            label += ' 🔥 (ACTIVO EN VRAM)';
+                        } else if (m.includes('llama3.2') || m.includes('mistral')) {
+                            label += ' (Recomendado)';
+                        }
+                        opt.textContent = label;
+                        if (m === runningModel || (!runningModel && m === currentVal)) {
+                            opt.selected = true;
+                        }
+                        modelSelect.appendChild(opt);
+                    });
+                } else if (runningModel) {
                     const opt = document.createElement('option');
-                    opt.value = currentVal;
-                    opt.textContent = currentVal + ' (Actual)';
+                    opt.value = runningModel;
+                    opt.textContent = runningModel + ' 🔥 (ACTIVO EN VRAM)';
                     opt.selected = true;
                     modelSelect.appendChild(opt);
                 }
 
+                if (!models.includes(currentVal) && currentVal && currentVal !== runningModel) {
+                    const opt = document.createElement('option');
+                    opt.value = currentVal;
+                    opt.textContent = currentVal + ' (Guardado)';
+                    modelSelect.appendChild(opt);
+                }
+
+                if (statusBadge) {
+                    statusBadge.style.background = '#00ffaa';
+                    statusBadge.style.boxShadow = '0 0 10px #00ffaa';
+                }
+                if (engineTitle) {
+                    engineTitle.textContent = `🟢 ${data.engine_name.toUpperCase()} CONECTADO (${data.host}:${data.port})`;
+                }
+                if (engineDesc) {
+                    engineDesc.textContent = runningModel
+                        ? `Modelo activo en memoria: ${runningModel}`
+                        : `${data.count} modelo(s) disponibles instalados`;
+                }
+                if (vramTag) {
+                    vramTag.style.display = runningModel ? 'inline-block' : 'none';
+                    vramTag.textContent = runningModel ? `🔥 MEMORIA: ${runningModel}` : '';
+                }
+
                 if (!silent) {
-                    this.showToast(`[OLLAMA] ${data.count} modelo(s) detectado(s) en ${host}:${port}`, 'success');
+                    const engineMsg = data.engine_name || 'Motor Local';
+                    this.showToast(`✅ [${engineMsg}] Detectado en ${data.host}:${data.port}. Modelo en uso: ${runningModel || 'Listo'}`, 'success');
                 }
             } else {
+                if (statusBadge) {
+                    statusBadge.style.background = '#ff2d55';
+                    statusBadge.style.boxShadow = '0 0 10px #ff2d55';
+                }
+                if (engineTitle) {
+                    engineTitle.textContent = '🔴 NINGÚN MOTOR LOCAL DETECTADO';
+                }
+                if (engineDesc) {
+                    engineDesc.textContent = 'No se encontró Ollama (11434), KoboldCPP (5001) ni LM Studio (1234) en ejecución.';
+                }
+                if (vramTag) {
+                    vramTag.style.display = 'none';
+                }
+
                 if (!silent) {
-                    this.showToast(data.message || 'No se encontraron modelos instalados en Ollama', 'warning');
+                    this.showToast(data.message || 'No se encontró ningún motor de IA local activo.', 'warning');
                 }
             }
         } catch (err) {
-            console.error('Error detectando modelos Ollama:', err);
+            console.error('Error detectando motor de IA local:', err);
+            if (statusBadge) {
+                statusBadge.style.background = '#ff2d55';
+                statusBadge.style.boxShadow = '0 0 10px #ff2d55';
+            }
+            if (engineTitle) {
+                engineTitle.textContent = '🔴 ERROR DE CONEXIÓN A MOTOR LOCAL';
+            }
+            if (engineDesc) {
+                engineDesc.textContent = 'Asegúrate de que Ollama, KoboldCPP o LM Studio estén iniciados en tu PC.';
+            }
+            if (vramTag) {
+                vramTag.style.display = 'none';
+            }
             if (!silent) {
-                this.showToast(`No se pudo conectar con Ollama en ${host}:${port}`, 'error');
+                this.showToast(`No se pudo verificar la conexión local con el servidor de IA.`, 'error');
             }
         } finally {
             if (icon) icon.classList.remove('fa-spin');

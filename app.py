@@ -229,7 +229,7 @@ async def lifespan(fastapi_app: FastAPI):
 
 
 app_state_lock = asyncio.Lock()
-app = FastAPI(title="COBALTO HUB v9", lifespan=lifespan)
+app = FastAPI(title="COBALTO HUB v16.5", lifespan=lifespan)
 
 app.include_router(avalanche_bridge.router)
 app.include_router(osiris_router)
@@ -522,7 +522,7 @@ async def security_middleware(request: Request, call_next):
         return JSONResponse({"error": "Internal server error"}, status_code=500)
 
 
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
 
 
 class DateTimeEncoder(json.JSONEncoder):
@@ -3538,44 +3538,278 @@ async def apply_preset_config(preset_name: str):
         return {"status": "ok", "preset": preset_name, "message": f"Perfil táctico '{preset_name}' aplicado correctamente."}
     raise HTTPException(status_code=500, detail="Error aplicando perfil")
 
+@app.get("/api/local-ai/detect")
 @app.get("/api/ollama/models")
 async def get_ollama_models(host: Optional[str] = None, port: Optional[int] = None):
-    """Escanea y detecta automáticamente los modelos instalados en la PC con Ollama local."""
+    """Escanea y detecta automáticamente el motor y modelo de IA local corriendo en la PC (Ollama, KoboldCPP, LM Studio)."""
     import aiohttp
 
     import config
 
-    target_host = host or getattr(config, "OLLAMA_HOST", "192.168.1.213")
+    target_host = (host or getattr(config, "OLLAMA_HOST", "localhost")).strip()
     target_port = port or getattr(config, "OLLAMA_PORT", 11434)
-    url = f"http://{target_host}:{target_port}/api/tags"
 
+    candidates = []
+    if target_host:
+        candidates.append((target_host, target_port))
+
+    local_hosts = ["localhost", "127.0.0.1", "192.168.1.213"]
+    standard_ports = [11434, 5001, 1234, 5000, 8000]
+
+    for h in local_hosts:
+        for p in standard_ports:
+            if (h, p) not in candidates:
+                candidates.append((h, p))
+
+    timeout_cfg = aiohttp.ClientTimeout(total=2.5)
+
+    async with aiohttp.ClientSession(timeout=timeout_cfg) as session:
+        for h, p in candidates:
+            base_url = f"http://{h}:{p}"
+
+            # 1. Probar OLLAMA (/api/tags + /api/ps)
+            try:
+                async with session.get(f"{base_url}/api/tags") as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        raw_models = data.get("models", [])
+                        models = [m.get("name", "") for m in raw_models if m.get("name")]
+
+                        running_model = None
+                        try:
+                            async with session.get(f"{base_url}/api/ps") as ps_resp:
+                                if ps_resp.status == 200:
+                                    ps_data = await ps_resp.json()
+                                    ps_models = ps_data.get("models", [])
+                                    if ps_models and isinstance(ps_models, list):
+                                        running_model = ps_models[0].get("name")
+                        except Exception:
+                            pass
+
+                        if not running_model and models:
+                            running_model = models[0]
+
+                        return {
+                            "status": "ok",
+                            "engine": "ollama",
+                            "engine_name": "Ollama Local Engine",
+                            "host": h,
+                            "port": p,
+                            "count": len(models),
+                            "models": models,
+                            "running_model": running_model,
+                            "message": f"Servidor Ollama detectado en {h}:{p}. Modelo en memoria: {running_model or 'Listo'}",
+                        }
+            except Exception:
+                pass
+
+            # 2. Probar KOBOLD / KOBOLDCPP (/api/v1/model)
+            try:
+                async with session.get(f"{base_url}/api/v1/model") as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        model_name = data.get("result", "")
+                        models = [model_name] if model_name else []
+                        return {
+                            "status": "ok",
+                            "engine": "kobold",
+                            "engine_name": "KoboldCPP Engine",
+                            "host": h,
+                            "port": p,
+                            "count": len(models),
+                            "models": models,
+                            "running_model": model_name or None,
+                            "message": f"Servidor KoboldCPP detectado en {h}:{p}. Modelo cargado: {model_name or 'Desconocido'}",
+                        }
+            except Exception:
+                pass
+
+            # 3. Probar LM STUDIO / OPENAI LOCAL (/v1/models)
+            try:
+                async with session.get(f"{base_url}/v1/models") as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        raw_models = data.get("data", [])
+                        models = [m.get("id", "") for m in raw_models if isinstance(m, dict) and m.get("id")]
+                        running_model = models[0] if models else None
+                        return {
+                            "status": "ok",
+                            "engine": "lmstudio",
+                            "engine_name": "LM Studio / Local OpenAI Engine",
+                            "host": h,
+                            "port": p,
+                            "count": len(models),
+                            "models": models,
+                            "running_model": running_model,
+                            "message": f"Servidor Local OpenAI (LM Studio) detectado en {h}:{p}. Modelo activo: {running_model or 'Listo'}",
+                        }
+            except Exception:
+                pass
+
+    return {
+        "status": "error",
+        "engine": "none",
+        "host": target_host,
+        "port": target_port,
+        "count": 0,
+        "models": [],
+        "running_model": None,
+        "message": f"No se detectó ningún servidor local de IA (Ollama, KoboldCPP o LM Studio) respondiendo en {target_host}:{target_port} ni en los puertos por defecto (11434, 5001, 1234).",
+    }
+
+
+class DossierItem(BaseModel):
+    id: Optional[str] = None
+    title: str
+    summary: Optional[str] = ""
+    source: Optional[str] = "Prensa / OSINT"
+    date: Optional[str] = ""
+    link: Optional[str] = ""
+    severity: Optional[str] = "info"
+
+
+class DossierAnalysisRequest(BaseModel):
+    items: list[DossierItem]
+    preset: Optional[str] = "general"
+    custom_prompt: Optional[str] = None
+
+
+def _generate_dossier_fallback_report(items: list[DossierItem], directive: str) -> str:
+    lines = []
+    lines.append(f"# 📋 INFORME TÁCTICO DE DOSSIER ({len(items)} FUENTES SELECCIONADAS)")
+    lines.append("")
+    lines.append(f"**DIRECTIVA OPERATIVA:** {directive}")
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("## 🎯 1. SÍNTESIS DE EVIDENCIAS Y FUENTES RECUPERADAS")
+    lines.append("")
+    for idx, item in enumerate(items, start=1):
+        lines.append(f"### [{idx}] {item.title}")
+        lines.append(f"- **Fuente:** `{item.source or 'OSINT'}`")
+        if item.date:
+            lines.append(f"- **Fecha:** {item.date}")
+        if item.link and item.link != "#":
+            lines.append(f"- **Enlace:** [{item.link}]({item.link})")
+        if item.summary:
+            lines.append(f"- **Resumen Fáctico:** {item.summary.strip()}")
+        lines.append("")
+
+    lines.append("## 🔍 2. CORRELACIÓN Y ANÁLISIS DE PATRONES")
+    lines.append("Se identificaron las siguientes coincidencias clave dentro de las fuentes evaluadas:")
+    sources = set(i.source for i in items if i.source)
+    lines.append(f"- **Cobertura de Fuentes:** {', '.join(sources) if sources else 'Prensa General / Redes Sociales'}.")
+    lines.append(f"- **Volumen de Noticias:** {len(items)} noticias procesadas en el dossier del operador.")
+    lines.append("")
+
+    lines.append("## ⚡ 3. EVALUACIÓN Y MATRIZ DE RIESGO")
+    lines.append("- **Nivel de Alerta:** `EVALUACIÓN PRELIMINAR`")
+    lines.append("- **Observaciones:** La muestra actual refleja desarrollos noticiosos activos en el teatro de operaciones.")
+    lines.append("")
+
+    lines.append("## 📋 4. RECOMENDACIONES OPERATIVAS")
+    lines.append("1. Mantener seguimiento a través del radar de noticias (SitRep) para confirmar nuevos reportes.")
+    lines.append("2. Iniciar sondeo en redes sociales para medir impacto de amplificación sintética.")
+    lines.append("3. Verificar si los eventos involucran actores monitoreados en la lista de sanciones OFAC.")
+    lines.append("")
+    lines.append("*Nota: Generado por el Motor Fáctico Determinístico (Inferencia IA Local no disponible en este instante).*")
+
+    return "\n".join(lines)
+
+
+@app.post("/api/intel/analyze-dossier")
+async def analyze_dossier(req: DossierAnalysisRequest):
+    """Genera un informe táctico de inteligencia basado en una selección manual (dossier curado) de noticias."""
+    if not req.items:
+        raise HTTPException(status_code=400, detail="El dossier no contiene noticias para analizar.")
+
+    items_formatted = []
+    for idx, item in enumerate(req.items, start=1):
+        summary_txt = (item.summary.strip()[:350] + '...') if item.summary and len(item.summary) > 350 else (item.summary or "Sin resumen disponible")
+        items_formatted.append(
+            f"{idx}. [FUENTE: {item.source}] {item.title}\n"
+            f"   Resumen: {summary_txt}\n"
+            f"   Fecha/Link: {item.date or 'Reciente'} | {item.link or 'N/A'}"
+        )
+
+    dossier_text = "\n\n".join(items_formatted)
+
+    preset_directives = {
+        "general": "Realiza un ANÁLISIS TÁCTICO INTEGRADO DE INTELIGENCIA. Identifica patrones, hipótesis de desarrollo, factores de riesgo y recomendaciones clave.",
+        "ejecutivo": "Sintetiza un RESUMEN EJECUTIVO EXPRÉS de alta relevancia. Destaca los puntos críticos en viñetas concisas con nivel de alerta.",
+        "amenazas": "Construye una EVALUACIÓN Y MATRIZ DE RIESGOS/AMENAZAS. Evalúa vulnerabilidades, actores potenciales y vectores de impacto.",
+        "desinformacion": "Realiza una EVALUACIÓN DE NARRATIVAS Y GUERRA DE INFORMACIÓN. Detecta posibles sesgos, patrones de botnet o campañas de amplificación."
+    }
+
+    directive = preset_directives.get(req.preset, preset_directives["general"])
+
+    system_prompt = (
+        "Eres el Motor Superior de Inteligencia de COBALTO Hub. Tu función es actuar como Analista Senior OSINT / SOC. "
+        "Analizarás exclusivamente la selección curada de noticias proporcionada por el operador táctico sin inventar hechos no sustentados."
+    )
+
+    user_prompt = f"""
+DIRECTIVA DE ANÁLISIS: {directive}
+
+--- DOSSIER DE NOTICIAS Y PUBLICACIONES SELECCIONADAS MANUALMENTE ({len(req.items)} ITEMS) ---
+{dossier_text}
+---------------------------------------------------------------------------------
+
+Genera un Informe de Inteligencia Táctica profesional estructurado en formato Markdown con las siguientes secciones:
+1. 🎯 RESUMEN DE SITUACIÓN (SÍNTESIS DE EVIDENCIAS SELECCIONADAS)
+2. 🔍 CORRELACIÓN Y PATRONES DETECTADOS
+3. ⚡ NIVEL DE IMPACTO Y EVALUACIÓN DE AMENAZAS
+4. 📋 RECOMENDACIONES OPERATIVAS Y LÍNEAS DE ACCIÓN
+
+Usa tono profesional, directo, táctico y preciso. Asegúrate de incluir saltos de línea claros entre secciones.
+"""
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+
+    report_md = None
+
+    # ESTRATEGIA 1: Inferencia Local AI (Ollama/Kobold/LM Studio) con autodetección
     try:
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=8)) as session:
-            async with session.get(url) as resp:
-                if resp.status == 200:
-                    data = await resp.json()
-                    raw_models = data.get("models", [])
-                    models = [m.get("name", "") for m in raw_models if m.get("name")]
-                    return {
-                        "status": "ok",
-                        "host": target_host,
-                        "port": target_port,
-                        "count": len(models),
-                        "models": models,
-                    }
-                else:
-                    return {
-                        "status": "error",
-                        "message": f"Servidor Ollama devolvió HTTP {resp.status}",
-                        "models": [],
-                    }
-    except Exception as e:
-        logger.warning(f"[OLLAMA DETECT] Error conectando a {url}: {e}")
-        return {
-            "status": "error",
-            "message": f"No se pudo conectar a Ollama en {target_host}:{target_port} ({type(e).__name__})",
-            "models": [],
-        }
+        from ollama_provider import ollama_chat
+        detection = await get_ollama_models()
+        active_model = detection.get("running_model") if detection.get("status") == "ok" else None
+        
+        report_md = await ollama_chat(messages=messages, model=active_model, temperature=0.3, max_tokens=800)
+    except Exception as ex:
+        logger.warning(f"[DOSSIER AI] Inferencia local no disponible: {ex}")
+
+    # ESTRATEGIA 2: Fallback a Cloud AI Pool (Groq / NVIDIA / OpenAI / CometAPI)
+    if not report_md:
+        try:
+            from ai_core import get_next_groq_client
+            client = get_next_groq_client()
+            if client:
+                res = await client.chat.completions.create(
+                    model="meta/llama-3.1-70b-instruct",
+                    messages=messages,
+                    temperature=0.3,
+                    max_tokens=1500
+                )
+                if res and res.choices:
+                    report_md = res.choices[0].message.content
+        except Exception as ex:
+            logger.warning(f"[DOSSIER AI] Error en pool cloud: {ex}")
+
+    # ESTRATEGIA 3: Fallback determinístico con Markdown limpio
+    if not report_md:
+        report_md = _generate_dossier_fallback_report(req.items, directive)
+
+    return {
+        "status": "ok",
+        "report": report_md,
+        "items_count": len(req.items),
+        "preset": req.preset,
+        "timestamp": datetime.now().isoformat()
+    }
+
 
 
 
@@ -3631,10 +3865,18 @@ async def api_intel_export_docx(payload: dict):
     try:
         from intel_reports import DocumentoIntel, InformeIntelData, generar_docx_informe
 
-        docs = [DocumentoIntel(**d) if isinstance(d, dict) else d for d in payload.get("documentos", [])]
+        raw_docs = payload.get("documentos", [])
+        docs = []
+        for d in raw_docs:
+            if isinstance(d, dict):
+                valid_doc_args = {k: v for k, v in d.items() if k in DocumentoIntel.__dataclass_fields__}
+                docs.append(DocumentoIntel(**valid_doc_args))
+            elif isinstance(d, DocumentoIntel):
+                docs.append(d)
         payload["documentos"] = docs
 
-        report_data = InformeIntelData(**{k: v for k, v in payload.items() if k in InformeIntelData.__dataclass_fields__})
+        valid_args = {k: v for k, v in payload.items() if k in InformeIntelData.__dataclass_fields__}
+        report_data = InformeIntelData(**valid_args)
         docx_bytes = generar_docx_informe(report_data)
 
         filename = f"informe_inteligencia_coporo_{int(time.time())}.docx"
@@ -3654,10 +3896,18 @@ async def api_intel_export_pdf(payload: dict):
     try:
         from intel_reports import DocumentoIntel, InformeIntelData, generar_pdf_informe
 
-        docs = [DocumentoIntel(**d) if isinstance(d, dict) else d for d in payload.get("documentos", [])]
+        raw_docs = payload.get("documentos", [])
+        docs = []
+        for d in raw_docs:
+            if isinstance(d, dict):
+                valid_doc_args = {k: v for k, v in d.items() if k in DocumentoIntel.__dataclass_fields__}
+                docs.append(DocumentoIntel(**valid_doc_args))
+            elif isinstance(d, DocumentoIntel):
+                docs.append(d)
         payload["documentos"] = docs
 
-        report_data = InformeIntelData(**{k: v for k, v in payload.items() if k in InformeIntelData.__dataclass_fields__})
+        valid_args = {k: v for k, v in payload.items() if k in InformeIntelData.__dataclass_fields__}
+        report_data = InformeIntelData(**valid_args)
         pdf_bytes = generar_pdf_informe(report_data)
 
         filename = f"informe_inteligencia_coporo_{int(time.time())}.pdf"

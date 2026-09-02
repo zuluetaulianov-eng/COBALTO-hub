@@ -841,6 +841,7 @@ window.CobaltoCore = {
                     </div>
                     <div class="news-card-actions">
                         <div class="flex gap-05 flex-wrap">
+                            <button type="button" class="news-action-btn btn-dossier-toggle" onclick="if(window.IntelDossier)window.IntelDossier.toggleFromCard(this.closest('.news-card'))" title="Añadir/Quitar noticia del Dossier de Inteligencia">📌 +Dossier</button>
                             <button type="button" class="news-action-btn" onclick="window.openSitrepReader(this.closest('.news-card'))" title="Maximizar noticia y analizar con IA">🔍 Maximizar</button>
                             <button type="button" class="news-action-btn" onclick="window.sitrepFocusMap('${countryTag}', '${titleClean}')" title="Ver ubicación en Mapa Táctico">📍 Mapa</button>
                             <button type="button" class="news-action-btn" onclick="window.sitrepInvestigateRAG('${titleClean}')" title="Investigar hipótesis con IA RAG Local">🎯 RAG</button>
@@ -1491,10 +1492,11 @@ window.CobaltoCore = {
                     var cleanS = (item.summary || '').trim();
                     var showSummary = cleanS && cleanS !== cleanT && !cleanS.startsWith(cleanT.substring(0, 60)) && !cleanT.startsWith(cleanS.substring(0, 60));
 
-                    html += `<div class="social-item ${isReddit ? 'reddit-item' : ''}" data-search-text="${this.utils.escapeHTML(searchText)}">
+                    html += `<div class="social-item ${isReddit ? 'reddit-item' : ''}" data-search-text="${this.utils.escapeHTML(searchText)}" data-title="${this.utils.escapeHTML(item.title || '')}" data-summary="${this.utils.escapeHTML(item.summary || '')}" data-link="${this.utils.escapeHTML(itemLink)}" data-source="${this.utils.escapeHTML(itemSrc)}">
                         <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.25rem; flex-wrap:wrap;">
                             ${tagHtml}
                             ${pubTime}
+                            <button type="button" class="btn-dossier-toggle" onclick="if(window.IntelDossier)window.IntelDossier.toggleFromCard(this.closest('.social-item'))" style="margin-left:auto; font-size:0.65rem; padding:1px 6px; border:1px solid rgba(0,229,255,0.3); background:rgba(0,229,255,0.05); color:var(--primary); border-radius:3px; cursor:pointer;" title="Añadir/Quitar noticia del Dossier de Inteligencia">📌 +Dossier</button>
                         </div>
                         <a href="${this.utils.escapeHTML(itemLink)}" target="_blank" rel="noopener noreferrer" style="font-weight:600; text-decoration:none;">${this.utils.escapeHTML(item.title || '')}</a>
                         ${showSummary ? `<p style="margin-top:0.3rem; font-size:0.8rem; color:var(--text-muted); line-height:1.4;">${this.utils.escapeHTML(item.summary)}</p>` : ''}
@@ -1761,6 +1763,9 @@ window.CobaltoCore = {
         
         if (tabId === 'tab-cyber' && !(this.state.tabRendered && this.state.tabRendered['tab-cyber'])) {
             this.lazyLoadTab('tab-cyber', '/api/cyber', data => this._renderCyberGrid(data));
+        }
+        if (tabId === 'tab-intel' && window.IntelDossier) {
+            window.IntelDossier.renderDossierList();
         }
 
         var titles = {

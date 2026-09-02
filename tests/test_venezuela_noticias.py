@@ -1,11 +1,13 @@
 # tests/test_venezuela_noticias.py - Suite de pruebas para Venezuela Noticias en COBALTO
 
+import io
 import os
 import sys
 import time
 from pathlib import Path
 
 from fastapi.testclient import TestClient
+from PIL import Image
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(BASE_DIR))
@@ -174,6 +176,52 @@ def test_fastapi_venezuela_noticias_endpoints():
     assert "application/xml" in res_rss.headers.get("content-type", "")
 
 
+def test_venezuela_relevance_filter():
+    assert vn._is_venezuela_relevant({"title": "Noticia de Venezuela", "country_tags": ["VEN"]}) is True
+    assert vn._is_venezuela_relevant({"title": "Noticia Global", "country_tags": ["GLOBAL"]}) is False
+    assert vn._is_venezuela_relevant({"title": "Noticia Colombia", "country_tags": ["COL"]}) is False
+    assert vn._is_venezuela_relevant({"title": "Noticia sin tags"}) is True
+    assert vn._is_venezuela_relevant({"title": "Noticia con str tag", "country_tags": "VE"}) is True
+
+    crypto_price = {"title": "BITCOIN: $77,134", "country_tags": ["GLOBAL"]}
+    assert vn._is_venezuela_relevant(crypto_price) is False
+    crypto_source = {"title": "Mercado al dia", "source": "Crypto", "country_tags": ["VEN"]}
+    assert vn._is_venezuela_relevant(crypto_source) is False
+
+
+def test_sync_filters_non_venezuela_entries():
+    ts = int(time.time() * 1000)
+    batch = [
+        {
+            "title": "Noticia VEN Sync Test",
+            "summary": "Solo VEN",
+            "link": f"https://example.com/ven-{ts}",
+            "country_tags": ["VEN"]
+        },
+        {
+            "title": "Noticia GLOBAL Sync Test",
+            "summary": "Debe ser ignorada",
+            "link": f"https://example.com/global-{ts}",
+            "country_tags": ["GLOBAL"]
+        },
+        {
+            "title": "BITCOIN: $90,000",
+            "link": f"https://example.com/btc-{ts}",
+            "country_tags": ["GLOBAL"]
+        }
+    ]
+    imported = vn.sync_cobalto_entries_to_inbox(batch)
+    assert imported == 1
+
+    inbox = vn.get_cobalto_inbox(status="pending", limit=50)
+    vn_items = [i for i in inbox if i["link"] == f"https://example.com/ven-{ts}"]
+    assert len(vn_items) == 1
+    assert vn_items[0]["title"] == "Noticia VEN Sync Test"
+
+    global_items = [i for i in inbox if f"https://example.com/global-{ts}" == i["link"]]
+    assert global_items == []
+
+
 def test_upload_media_and_image_optimization():
     # Login Admin
     res_login = client.post("/api/vn-admin/login", json={"username": "admin", "password": "admin"})
@@ -181,8 +229,6 @@ def test_upload_media_and_image_optimization():
     client.cookies.set("vn_token", token)
 
     # Crear imagen sintética en memoria
-    import io
-    from PIL import Image
     img = Image.new("RGB", (800, 600), color="blue")
     buf = io.BytesIO()
     img.save(buf, format="JPEG")

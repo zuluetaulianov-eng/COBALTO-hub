@@ -51,9 +51,9 @@ FONT_UI = "Segoe UI"
 
 @dataclass
 class DocumentoIntel:
-    doc_num: str
-    titulo: str
-    fuente: str
+    doc_num: str = "1"
+    titulo: str = "Sin título"
+    fuente: str = "OSINT"
     score_sentimiento: float = 0.0
     url: str = ""
     analisis: str = ""
@@ -65,13 +65,13 @@ class DocumentoIntel:
 
 @dataclass
 class InformeIntelData:
-    codigo: str
-    fecha_creacion: str
-    autor: str
-    institucion: str
-    fuente_datos: str
-    fecha_analisis: str
-    tema_investigacion: str
+    codigo: str = "INTEL-001"
+    fecha_creacion: str = ""
+    autor: str = "Analista C4I / COBALTO Hub"
+    institucion: str = "EL OJO DEL COPORO / C4I"
+    fuente_datos: str = "Base de Datos OSINT"
+    fecha_analisis: str = ""
+    tema_investigacion: str = "Análisis de Inteligencia OSINT"
     resumen_ejecutivo: str = ""
     analisis_completo: str = ""
     nivel_alerta: str = "MONITOREO NORMAL"
@@ -540,24 +540,51 @@ async def ejecutar_investigacion_local(
             {"role": "user", "content": user_prompt},
         ]
 
-        cfg = ollama_settings()
-        model_name = cfg["model"]
+        active_model = None
+        try:
+            from app import get_ollama_models
+            detection = await get_ollama_models()
+            if detection.get("status") == "ok":
+                active_model = detection.get("running_model")
+        except Exception:
+            pass
+
+        model_name = active_model or ollama_settings()["model"]
 
         try:
             res_text = await ollama_chat(
-                messages=messages, model=model_name, temperature=0.3, max_tokens=1200
+                messages=messages, model=model_name, temperature=0.3, max_tokens=800
             )
         except Exception as e:
-            logger.warning(f"[INTEL] Ollama no disponible: {e}. Generando informe fáctico determinístico sin IA.")
+            logger.warning(f"[INTEL] Ollama no disponible: {e}")
 
-    # Fallback o selección directa si use_ai es False o Ollama falló
+        # Fallback a Cloud AI Pool si IA local retornó None
+        if not res_text:
+            try:
+                from ai_core import get_next_groq_client
+                client = get_next_groq_client()
+                if client:
+                    res = await client.chat.completions.create(
+                        model="meta/llama-3.1-70b-instruct",
+                        messages=messages,
+                        temperature=0.3,
+                        max_tokens=800
+                    )
+                    if res and res.choices:
+                        res_text = res.choices[0].message.content
+                        autor_str = "Analista COBALTO IA (Cloud Pool)"
+                        fuente_str = f"IA Cloud Pool + RAG Local ({len(docs_consultados)} docs)"
+            except Exception as e_cloud:
+                logger.warning(f"[INTEL] Cloud AI pool no disponible: {e_cloud}")
+
+    # Fallback o selección directa si use_ai es False o ambas IAs fallaron
     if not res_text:
         res_text = generar_informe_sintetico_sin_ia(query, docs_consultados, preset)
         autor_str = "Analista COBALTO Motor Fáctico (Sin IA)"
         fuente_str = f"Sintetizador Fáctico RAG ({len(docs_consultados)} docs)"
-    else:
+    elif 'autor_str' not in locals():
         autor_str = "Analista COBALTO IA (Local)"
-        fuente_str = f"Ollama ({model_name}) + RAG Local ({len(docs_consultados)} docs)"
+        fuente_str = f"IA Local ({model_name}) + RAG Local ({len(docs_consultados)} docs)"
 
     # Determinar nivel de alerta
     alert_level = "MONITOREO NORMAL"
@@ -773,6 +800,22 @@ class PDFInformeIntel(FPDF):
         self.cell(0, 10, f"COBALTO HUB OSINT | Pagina {self.page_no()}", align="C", new_x=XPos.RIGHT, new_y=YPos.TOP)
 
 
+def safe_latin1(text: str) -> str:
+    """Convierte texto UTF-8 con emojis y caracteres especiales a formato Latin-1 seguro para FPDF."""
+    if not text:
+        return ""
+    replacements = {
+        "🔴": "[ALERTA]", "🟢": "[OK]", "⚪": "[INFO]", "🎯": "[OBJETIVO]",
+        "📋": "[INFORME]", "🔍": "[ANÁLISIS]", "⚡": "[IMPACTO]", "📌": "[DOSSIER]",
+        "📇": "[EVIDENCIA]", "📡": "[FUENTE]", "⚖️": "[SENTIMIENTO]", "🔗": "[LINK]",
+        "📝": "[RESUMEN]", "📹": "[CCTV]", "•": "-", "“": '"', "”": '"',
+        "’": "'", "‘": "'", "–": "-", "—": "-", "**": "", "###": "", "##": "", "#": ""
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return text.encode("latin-1", "replace").decode("latin-1")
+
+
 def generar_pdf_informe(datos: InformeIntelData) -> bytes:
     """Genera un informe PDF profesional imprimible en memoria."""
     pdf = PDFInformeIntel(orientation="P", unit="mm", format="A4")
@@ -787,16 +830,16 @@ def generar_pdf_informe(datos: InformeIntelData) -> bytes:
     pdf.set_xy(12, 27)
     pdf.set_font("Courier", "B", 9)
     pdf.set_text_color(15, 23, 42)
-    pdf.cell(90, 5, f"CODIGO: {datos.codigo}")
-    pdf.cell(90, 5, f"FECHA: {datos.fecha_creacion}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(90, 5, safe_latin1(f"CODIGO: {datos.codigo}"))
+    pdf.cell(90, 5, safe_latin1(f"FECHA: {datos.fecha_creacion or 'Reciente'}"), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.set_x(12)
-    pdf.cell(90, 5, f"AUTOR: {datos.autor[:35]}")
-    pdf.cell(90, 5, f"ALERTA: {datos.nivel_alerta}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(90, 5, safe_latin1(f"AUTOR: {datos.autor[:35]}"))
+    pdf.cell(90, 5, safe_latin1(f"ALERTA: {datos.nivel_alerta}"), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.set_x(12)
     pdf.set_text_color(15, 23, 42)
-    pdf.cell(180, 5, f"TEMA: {datos.tema_investigacion[:65]}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(180, 5, safe_latin1(f"TEMA: {datos.tema_investigacion[:65]}"), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.ln(8)
 
@@ -809,19 +852,8 @@ def generar_pdf_informe(datos: InformeIntelData) -> bytes:
     pdf.set_text_color(30, 41, 59)
 
     # Formatear líneas para PDF de forma limpia
-    for line in datos.analisis_completo.split("\n"):
-        clean_line = (
-            line.replace("🔴", "[Negativo]")
-            .replace("🟢", "[Positivo]")
-            .replace("⚪", "[Neutro]")
-            .replace("•", "-")
-            .replace("**", "")
-            .replace("###", "")
-            .replace("##", "")
-            .replace("#", "")
-            .strip()
-        )
-        clean_line = clean_line.encode("latin-1", "replace").decode("latin-1")
+    for line in (datos.analisis_completo or "").split("\n"):
+        clean_line = safe_latin1(line.strip())
         if not clean_line:
             continue
         if clean_line[0].isdigit() and "." in clean_line[:3]:
@@ -856,8 +888,8 @@ def generar_pdf_informe(datos: InformeIntelData) -> bytes:
             pdf.rect(10, y_curr, 190, 14, "DF")
             pdf.set_x(12)
             pdf.set_text_color(15, 23, 42)
-            t_str = f"[DOC {doc_item.doc_num}] {doc_item.titulo[:80]}".encode("latin-1", "replace").decode("latin-1")
-            f_str = f"Fuente: {doc_item.fuente} | {doc_item.url[:60]}".encode("latin-1", "replace").decode("latin-1")
+            t_str = safe_latin1(f"[DOC {doc_item.doc_num}] {doc_item.titulo[:80]}")
+            f_str = safe_latin1(f"Fuente: {doc_item.fuente} | {doc_item.url[:60]}")
             pdf.cell(0, 5, t_str, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
             pdf.set_x(12)
             pdf.set_text_color(71, 85, 105)

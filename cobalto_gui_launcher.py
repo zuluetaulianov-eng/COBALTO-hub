@@ -373,7 +373,7 @@ class CobaltoGUI:
         header_frame = tk.Frame(self.root, bg=self.c_card, height=70, bd=1, relief="ridge", highlightbackground=self.c_cyan, highlightcolor=self.c_cyan, highlightthickness=1)
         header_frame.pack(fill="x", padx=15, pady=10)
 
-        lbl_title = tk.Label(header_frame, text="COBALTO HUB v9.0", font=("Consolas", 18, "bold"), fg=self.c_cyan, bg=self.c_card)
+        lbl_title = tk.Label(header_frame, text="COBALTO HUB v16.5", font=("Consolas", 18, "bold"), fg=self.c_cyan, bg=self.c_card)
         lbl_title.pack(side="left", padx=20, pady=10)
 
         self.lbl_uptime = tk.Label(header_frame, text="UPTIME: 00:00:00", font=("Consolas", 10, "bold"), fg=self.c_gray, bg=self.c_card)

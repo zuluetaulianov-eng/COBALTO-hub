@@ -4,8 +4,8 @@ import uuid
 import os
 
 API_SISTEMA = "http://localhost:8100"
-# Nueva API Key dedicada exclusivamente a la ingesta/mejora para no saturar las consultas
-NVIDIA_API_KEY = "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"
+# API Key vía variable de entorno (configurar NVIDIA_API_KEY en .env)
+NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY", "")
 
 def mejorar_y_alimentar(texto_crudo: str, nombre_referencia: str):
     """

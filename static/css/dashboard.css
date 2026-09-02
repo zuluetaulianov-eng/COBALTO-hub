@@ -3141,6 +3141,36 @@ body.theme-light .export-modal .modal-progress { background: rgba(0,0,0,0.02); }
 }
 
 /* ============================================
+   CCTV Stats Strip & AI-vision chip
+   ============================================ */
+#osiris-cctv-stats span {
+    cursor: pointer;
+}
+.cctv-ai-chip {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    z-index: 3;
+    background: rgba(0,0,0,0.7);
+    border: 1px solid rgba(255,45,85,0.3);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-size: 7px;
+    color: #FF2D55;
+    font-family: monospace;
+    pointer-events: auto;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.cctv-ai-chip:hover {
+    background: rgba(255,45,85,0.2);
+}
+.cctv-ai-chip.idle {
+    border-color: rgba(255,255,255,0.1);
+    color: #64748B;
+}
+
+/* ============================================
    CCTV Expand Modal
    ============================================ */
 #cctv-modal {

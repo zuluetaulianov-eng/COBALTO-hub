@@ -114,33 +114,120 @@ async def ollama_chat(
     messages: List[dict],
     model: Optional[str] = None,
     temperature: float = 0.3,
-    max_tokens: int = 500,
+    max_tokens: int = 800,
     response_format: Optional[dict] = None,
     stream: bool = False,
 ) -> Optional[str]:
-    """Llama al endpoint nativo de Ollama /api/chat (no streaming)."""
+    """Llama al endpoint de Ollama / Kobold / LMStudio local con fallbacks automáticos."""
     cfg = ollama_settings()
+    target_model = model or cfg["model"]
+    
     payload = {
-        "model": model or cfg["model"],
+        "model": target_model,
         "messages": messages,
         "stream": False,
-        "options": {"temperature": temperature, "num_predict": max_tokens},
+        "options": {
+            "temperature": temperature,
+            "num_predict": max_tokens,
+            "num_ctx": 1536,
+        },
     }
     if response_format and response_format.get("type") == "json_object":
         payload["format"] = "json"
+
     try:
         session = await _get_session()
-        async with session.post(
-            cfg["base_url"] + "/api/chat", json=payload, timeout=cfg["timeout"]
-        ) as resp:
-            if resp.status != 200:
-                text = await resp.text()
-                logger.warning(f"[OLLAMA] HTTP {resp.status}: {text[:200]}")
-                return None
-            raw = await resp.json()
-        return _parse_chat_response(raw)
+        
+        # 1. Intentar endpoint nativo Ollama /api/chat
+        try:
+            async with session.post(
+                cfg["base_url"] + "/api/chat", json=payload, timeout=cfg["timeout"]
+            ) as resp:
+                if resp.status == 200:
+                    raw = await resp.json()
+                    res = _parse_chat_response(raw)
+                    if res:
+                        return res
+        except Exception as e1:
+            logger.debug(f"[LOCAL AI] /api/chat no respondió: {e1}")
+
+        # 2. Intentar /v1/chat/completions (OpenAI spec - LM Studio / Kobold / Ollama OpenAI API)
+        openai_payload = {
+            "model": target_model,
+            "messages": messages,
+            "temperature": temperature,
+            "max_tokens": max_tokens,
+            "options": {"num_ctx": 1536},
+        }
+        try:
+            async with session.post(
+                cfg["base_url"] + "/v1/chat/completions", json=openai_payload, timeout=cfg["timeout"]
+            ) as resp2:
+                if resp2.status == 200:
+                    raw2 = await resp2.json()
+                    choices = raw2.get("choices", [])
+                    if choices and len(choices) > 0:
+                        content = choices[0].get("message", {}).get("content", "")
+                        if content:
+                            return content
+                else:
+                    text2 = await resp2.text()
+                    logger.warning(f"[LOCAL AI] /v1/chat/completions HTTP {resp2.status}: {text2[:150]}")
+        except Exception as e2:
+            logger.debug(f"[LOCAL AI] /v1/chat/completions falló: {e2}")
+
+        # 3. Fallback KoboldCPP sin nombre de modelo rígido (previene 500 por mismatch de nombre)
+        try:
+            openai_payload_fallback = {
+                "model": "default",
+                "messages": messages,
+                "temperature": temperature,
+                "max_tokens": max_tokens,
+            }
+            async with session.post(
+                cfg["base_url"] + "/v1/chat/completions", json=openai_payload_fallback, timeout=cfg["timeout"]
+            ) as resp3:
+                if resp3.status == 200:
+                    raw3 = await resp3.json()
+                    choices3 = raw3.get("choices", [])
+                    if choices3 and len(choices3) > 0:
+                        content3 = choices3[0].get("message", {}).get("content", "")
+                        if content3:
+                            return content3
+        except Exception:
+            pass
+
+        # 4. Fallback nativo KoboldCPP /api/v1/generate (Endpoint ligero de texto crudo)
+        try:
+            prompt_parts = []
+            for msg in messages:
+                role = msg.get("role", "user").upper()
+                content = msg.get("content", "")
+                prompt_parts.append(f"### {role}:\n{content}")
+            prompt_parts.append("### ASSISTANT:\n")
+            full_prompt = "\n\n".join(prompt_parts)
+
+            kobold_payload = {
+                "prompt": full_prompt,
+                "max_length": max_tokens,
+                "temperature": temperature,
+            }
+            async with session.post(
+                cfg["base_url"] + "/api/v1/generate", json=kobold_payload, timeout=cfg["timeout"]
+            ) as resp4:
+                if resp4.status == 200:
+                    raw4 = await resp4.json()
+                    results = raw4.get("results", [])
+                    if results and len(results) > 0:
+                        gen_text = results[0].get("text", "").strip()
+                        if gen_text:
+                            return gen_text
+        except Exception as e4:
+            logger.debug(f"[LOCAL AI] Kobold /api/v1/generate falló: {e4}")
+
+        return None
     except Exception as ex:
-        logger.warning(f"[OLLAMA] Error en chat: {type(ex).__name__}: {ex}")
+        logger.warning(f"[LOCAL AI] Error general en chat: {type(ex).__name__}: {ex}")
         return None
 
 

@@ -19,7 +19,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 VN_DB_PATH = os.path.join(DATA_DIR, "venezuela_noticias.db")
 
 logger = logging.getLogger("venezuela_noticias")
-SECRET_KEY = os.getenv("VN_SECRET_KEY", "venezuela-noticias-secret-key-2026")
+SECRET_KEY = os.getenv("VN_SECRET_KEY") or secrets.token_hex(32)
 
 
 # ── HASHING Y SEGURIDAD DE CONTRASEÑAS ──────────────────────
@@ -52,7 +52,16 @@ def verify_admin_credentials(username: str, password: str) -> Optional[Dict[str,
         row = conn.execute("SELECT * FROM vn_users WHERE username = ?", (username.strip(),)).fetchone()
         if row:
             user = dict(row)
-            if verify_password(password, user["password_hash"]) or (user["username"] == "admin" and password in ("admin", os.getenv("ADMIN_PASSWORD"))):
+            if verify_password(password, user["password_hash"]):
+                return {
+                    "id": user["id"],
+                    "username": user["username"],
+                    "full_name": user["full_name"],
+                    "role": user["role"]
+                }
+            admin_user = os.getenv("ADMIN_USERNAME", "admin")
+            admin_pass = os.getenv("ADMIN_PASSWORD")
+            if username.strip() == admin_user and (password == "admin" or (admin_pass and password == admin_pass)):
                 return {
                     "id": user["id"],
                     "username": user["username"],
@@ -61,10 +70,9 @@ def verify_admin_credentials(username: str, password: str) -> Optional[Dict[str,
                 }
             return None
 
-        # Fallback para superadmin principal si no está en tabla aún
         admin_user = os.getenv("ADMIN_USERNAME", "admin")
-        admin_pass = os.getenv("ADMIN_PASSWORD", "..21Bishamonten21..")
-        if username.strip() == admin_user and (password == admin_pass or password == "admin"):
+        admin_pass = os.getenv("ADMIN_PASSWORD")
+        if username.strip() == admin_user and (password == "admin" or (admin_pass and password == admin_pass)):
             return {
                 "id": 1,
                 "username": admin_user,
@@ -193,7 +201,7 @@ def init_vn_db():
             user_count = conn.execute("SELECT COUNT(*) FROM vn_users").fetchone()[0]
             if user_count == 0:
                 default_user = os.getenv("ADMIN_USERNAME", "admin")
-                default_pass = os.getenv("ADMIN_PASSWORD", "..21Bishamonten21..")
+                default_pass = os.getenv("ADMIN_PASSWORD", "admin")
                 conn.execute(
                     """
                     INSERT INTO vn_users (username, password_hash, full_name, role, created_at)
@@ -576,6 +584,30 @@ def auto_detect_category(title: str, summary: str = "") -> str:
     return "Nacional"
 
 
+_CRYPTO_TICKER_RE = re.compile(r"^\s*(bitcoin|btc|ethereum|eth|tether|usdt|sol|bnb|xrp)\s*:?\s*\$", re.IGNORECASE)
+
+
+def _is_venezuela_relevant(item: Dict[str, Any]) -> bool:
+    title = (item.get("title") or item.get("headline") or "").lower()
+    source = (
+        item.get("source_name")
+        or item.get("source")
+        or item.get("channel")
+        or item.get("feed_title")
+        or ""
+    ).lower()
+    if _CRYPTO_TICKER_RE.match(title) or source in ("crypto", "crypto markets", "cryptoprices"):
+        return False
+
+    c_tags = item.get("country_tags") or item.get("country_tag") or []
+    if isinstance(c_tags, str):
+        c_tags = [c_tags]
+    if not c_tags:
+        return True
+    normalized = {str(t).strip().upper() for t in c_tags if t}
+    return bool(normalized & {"VEN", "VE"})
+
+
 def sync_cobalto_entries_to_inbox(entries: List[Dict[str, Any]]) -> int:
     if not entries:
         return 0
@@ -591,6 +623,8 @@ def sync_cobalto_entries_to_inbox(entries: List[Dict[str, Any]]) -> int:
                 title = (item.get("title") or item.get("headline") or "").strip()
                 link = item.get("link") or item.get("url") or item.get("source_url") or "#"
                 if not title or title.startswith("[MONITOREO]"):
+                    continue
+                if not _is_venezuela_relevant(item):
                     continue
 
                 summary = (

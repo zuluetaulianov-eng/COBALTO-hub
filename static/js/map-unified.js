@@ -42,15 +42,17 @@ window.UnifiedMap = {
     init: function() {
         if (this.state.active) return;
         if (typeof L === 'undefined') {
-            console.warn('[UNIFIED-MAP] Leaflet not loaded. Retrying...');
-            setTimeout(function() { window.UnifiedMap.init(); }, 1000);
+            if (!this._leafletRetryCount) this._leafletRetryCount = 0;
+            if (this._leafletRetryCount < 5) {
+                this._leafletRetryCount++;
+                setTimeout(function() { window.UnifiedMap.init(); }, 1000);
+            }
             return;
         }
 
         var container = document.getElementById('unified-map-container');
         if (!container || container.offsetWidth === 0) {
-            console.warn('[UNIFIED-MAP] Container not visible yet. Retrying...');
-            setTimeout(function() { window.UnifiedMap.init(); }, 300);
+            // El mapa está en una pestaña oculta. Se inicializará cuando el usuario active la pestaña Mapa.
             return;
         }
 

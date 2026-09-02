@@ -9,6 +9,18 @@
 
 ## 🔄 Últimas Actualizaciones (Septiembre 2026 — Release v16.5)
 
+- **📌 Mesa de Trabajo (Target Dossier Intelligence) & RAG Resiliente:**
+  - **Inferencia IA Multinivel con Autodetección**: Integración de autodetección inteligente para motores de IA local (Ollama `/api/chat`, KoboldCPP, LM Studio) y fallback automático a la Piscina Cloud (NVIDIA NIM / Groq) y motor fáctico determinístico.
+  - **Optimización de RAM & Contexto (`num_ctx: 1536`)**: Reducción del footprint de memoria KV Cache en Ollama para garantizar inferencia fluida en equipos de 8GB RAM (CPUs Intel i3-N305) sin desbordamientos de buffer o errores 500.
+  - **Truncamiento de Contexto & Limitación de Tokens**: Prompts de dossier optimizados con resúmenes truncados a 350 caracteres y `max_tokens: 800` para evitar cierres por límites de VRAM.
+
+- **📄 Blindaje de Exportación de Informes de Inteligencia (.docx & .pdf):**
+  - **Sanitización Latin-1 Seguro (`safe_latin1`)**: Conversión automática de emojis tácticos (`🎯`, `🔍`, `⚡`, `📌`, `📇`) y símbolos tipográficos UTF-8 a texto seguro para FPDF2, eliminando fallos y `UnicodeEncodeError`.
+  - **Instanciación Resiliente de Dataclasses**: Asignación de valores por defecto en `InformeIntelData` y `DocumentoIntel` junto a un filtro de claves dinámico en `/api/intel/export_docx` y `/api/intel/export_pdf` para procesar cualquier informe parcial sin errores HTTP 500.
+
+- **🗺️ Estabilización de UI/UX en Mapa Unificado (`map-unified.js`):**
+  - Eliminación del bucle de reintentos infinitos en consola (`setTimeout`) cuando el contenedor del mapa Leaflet está oculto, optimizando el rendimiento general del navegador.
+
 - **🛡️ Auditoría Cronológica Táctica & Ingesta Real OSINT (`incidents_manager.py` & `timeline-analysis.js`):**
   - **Ingesta Real desde SQLite (`historical_store.db`)**: Conexión directa con la base de datos histórica para extraer noticias y alertas de inteligencia reales en tiempo real sin requerir datos simulados de fallback.
   - **Clasificador Multiteatro y Categorías Tácticas**: Etiquetado automatizado por áreas estratégicas (*SECURITY, MILITARY, INFRASTRUCTURE, CYBER, CIB, PROTEST, WEATHER*) y teatros operacionales (*VENEZUELA, COLOMBIA, FRONTERA, GLOBAL*).
@@ -74,14 +86,16 @@
 - **🧪 Cobertura del 100% en Suite de Pruebas (`tests/`):** **191/191 tests pasados exitosamente**.
 
 - **📹 Visión Táctica CCTV 100% Real & Motor Proxy Resiliente (`osiris_bridge.py` & `osiris-global.js`):**
+  - **Migración a API Oficial DriveBC (Canadá)**: Sustitución de URLs obsoletas (`images.drivebc.ca`) por la ingesta dinámica en tiempo real desde la API JSON oficial (`https://www.drivebc.ca/api/webcams`), mapeando IDs, coordenadas geoespaciales y nombres de región a la estructura `https://www.drivebc.ca/images/{id}.jpg`.
+  - **Restauración Feeds Houston TranStar (EE.UU.)**: Reemplazo de URLs secundarias que retornaban páginas HTML de diapositivas por la ingesta directa desde los servidores principales de snapshot (`https://www.houstontranstar.org/snapshots/cctv/{cid}.jpg`) con 30 IDs de cámaras verificadas activas (`102`–`131`).
+  - **Ingesta Dinámica España DGT / Euskadi**: Eliminación de rutas estáticas inactivas y extracción directa del atributo `urlImage` desde la API REST oficial (`api.euskadi.eus/traffic/v1.0/cameras`), alimentando transmisiones vivas con validación HTTP 200 (Bizkaimove / Bilbao.eus).
+  - **Escudo Proxy Anti-HTML en Endpoint CCTV**: Filtro estricto en el proxy `/api/osiris/cctv/image` (`osiris_bridge.py`) que detecta y descarta automáticamente payloads HTML/texto devueltos con código 200 por servidores externos caídos, desplegando la tarjeta visual táctica de fuera de línea en lugar de romper el renderizado del navegador.
+  - **Manejo de Errores y Re-intento en Modal (`osiris-global.js`)**: Incorporación de manejadores `onerror` en el visor modal para auto-reintentar la carga de imágenes durante caídas o latencias temporales de red.
   - **Política Cero Simulación:** Eliminación completa de generadores sintéticos. Las transmisiones muestran exclusivamente fuentes en vivo o un indicador SVG neutro de fuera de línea si la cámara cae en origen.
-  - **Ingesta Paralela Asíncrona:** Integración de `asyncio.gather` para consultar simultáneamente más de 350+ cámaras de fuentes como TfL Londres, Singapur LTA, WSDOT Washington, NYC DOT TMC, Caltrans CA y redes LATAM (Venezuela/Colombia).
-  - **Motor Proxy con Bypass TLS/SSL & Cabeceras de Navegador:** Conexión flexibilizada (`ssl=False`) para webcams públicas con certificados vencidos y emulación de cabeceras Chrome de escritorio para evadir bloqueos de WAF/Cloudflare.
-  - **Exploración Adaptativa de Rutas IP:** Sondeo automático de subrutas estándar (`/mjpg/video.mjpg`, `/axis-cgi/mjpg/video.cgi`, `/video.mjpg`, `/image.jpg`) al conectar con hosts IP directos.
-  - **Caché en Memoria Anti-Parpadeo (90s):** Almacenamiento de fotogramas válidos recientes en memoria para prevenir cortes visuales durante micro-caídas de red.
-  - **Búsqueda Táctica Instantánea:** Barra de búsqueda en tiempo real por texto (`🔍 Search camera, city...`) para filtrar por ciudad, país o nombre de cámara sin recargar la página.
+  - **Ingesta Paralela Asíncrona:** Integración de `asyncio.gather` para consultar simultáneamente más de 350+ cámaras de fuentes como TfL Londres, Singapur LTA, WSDOT Washington, NYC DOT TMC, Caltrans CA, DriveBC, Houston TranStar, España DGT y redes LATAM (Venezuela/Colombia).
   - **Captura Táctica de Snapshots:** Botón **`📸 CAPTURAR SNAPSHOT`** en la barra lateral y en el visor fullscreen para descargar imágenes al instante con marca de agua UTC.
   - **Enlace Bi-direccional con Mapa Leaflet:** Botón **`📹 VER EN VISOR FULLSCREEN CCTV`** en popups de Leaflet y botón **`📍 MAPA`** en el visor global para saltar entre la vista geoespacial y el visor de video.
+
 
 - **🩺 Motor de Diagnóstico Táctico `OSIRIS Doctor` (`osiris_bridge.py` & `osiris_recon.py`):**
   - Chequeos de salud concurrentes sobre 10 fuentes principales OSINT (DNS DoH, WHOIS RDAP, BGP ip-api, crt.sh, MITRE CVE, Shodan, GitHub, Leaks, AlienVault OTX, Jina Reader).
@@ -792,6 +806,7 @@ Cobalto Hub es instalable como aplicación de escritorio:
 
 | Versión | Fecha | Cambios clave |
 |---|---|---|
+| **v16.5** | 2026-09-02 | **Mesa de Trabajo (Dossier) & Estabilización de Inferencia y Exportación**: Ingesta real desde `historical_store.db` en la cronología táctica. Inferencia IA local autodetectada (Ollama/Kobold/LM Studio) con gestión de memoria RAM `num_ctx: 1536` para entornos de 8GB RAM (Intel i3-N305), desborde a Cloud AI Pool (NVIDIA/Groq) y motor fáctico determinístico. Blindaje de exportaciones Word/PDF (`safe_latin1` anti-crash FPDF y dataclasses resilientes). Eliminación de reintentos infinitos en Mapa Unificado. **191/191 tests pasados**. |
 | **v16.4** | 2026-08-30 | **Optimización de Rendimiento, Accesibilidad & SEO**: Aceleración de carga inicial (FCP/LCP) mediante ocultamiento inmediato del Splash HUD, precarga perezosa de pestañas en diferido (`requestIdleCallback`), hojas CSS no bloqueantes (`media="print" onload="..."`), cumplimiento del 100% en accesibilidad WCAG A11y (etiquetado de selectores, `aria-label`, subtítulos `<track>` en reproductores de video), e indexación y enlaces rastreables SEO. |
 | **v16.3** | 2026-08-30 | **Fallback CNE Wayback Machine & Módulos OSINT Estatales**: Integración de búsqueda histórica de votación CNE vía Internet Archive CDX API (`cne_voter_wayback_lookup`), módulos OSINT Institucionales CNE, IVSS, SENIAT RIF y SAIME, reproductor HLS.js en visor CCTV y pivot 1-clic en Grafo Táctico. |
 | **v14.2** | 2026-08-24 | **Marco DGAE Colombia 2026 & Hardening**: Integración completa del set de inteligencia DGAE 2026 para Colombia (164+ keywords, 26 targets de alto perfil, 5 fuentes RSS estratégicas: *Colombia+20*, *InSight Crime*, *Infobae*, *Indepaz*, *FIP*). Parcheo dinámico de fuentes caídas (`feed_patches.json`), aceleración del rate-limiter de redes sociales, circuit breakers optimizados en OSINT tiempo real y bypass SSL en scraping BCV. |

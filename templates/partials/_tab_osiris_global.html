@@ -21,9 +21,21 @@
                                 <select id="osiris-cctv-filter" aria-label="Filtrar cámaras por fuente CCTV" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text-muted);padding:3px 6px;font-size:0.6rem;font-family:monospace;cursor:pointer;">
                                     <option value="all">ALL SOURCES</option>
                                 </select>
+                                <select id="osiris-cctv-sort" aria-label="Ordenar cámaras" title="Ordenar cámaras" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text-muted);padding:3px 6px;font-size:0.6rem;font-family:monospace;cursor:pointer;">
+                                    <option value="online">● ONLINE FIRST</option>
+                                    <option value="name">NAME A→Z</option>
+                                    <option value="country">COUNTRY</option>
+                                    <option value="source">SOURCE</option>
+                                </select>
                                 <button id="osiris-cctv-live-btn" onclick="if(window.OsirisGlobal)window.OsirisGlobal.toggleLiveVision()" style="background:rgba(0,255,170,0.12);border:1px solid rgba(0,255,170,0.4);border-radius:4px;color:#00FFAA;padding:3px 8px;font-size:0.6rem;font-family:monospace;cursor:pointer;font-weight:bold;" title="Alternar actualización de video en vivo">🔴 LIVE STREAM: ON</button>
-                                <button id="osiris-cctv-refresh" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text-muted);padding:3px 8px;font-size:0.6rem;font-family:monospace;cursor:pointer;">⟳</button>
+                                <button id="osiris-cctv-refresh" style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);border-radius:4px;color:var(--text-muted);padding:3px 8px;font-size:0.6rem;font-family:monospace;cursor:pointer;" title="Recargar datos CCTV">⟳</button>
                             </div>
+                        </div>
+                        <div id="osiris-cctv-stats" style="flex-shrink:0;display:flex;gap:8px;align-items:center;padding:4px 2px;font-family:monospace;font-size:8px;color:var(--text-muted);overflow-x:auto;white-space:nowrap;">
+                            <span style="color:#00FFAA;">● <span id="osiris-stats-online">0</span> ONLINE</span>
+                            <span style="color:#FF4444;">● <span id="osiris-stats-offline">0</span> OFFLINE</span>
+                            <span style="color:#FF9500;">◐ <span id="osiris-stats-checking">0</span> CHECKING</span>
+                            <span id="osiris-stats-sources" style="margin-left:6px;"></span>
                         </div>
                         <div id="osiris-cctv-container" style="flex:1;overflow-y:auto;min-height:0;">
                             <div id="osiris-cctv-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:2px 0;"></div>
